@@ -40,7 +40,7 @@ SchoolSOLPassRate<-read.csv("~/git/stem_edu/data/stem_edu/original/HS_info/2015-
 StateSOLPassRate<-read.csv("~/git/stem_edu/data/stem_edu/original/HS_info/2015-2016 State SOL Pass Rate.csv",stringsAsFactors = F)
 
 
-#Manipulating School Dataframes
+#Manipulating School Dataframes ##NEED TO RE DO FOR WASHINGTON-LEE HS!!!!!!!
 SchoolSOLPassRate <- SchoolSOLPassRate[-c(1:4,6:8,14:16)] #delete columns
 SchoolSOLPassRate <- SchoolSOLPassRate[-c(1:6,13:19),] #delete rows
 SchoolSOLPassRate <- SchoolSOLPassRate[c(1,3,2,4:6,8,7,9,10:12),] #reorder columns
@@ -68,8 +68,6 @@ SchoolandStatebind <-rbind(SchoolSOLPassRate,StateSOLPassRate)
 #Algebra 1 (15-16)
 AlgebraI <- SchoolandStatebind[-c(2:6,8:12,14:19),]
 ggplot(data = AlgebraI, aes(x = School, y = Pass_Rate_15_16)) + geom_bar(stat = "identity") + ylab("15-16 Pass Rate (%)") + ggtitle("Algebra 1 Pass Rates")
-
-#Biology (15-16)
 
 
 
