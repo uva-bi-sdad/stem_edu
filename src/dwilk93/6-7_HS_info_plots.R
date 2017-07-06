@@ -41,18 +41,35 @@ StateSOLPassRate<-read.csv("~/git/stem_edu/data/stem_edu/original/HS_info/2015-2
 
 
 #Manipulating School Dataframes
-SchoolSOLPassRate <- SchoolSOLPassRate[-c(1:4,6:8,14:16)]
-SchoolSOLPassRate <- SchoolSOLPassRate[-c(2:7,14:20),]
-SchoolSOLPassRate <- SchoolSOLPassRate[c(1,2,4,3,5,6,7,9,8,10,11,12,13),]
+SchoolSOLPassRate <- SchoolSOLPassRate[-c(1:4,6:8,14:16)] #delete columns
+SchoolSOLPassRate <- SchoolSOLPassRate[-c(1:6,13:19),] #delete rows
+SchoolSOLPassRate <- SchoolSOLPassRate[c(1,3,2,4:6,8,7,9,10:12),] #reorder columns
+SchoolSOLPassRate <- rename(SchoolSOLPassRate, c("School.Name"="School", "X2013.14.Pass.Rate"="Pass_Rate_13_14", "X2014.15.Pass.Rate"="Pass_Rate_14_15","X2015.16.Pass.Rate"="Pass_Rate_15_16"))
 
 
 #Manipulating State Dataframe
-StateSOLPassRate <- StateSOLPassRate[-c(1,7:9)]
-StateSOLPassRate <- StateSOLPassRate[-c(2:28,32:34),]
-StateSOLPassRate <- StateSOLPassRate[c(1,3,4,2,6,7,5),]
+StateSOLPassRate <- StateSOLPassRate[-c(1,7:9)] #delete columns
+StateSOLPassRate <- cbind("School" = "State", StateSOLPassRate)
+StateSOLPassRate <- StateSOLPassRate[-c(1:27,31:33),] #delete rows
+StateSOLPassRate <- StateSOLPassRate[c(2,3,1,5,6,4),] #reorder columns
+StateSOLPassRate <- rename(StateSOLPassRate, c("X2013.14.Pass.Rate"="Pass_Rate_13_14", "X2014.15.Pass.Rate"="Pass_Rate_14_15","X2015.16.Pass.Rate"="Pass_Rate_15_16"))
 
+#Save State and School SOL Score Dataframes
+write.csv(SchoolSOLPassRate,"~/git/stem_edu/data/stem_edu/original/HS_info/15-16_School_SOL_Pass_Rate.csv")
+write.csv(StateSOLPassRate,"~/git/stem_edu/data/stem_edu/original/HS_info/15-16_State_SOL_Pass_Rate.csv")
 
+#binding School & State
+SchoolandStatebind <-rbind(SchoolSOLPassRate,StateSOLPassRate)
 
+###Plotting
+
+##SOL SCORES
+
+#Algebra 1 (15-16)
+AlgebraI <- SchoolandStatebind[-c(2:6,8:12,14:19),]
+ggplot(data = AlgebraI, aes(x = School, y = Pass_Rate_15_16)) + geom_bar(stat = "identity") + ylab("15-16 Pass Rate (%)") + ggtitle("Algebra 1 Pass Rates")
+
+#Biology (15-16)
 
 
 
