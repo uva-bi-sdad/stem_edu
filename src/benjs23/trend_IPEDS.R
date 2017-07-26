@@ -3,8 +3,9 @@
 ### This code imports 6 IPEDS data tables containing STEM degrees awarded from all institutions participating in the federal student loan program
 ### for the years 2010-2015. It pulls in IPEDS data  (from data/working folder) subsetted by race
 ### and generates a heatmap showing the percentage of total degrees awarded by race for each year
-### out of the 6 year period. The trend plot for gender is still in progress.
-###
+### out of the 6 year period. The trend plot for gender is still in progress. The data for
+### STEM Phds needs to be re-downloaded from the IPEDS data center, cleaned, and plotted.
+### An additional comparison of STEM degrees to all degrees by race and gender would be interesting to explore.
 
 ###
 
@@ -38,6 +39,10 @@ IPEDS_2013_degrees <- read_csv("~/git/stem_edu/data/stem_edu/working/IPEDS_worki
 IPEDS_2014_degrees <- read_csv("~/git/stem_edu/data/stem_edu/working/IPEDS_working/IPEDS_2014_degrees.csv")
 IPEDS_2015_degrees <- read_csv("~/git/stem_edu/data/stem_edu/working/IPEDS_working/IPEDS_2015_degrees.csv")
 
+
+####The data on PhDs read in here should be re-downloaded from IPEDS website.
+####There may have been an issue with the 2010 data. I am not sure if it's
+####an IPEDS data collection issue, or a data cleaning issue.
 all2010 <-read_csv("~/git/stem_edu/data/stem_edu/working/IPEDS_working/all2010_v4.csv")
 phd2011 <-read_csv("~/git/stem_edu/data/stem_edu/working/IPEDS_working/phd2011.csv")
 phd2012 <-read_csv("~/git/stem_edu/data/stem_edu/working/IPEDS_working/phd2012.csv")
@@ -183,10 +188,15 @@ ipedsM<-melt(IPEDS_2010_2015_degrees,id=c("unitid","institution name","year","Fi
                                           "CIP Code","CipTitle","Award Level Code","Grand Total - Women","IDX_C"),
              value.name="count")
 
+
+#####This is the melted data table with all STEM awards from 2010-2015
 save(ipedsM, file = "~/git/stem_edu/data/stem_edu/working/IPEDS_working/meltTable.RData")
 
 
-#############################
+
+####################################################
+####################################################
+### The next section creates heat tile plots to visualize trends in STEM degrees by race/ethnicity.
 ### This imports the data to plot.
 load(file = "./data/stem_edu/working/meltTable.RData")
 
@@ -221,11 +231,11 @@ doctorsByRace$raceEth = factor(doctorsByRace$raceEth,levels(doctorsByRace$raceEt
 doctorsByRace <- filter(doctorsByRace,raceEth!="Two or More Races")
 doctorsByRace <- filter(doctorsByRace,raceEth!="Unknown Race/Ethnicity")
 
-### HEAT MAP (modified code from Madison Arnsbarger)
-### The
+### HEAT TILE MAP (shoutout to Madison "Battie" Arnsbarger for providing example code for these plots)
+
 data_heatmap <- IPEDS_2010_2015_degrees %>% group_by(y_axis_var, x_axis_var) %>% dplyr::summarise(count = n())
 
-png("~/git/stem_edu/data/stem_edu/final/TotalStemTrend.png", height = 1000, width = 1710)
+png("~/git/stem_edu/output/TotalStemTrend.png", height = 1000, width = 1710)
 trendAll<-ggplot() +
   geom_tile(data = ipedsbyRace,
             mapping = aes(x = year,
@@ -240,7 +250,7 @@ trendAll<-ggplot() +
 print(trendAll)
 dev.off()
 
-png("~/git/stem_edu/data/stem_edu/final/MastersDegreeTrend.png", height = 1000, width = 1800)
+png("~/git/stem_edu/output/MastersDegreeTrend.png", height = 1000, width = 1800)
 trendAll<-ggplot() +
   geom_tile(data = mastersByRace,
             mapping = aes(x = year,
@@ -256,7 +266,7 @@ print(trendAll)
 dev.off()
 
 
-png("~/git/stem_edu/data/stem_edu/final/BachelorsDegreeTrend.png", height = 1000, width = 1800)
+png("~/git/stem_edu/output/BachelorsDegreeTrend.png", height = 1000, width = 1800)
 trendAll<-ggplot() +
   geom_tile(data = bachelorsByRace,
             mapping = aes(x = year,
@@ -271,7 +281,7 @@ trendAll<-ggplot() +
 print(trendAll)
 dev.off()
 
-png("~/git/stem_edu/data/stem_edu/final/AssociatesDegreeTrend.png", height = 1000, width = 1850)
+png("~/git/stem_edu/output/AssociatesDegreeTrend.png", height = 1000, width = 1850)
 trendAll<-ggplot() +
   geom_tile(data = associatesByRace,
             mapping = aes(x = year,
@@ -286,7 +296,7 @@ trendAll<-ggplot() +
 print(trendAll)
 dev.off()
 
-png("~/git/stem_edu/data/stem_edu/final/PHDTrend.png", height =1000, width = 1800)
+png("~/git/stem_edu/output/PHDTrend.png", height =1000, width = 1800)
 trendAll<-ggplot() +
   geom_tile(data = doctorsByRace,
             mapping = aes(x = year,
@@ -301,7 +311,9 @@ trendAll<-ggplot() +
 print(trendAll)
 dev.off()
 
-######## Exploration of degree trends by gender still needs to be completed
+######## Exploration of degree trends by gender still needs to be completed. This is
+######## roughly what the final code will look like. Use the melted table (ipedsM)
+######## as the source of data for "vectorToPlot"
 # png("~/git/stem_edu/data/stem_edu/final/GenderTrend.png", height = 1000, width = 2000)
 #
 # vectorToPlotGender$percent
@@ -333,7 +345,9 @@ dev.off()
 
 ### FAILED MOSAIC PLOT #########################################################################################
 ### A mosaic plot is not the best way to depict STEM award trends. There is too much information
-### to be understandable in this format. See heat tile plot above.
+### to be understandable in this format. I spent wayyyy too long creating this and it sucked.
+### Don't make the same mistakes I made. You're better than that.
+### See heat tile plot above.
 ###
 # yearB <- rep(rep(c(2010, 2011, 2012, 2013, 2014, 2015),3),4)
 # DegreeB <- rep(c("MW","BW","AW","MB","BB","AB","MH", "BH", "AH", "MO","BO","AO"),rep(6,12))
