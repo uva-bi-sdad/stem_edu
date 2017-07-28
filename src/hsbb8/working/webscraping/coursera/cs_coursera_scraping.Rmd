@@ -1,0 +1,335 @@
+---
+title: "Coursera Webscraping (Computer Science)"
+author: "Hannah Brinkley"
+date: "7/5/2017"
+output: html_document
+---
+
+```{r}
+#libraries
+library(RCurl)
+library(rvest)
+library(XML)
+```
+
+```{r}
+#creating the data frame
+coursera_df <- data.frame(NA, NA, NA, NA, stringsAsFactors = FALSE)
+colnames(coursera_df)[1] <- "type"
+colnames(coursera_df)[2] <- "title"
+colnames(coursera_df)[3] <- "description"
+colnames(coursera_df)[4] <- "skills"
+row_nm <- 1
+```
+
+```{r}
+#SOFTWARE DEVELOPMENT COURSES
+
+sd_url <- read_html("https://www.coursera.org/browse/computer-science/software-development?languages=en")
+sd_courses <-  sd_url %>% html_nodes("a.rc-OfferingCard.nostyle") %>% html_attr("href")
+
+for(i in 1:length(sd_courses))
+{
+  course_url <- paste0('https://www.coursera.org', sd_courses[i])
+  course_url <- read_html(course_url)
+
+  Sys.sleep(sample(1:5, 1))
+
+
+  coursera_df[row_nm, 1] <- "software_development"
+
+  if(length(course_url %>% html_node('.display-3-text') %>% html_text()) != 0)
+  {
+    coursera_df[row_nm, 2] <- course_url %>% html_node('.display-3-text') %>% html_text()
+  }
+
+  if(length(course_url %>% html_nodes('#about') %>% html_text()) != 0)
+  {
+    coursera_df[row_nm, 3] <- course_url %>% html_nodes('#about') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.course-description') %>% html_text()) != 0)
+  {
+    coursera_df[row_nm, 3] <- course_url %>% html_node('.course-description') %>% html_text()
+  }
+
+  if(length(as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())
+    coursera_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+  else if(length(as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())
+    coursera_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+
+  row_nm <- row_nm + 1
+}
+```
+
+```{r}
+#new data frame 
+
+web_dev_df <- data.frame(NA, NA, NA, NA, stringsAsFactors = FALSE)
+colnames(web_dev_df)[1] <- "type"
+colnames(web_dev_df)[2] <- "title"
+colnames(web_dev_df)[3] <- "description"
+colnames(web_dev_df)[4] <- "skills"
+row_nm <- 1
+```
+
+```{r}
+#MOBILE/WEB DEVELOPMENT COURSES
+
+sd_url <- read_html("https://www.coursera.org/browse/computer-science/mobile-and-web-development?languages=en")
+sd_courses <-  sd_url %>% html_nodes("a.rc-OfferingCard.nostyle") %>% html_attr("href")
+
+for(i in 1:length(sd_courses))
+{
+  course_url <- paste0('https://www.coursera.org', sd_courses[i])
+  course_url <- read_html(course_url)
+
+  Sys.sleep(sample(1:5, 1))
+
+  web_dev_df[row_nm, 1] <- "mobile_web_development"
+
+  if(length(course_url %>% html_node('.display-3-text') %>% html_text()) != 0)
+  {
+    web_dev_df[row_nm, 2] <- course_url %>% html_node('.display-3-text') %>% html_text()
+  }
+  if(length(course_url %>% html_node('.s12n-name') %>% html_text()) != 0)
+  {
+    web_dev_df[row_nm, 2] <- course_url %>% html_node('.s12n-name') %>% html_text()
+  }
+  
+  if(length(course_url %>% html_nodes('#about') %>% html_text()) != 0)
+  {
+    web_dev_df[row_nm, 3] <- course_url %>% html_nodes('#about') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.course-description') %>% html_text()) != 0)
+  {
+    web_dev_df[row_nm, 3] <- course_url %>% html_node('.course-description') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.styled div') %>% html_text()) != 0)
+  {
+    web_dev_df[row_nm, 3] <- course_url %>% html_node('.styled div') %>% html_text()
+  }
+  
+  if(length(as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())
+    web_dev_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+  else if(length(as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())
+    web_dev_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+  row_nm <- row_nm + 1
+}
+```
+
+```{r}
+#creating the data frame
+sec_df <- data.frame(NA, NA, NA, NA, stringsAsFactors = FALSE)
+colnames(sec_df)[1] <- "type"
+colnames(sec_df)[2] <- "title"
+colnames(sec_df)[3] <- "description"
+colnames(sec_df)[4] <- "skills"
+row_nm <- 1
+```
+
+
+```{r}
+#COMPUTER SECURITY AND NETWORKS
+
+sd_url <- read_html("https://www.coursera.org/browse/computer-science/computer-security-and-networks?languages=en")
+sd_courses <-  sd_url %>% html_nodes("a.rc-OfferingCard.nostyle") %>% html_attr("href")
+
+#scraping the data
+for(i in 1:length(sd_courses))
+{
+  course_url <- paste0('https://www.coursera.org', sd_courses[i])
+  course_url <- read_html(course_url)
+
+  Sys.sleep(sample(1:5, 1))
+
+  sec_df[row_nm, 1] <- "comuter_security_networks"
+
+  if(length(course_url %>% html_node('.display-3-text') %>% html_text()) != 0)
+  {
+    sec_df[row_nm, 2] <- course_url %>% html_node('.display-3-text') %>% html_text()
+  }
+  if(length(course_url %>% html_node('.s12n-name') %>% html_text()) != 0)
+  {
+    sec_df[row_nm, 2] <- course_url %>% html_node('.s12n-name') %>% html_text()
+  }
+
+
+  if(length(course_url %>% html_nodes('#about') %>% html_text()) != 0)
+  {
+    sec_df[row_nm, 3] <- course_url %>% html_nodes('#about') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.course-description') %>% html_text()) != 0)
+  {
+    sec_df[row_nm, 3] <- course_url %>% html_node('.course-description') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.styled div') %>% html_text()) != 0)
+  {
+    sec_df[row_nm, 3] <- course_url %>% html_node('.styled div') %>% html_text()
+  }
+  
+  if(length(as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())
+    sec_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+  else if(length(as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())
+    sec_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+
+  row_nm <- row_nm + 1
+}
+```
+
+```{r}
+#new df
+
+algrthm_df <- data.frame(NA, NA, NA, NA, stringsAsFactors = FALSE)
+colnames(algrthm_df)[1] <- "type"
+colnames(algrthm_df)[2] <- "title"
+colnames(algrthm_df)[3] <- "description"
+colnames(algrthm_df)[4] <- "skills"
+row_nm <- 1
+```
+
+```{r}
+#ALGORITHM CLASSES
+
+row_nm <- 1
+sd_url <- read_html("https://www.coursera.org/browse/computer-science/algorithms?languages=en")
+sd_courses <-  sd_url %>% html_nodes("a.rc-OfferingCard.nostyle") %>% html_attr("href")
+
+#scraping the data
+for(i in 1:length(sd_courses))
+{
+  course_url <- paste0('https://www.coursera.org', sd_courses[i])
+  course_url <- read_html(course_url)
+
+  Sys.sleep(sample(1:5, 1))
+
+  algrthm_df[row_nm, 1] <- "algorithms"
+
+  if(length(course_url %>% html_node('.display-3-text') %>% html_text()) != 0)
+  {
+    algrthm_df[row_nm, 2] <- course_url %>% html_node('.display-3-text') %>% html_text()
+  }
+  if(length(course_url %>% html_node('.s12n-name') %>% html_text()) != 0)
+  {
+    algrthm_df[row_nm, 2] <- course_url %>% html_node('.s12n-name') %>% html_text()
+  }
+
+
+  if(length(course_url %>% html_nodes('#about') %>% html_text()) != 0)
+  {
+    algrthm_df[row_nm, 3] <- course_url %>% html_nodes('#about') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.course-description') %>% html_text()) != 0)
+  {
+    algrthm_df[row_nm, 3] <- course_url %>% html_node('.course-description') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.styled div') %>% html_text()) != 0)
+  {
+    algrthm_df[row_nm, 3] <- course_url %>% html_node('.styled div') %>% html_text()
+  }
+  
+  if(length(as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())
+    algrthm_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+  else if(length(as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())
+    algrthm_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+
+  row_nm <- row_nm + 1
+}
+```
+
+```{r}
+#new df
+design_df <- data.frame(NA, NA, NA, NA, stringsAsFactors = FALSE)
+colnames(design_df)[1] <- "type"
+colnames(design_df)[2] <- "title"
+colnames(design_df)[3] <- "description"
+colnames(design_df)[4] <- "skills"
+row_nm <- 1
+```
+
+```{r}
+#DESIGN AND PRODUCTS
+
+sd_url <- read_html("https://www.coursera.org/browse/computer-science/design-and-product?languages=en")
+sd_courses <-  sd_url %>% html_nodes("a.rc-OfferingCard.nostyle") %>% html_attr("href")
+
+#scraping the data
+for(i in 7:length(sd_courses))
+{
+  course_url <- paste0('https://www.coursera.org', sd_courses[i])
+  course_url <- read_html(course_url)
+
+  Sys.sleep(sample(1:5, 1))
+
+  design_df[row_nm, 1] <- "algorithms"
+
+  if(length(course_url %>% html_node('.display-3-text') %>% html_text()) != 0)
+  {
+    design_df[row_nm, 2] <- course_url %>% html_node('.display-3-text') %>% html_text()
+  }
+  if(length(course_url %>% html_node('.s12n-name') %>% html_text()) != 0)
+  {
+    design_df[row_nm, 2] <- course_url %>% html_node('.s12n-name') %>% html_text()
+  }
+
+
+  if(length(course_url %>% html_nodes('#about') %>% html_text()) != 0)
+  {
+    design_df[row_nm, 3] <- course_url %>% html_nodes('#about') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.course-description') %>% html_text()) != 0)
+  {
+    design_df[row_nm, 3] <- course_url %>% html_node('.course-description') %>% html_text()
+  }
+  else if(length(course_url %>% html_node('.styled div') %>% html_text()) != 0)
+  {
+    design_df[row_nm, 3] <- course_url %>% html_node('.styled div') %>% html_text()
+  }
+  
+  if(length(as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('#courses .body-1-text span') %>% html_text())
+    design_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+  else if(length(as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())) != 0)
+  {
+    skills <- as.character(course_url %>% html_nodes('.module-desc span') %>% html_text())
+    design_df[row_nm, 4] <- paste(skills, collapse = '%')
+  }
+
+  row_nm <- row_nm + 1
+}
+```
+
+```{r}
+#ALL COURSERA DATA FOR COMP SCI COURSES
+coursera_comp_sci <- rbind(algrthm_df, coursera_df, design_df, sec_df, web_dev_df)
+
+#save this csv!!!!
+write.csv(coursera_comp_sci, file = '~/git/stem_edu/data/stem_edu/final/webscraping_data/coursera_comp_sci')
+
+```
+
