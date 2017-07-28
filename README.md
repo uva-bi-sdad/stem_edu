@@ -20,6 +20,8 @@
   - from O*NET.com: technology skills listed for Software Developer, Applications
   - stored in: ~/stem_edu/data/stem_edu/original/hsbb8/
   - list of keywords of skills that could be needed in junior software developer jobs
+  - used to calculate the number of job ads or courses that these skills appear in 
+    - used in: coursera_keyword_counts.csv and indeed_keyword_counts.csv
   
 - virginia_res.csv
   - produced from: ~/stem_edu/src/chanida3/indeed_virginia_webscraping.R
