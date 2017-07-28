@@ -2,6 +2,7 @@ library(dplyr)
 library(data.table)
 library(grid)
 library(stringr)
+library(ggplot2)
 
 load("./data/stem_edu/working/IPEDS_working/meltTable.RData")
 # phd data
@@ -113,9 +114,8 @@ ipeds<-rename(ipeds,`Award Level Code`=award)
 
 
 # white, hispanic, asian, black
-yr<-2010
-png(paste0("~/Google Drive/2017 DSPG Program - shared folder/DSPG 2017 Projects/NSF NCSES STEM Education/Data for Team Education/IPEDS/RaceAwardPlot",yr,".png"),
-    height=800,width=1200)
+yr<-2015
+png(paste0("./output/ipeds_trend/",yr,".png"),height=800,width=1200)
 ggplot(filter(ipeds,year==yr),aes(x=raceEth,y=percent,fill=`Award Level Code`)) + geom_bar(stat="identity") +
   scale_x_discrete(labels=c("Black or \nAfrican American","Asian, Native Hawaiian \nor Other Pacific Islander","White",
                             "American Indian or \nAlaska Native",
