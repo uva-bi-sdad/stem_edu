@@ -1,10 +1,16 @@
+#scrapes indeed.com for job resumes for dental hygienists in Virginia
+#output: virginia_res.csv (saved to ~/stem_edu/data/stem_edu/original/chanida3/)
+
+#loading libraries
 library(rvest)
 library(XML)
 library(stringr)
 library(RCurl)
 
+#Making a data frame for Virginia Resumes
 virginia_res <- data.frame(stringsAsFactors = FALSE)
 
+#Created 1 blank row and 6 blank columns
 virginia_res[1,1] <- NA
 virginia_res[1,2] <- NA
 virginia_res[1,3] <- NA
@@ -12,7 +18,7 @@ virginia_res[1,4] <- NA
 virginia_res[1,5] <- NA
 virginia_res[1,6] <- NA
 
-#change column names
+#change column names to the specific descriptions
 names(virginia_res)[1] <- paste("education_description")
 names(virginia_res)[2] <- paste("skills")
 names(virginia_res)[3] <- paste("Work_description")
