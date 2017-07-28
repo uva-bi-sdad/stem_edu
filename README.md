@@ -64,5 +64,24 @@ STEM Final Data README.md
     -Lines 187-193 in trend_IPEDS.R creates and saves this table
     
 #Figures
--
+-./output/mind_maps/
+  -Dental_Hygienist.pdf
+  -Junior_Software_Developer_Applications.pdf
+  -Environmental_Engineer.pdf
+    -Mind maps for the three occupations
+    -The information contained comes from O*NET profile for each occupation
+  
+-./output/ipeds_trend/
+  -AssociatesDegreeTrend.png
+  -BachelorsDegreeTrend.png
+  -MastersDegreeTrend.png
+  -PHDTrend.png
+  -TotalStemTrend.png
+    -These are trend plots of STEM degrees earned each year as a percentage of all STEM degrees earned in a 6 year period, by race/ethnicity
+    -Code to generate them is in ./src/benjs23/trend_IPEDS.R
 
+-./output/ipeds_trend/
+  -2010.png 
+    -Shows all of the award types earned in 2010 by race/ethnicity
+    -Code to generate them is in ./src/benjs23/bianica_raceAwardCrosstab.R
+      -Code can produce plots for all years 2010-2015
