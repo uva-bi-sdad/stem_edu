@@ -42,3 +42,30 @@
   - stored in: `~/stem_edu/output/keyword_search_graphs/`
   - bar plot of the percentages of job ads that certain job skills appear in
     - used for the final poster
+    
+    
+STEM Final Data README.md
+
+
+# Datasets
+
+-IPEDS_2010_degrees.zip -- IPEDS_2015_degrees.zip
+    -./data/stem_edu/original/IPEDS_data_zipped
+    -IPEDS data on STEM award counts by institution, award type 
+     (Master's, associates, certification, etc), race/ethnicity,
+     and gender
+    -each count of award type by race is a separate column
+    -The ipedsM (melt table) makes the count by race into an 
+      observation
+    -This data set should be re-downloaded from IPEDS data           center
+        -Download ALL degrees awarded for race/ethnicity and             gender from 2010-2015 and then subset in R
+        -I made the mistake of selecting variables to try to             subset data from the IPEDS data center and may have             made a mistake in PhD awards for 2010
+
+-meltTable.RData (ipedsM is the object name)
+    -./data/stem_edu/working/meltTable.RData
+    -this is the melted version that turns the counts by race      and gender into observations
+    -Lines 187-193 in trend_IPEDS.R creates and saves this         table
+    
+#Figures
+-
+
