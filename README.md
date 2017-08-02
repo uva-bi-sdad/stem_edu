@@ -28,6 +28,37 @@
   - stored in: `~/stem_edu/data/stem_edu/chanida3/virginia_res.csv`
   - information scraped from dental hygienist resumes in Virginia from indeed.com
   
+-IPEDS_2010_degrees.zip -- IPEDS_2015_degrees.zip
+    -./data/stem_edu/original/IPEDS_data_zipped
+    -IPEDS data on STEM award counts by institution, award type (Master's, associates, certification, etc), race/ethnicity,and gender
+    -each count of award type by race is a separate column
+    -The ipedsM (melt table) makes the count by race into an observation
+    -This data set should be re-downloaded from IPEDS data center
+        -Download ALL degrees awarded for race/ethnicity and gender from 2010-2015 and then subset in R
+        -I made the mistake of selecting variables to try to subset data from the IPEDS data center and may have made a mistake in PhD awards for 2010
+
+-meltTable.RData (ipedsM is the object name)
+    -./data/stem_edu/working/meltTable.RData
+    -this is the melted version that turns the counts by race and gender into observations
+    -Lines 187-193 in trend_IPEDS.R creates and saves this table
+    
+- ./data/stem_edu_original/NCES
+  - unzipped file from NCES website download
+  - includes 4 rdata files, 4 readme txt files, and 1 overall codebook (https://nces.ed.gov/edat/index.aspx?agrmnt=1)
+
+- ./data/stem_edu/original/IPUMS
+  - Attachment_C_STEM.csv
+      - List of SOC codes considered STEM occupations by BLS.
+  - ipums.csv
+      - 2015 ACS/Census data table downloaded from IPUMS *AFTER* running 'do' file on original download in STATA.
+      - ipums does not preserve the sample you select for more than a couple of weeks. This was selected using Maddie Arnsbarger's account.
+      - Must make personal account with IPUMS and select the variables/year/sources you want to use.
+  - ipums_data_dictionary.csv
+      - variable definitions and valid values for each variable in ipums.csv sample.
+      - original data dictionary is in the dspg 2017 nsf stem project folder
+  - origin
+      - these 3 csv files compose ipums_data_dictionary.csv
+      - source: `./src/maddieka/01.1-ipums_data_dict.R`
 
 # Figures/ Plots
 
@@ -43,27 +74,27 @@
   - bar plot of the percentages of job ads that certain job skills appear in
     - used for the final poster
     
+- ./output/sankey_diagrams/ipums_women_deglevel_3.selected.occupations.html
+  - description: sankey of ipums data (only women; degree level to stem categorization for occupation + 3 selected case study occupations.)
+  - source: `src/maddieka/01.2-sankey_ipums.R
+  
+- ./output/sankey_diagrams/ipums_women_degreelevel_high.super.stem.occs.html
+  - description: sankey of ipums data (only women; degree level to high/super stem occupation categories.)
+  - source: `src/maddieka/poster_plotsDSPG2017.R`
+
+- ./output/sankey_diagrams/nces_sankey.html
+  - description: sankey of nces data
+  - source: `src/maddieka/02.1-sankey_nces.R`
+
+- ./output/sankey_diagrams/ipums_women_degreelevel_all.stem.occs.html
+  - description: DSPG 2017 POSTER SANKEY -- sankey of ipums data 
+        (only women; degree level to stem occupation categories (using Biania's stem score calculations))
+  - source: `src/maddieka/poster_plotsDSPG2017.R`
+
+- ./output/sankey_diagrams/ipums_women_degtype_only3selected.occs.html
+  - description: sankey of ipums data (only women; degree level to 3 selected case study occupations.)
+  - source: `src/maddieka/01.2-sankey_ipums.R`
     
-STEM Final Data README.md
-
-
-# Datasets
-
--IPEDS_2010_degrees.zip -- IPEDS_2015_degrees.zip
-    -./data/stem_edu/original/IPEDS_data_zipped
-    -IPEDS data on STEM award counts by institution, award type (Master's, associates, certification, etc), race/ethnicity,and gender
-    -each count of award type by race is a separate column
-    -The ipedsM (melt table) makes the count by race into an observation
-    -This data set should be re-downloaded from IPEDS data center
-        -Download ALL degrees awarded for race/ethnicity and gender from 2010-2015 and then subset in R
-        -I made the mistake of selecting variables to try to subset data from the IPEDS data center and may have made a mistake in PhD awards for 2010
-
--meltTable.RData (ipedsM is the object name)
-    -./data/stem_edu/working/meltTable.RData
-    -this is the melted version that turns the counts by race and gender into observations
-    -Lines 187-193 in trend_IPEDS.R creates and saves this table
-    
-#Figures
 -./output/mind_maps/
   -Dental_Hygienist.pdf
   -Junior_Software_Developer_Applications.pdf
