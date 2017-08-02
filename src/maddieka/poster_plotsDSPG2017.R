@@ -2,6 +2,8 @@
 
 library(dplyr)
 
+# FORMAT DATA FOR SANKEYS --------------------------------------------------------------------------------------------------------------
+
 ipums <- readr::read_csv("data/stem_edu/original/IPUMS/ipums.csv")
 ipums_data_dict <- read.csv("data/stem_edu/original/IPUMS/ipums_data_dictionary.csv")
 
@@ -59,6 +61,7 @@ ipums6$educd_red[ipums6$educd %in% c("No schooling completed","Nursery school, p
                                      "Grade 5", "Grade 6", "Grade 7", "Grade 8")] <- "Less than high school"
 ipums6$educd_red[ipums6$educd %in% c("Grade 9", "Grade 10", "Grade 11", "12th grade, no diploma")] <- "Some high school, no diploma"
 
+# SANKEY NETWORK 1 (ONLY HIGH AND SUPER STEM OCCUPATIONS) ------------------------------------------------------------------------------------------
 # only women
 female <- ipums6 %>% filter(sex == "Female" & sankey_stem_classification %in% c("Super STEM", "High STEM"))
 # female$occsoc <- substr(female$occsoc, 1, nchar(female$occsoc) - 1)
@@ -84,12 +87,23 @@ name <- as.data.frame(codes$name, stringsAsFactors = FALSE)
 colnames(name) <- "name"
 
 library(networkD3)
+library(magrittr)
 sankey_data <- list(nodes = name, links = links)
 
-sankeyNetwork(Links = sankey_data$links, Nodes = sankey_data$nodes, Source = "source",
-              Target = "target", Value = "Freq", NodeID = "name",
-              units = "freq", fontSize = 16, nodeWidth = 30, fontFamily = "sans-serif")
+setwd("output/sankey_diagrams/")
 
+sankeyNetwork(Links = sankey_data$links,
+              Nodes = sankey_data$nodes,
+              Source = "source",
+              Target = "target",
+              Value = "Freq",
+              NodeID = "name",
+              units = "freq",
+              fontSize = 16,
+              nodeWidth = 30,
+              fontFamily = "sans-serif") %>% saveNetwork('ipums_women_degreelevel_high.super.stem.occs.html')
+
+# VENN DIAGRAM ----------------------------------------------------------------------------------------------------------------------------------
 library(VennDiagram)
 sh <- sum(rothwell$STEM_classification %in% c("Super STEM", "High STEM"))
 bls <- length(unique(bls_soc_stem$X2010_SOC_code))
@@ -100,6 +114,46 @@ grid.newpage()
 draw.pairwise.venn(area1 = sh, area2 = bls, cross.area = both,
                    category = c("High or Super STEM", "BLS STEM"),
                    fill = c("lavender", "palegreen3"))
+
+# POSTER SANKEY 2 (ALL OCCUPATION TYPES) --------------------------------------------------------------------------------------------------------------------------------------------
+# only women
+female <- ipums6 %>% filter(sex == "Female")
+# female$occsoc <- substr(female$occsoc, 1, nchar(female$occsoc) - 1)
+
+# sankey
+table_sankey1 <- as.data.frame(table(as.character(female$educd_red),
+                                     as.character(female$sankey_stem_classification)), stringsAsFactors = FALSE)
+# table_sankey2 <- as.data.frame(table(as.character(female$degfield_stem),
+# as.character(female$occVT)), stringsAsFactors = FALSE)
+# links <- rbind(table_sankey1, table_sankey2)
+links <- table_sankey1
+
+codes <- as.data.frame(as.integer(seq(0,14,1)))
+colnames(codes) <- "number"
+codes$name <- c(unique(links$Var1), unique(links$Var2))
+
+links <- merge(links, codes, by.x = "Var1", by.y = "name", all.x = TRUE)
+colnames(links)[4] <- "source"
+links <- merge(links, codes, by.x = "Var2", by.y = "name", all.x = TRUE)
+colnames(links)[5] <- "target"
+
+name <- as.data.frame(codes$name, stringsAsFactors = FALSE)
+colnames(name) <- "name"
+
+sankey_data <- list(nodes = name, links = links)
+
+setwd("output/sankey_diagrams/")
+
+sankeyNetwork(Links = sankey_data$links,
+              Nodes = sankey_data$nodes,
+              Source = "source",
+              Target = "target",
+              Value = "Freq",
+              NodeID = "name",
+              units = "freq",
+              fontSize = 16,
+              nodeWidth = 30,
+              fontFamily = "sans-serif") %>% saveNetwork('ipums_women_degreelevel_all.stem.occs.html')
 
 
 
