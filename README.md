@@ -42,10 +42,6 @@
     -this is the melted version that turns the counts by race and gender into observations
     -Lines 187-193 in trend_IPEDS.R creates and saves this table
     
-- ./data/stem_edu_original/NCES
-  - unzipped file from NCES website download
-  - includes 4 rdata files, 4 readme txt files, and 1 overall codebook (https://nces.ed.gov/edat/index.aspx?agrmnt=1)
-
 - ./data/stem_edu/original/IPUMS
   - Attachment_C_STEM.csv
       - List of SOC codes considered STEM occupations by BLS.
@@ -59,6 +55,19 @@
   - origin
       - these 3 csv files compose ipums_data_dictionary.csv
       - source: `./src/maddieka/01.1-ipums_data_dict.R`
+      
+- ./data/stem_edu/original/NCES_ELS
+  - byf3_dictionary.csv
+      - csv version of Layout_BYF1SCH.txt
+      - variable definitions for the els_02_12_byf3stu_v1_0.rdata file.
+  - Codebook.txt
+      - Comprehensive data dictionary for all 4 tables downloaded from NCES.
+  - Layout_....txt
+      - Data dictionaries for each corresponding .rdata file.
+      - Includes variable definitions, valid values, and valid value definitions.
+  - els_02...._v1_0.rdata
+      - rdata files downloaded from NCES ELS website.
+      - stu = student, inst = institution, sch = school.
 
 # Figures/ Plots
 
