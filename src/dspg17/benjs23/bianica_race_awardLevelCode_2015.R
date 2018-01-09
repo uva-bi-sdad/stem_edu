@@ -1,4 +1,4 @@
-library(dlplyr)
+library(dplyr)
 
 load("~/Google Drive/2017 DSPG Program - shared folder/DSPG 2017 Projects/NSF NCSES STEM Education/Data for Team Education/meltTable.RData")
 

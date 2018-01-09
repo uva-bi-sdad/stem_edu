@@ -1,13 +1,4 @@
-### Written by Ben Swartz (benjs23)
-### Last update 7/24/2017
-### This code imports 6 IPEDS data tables containing STEM degrees awarded from all institutions participating in the federal student loan program
-### for the years 2010-2015. It pulls in IPEDS data  (from data/working folder) subsetted by race
-### and generates a heatmap showing the percentage of total degrees awarded by race for each year
-### out of the 6 year period. The trend plot for gender is still in progress. The data for
-### STEM Phds needs to be re-downloaded from the IPEDS data center, cleaned, and plotted.
-### An additional comparison of STEM degrees to all degrees by race and gender would be interesting to explore.
-
-###
+# For each year, field, and degree type, plot the number of degrees awarded
 
 library(readr)
 library(raster)
@@ -16,17 +7,18 @@ library(dplyr)
 library(RColorBrewer)
 library(grid)
 library(gridExtra)
+library(reshape)
 
 
 ##### From here until about lines 430 is code to subset an IPEDS csv.
 ##### This was written because I didn't that the time to learn the dplyr package
 ##### which has functions to do the things I manually coded.
-unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2010.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
-unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2011.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
-unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2012.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
-unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2013.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
-unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2014.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
-unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2015.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
+# unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2010.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
+# unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2011.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
+# unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2012.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
+# unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2013.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
+# unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2014.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
+# unzip("~/git/stem_edu/data/stem_edu/original/IPEDS_data_zipped/all2015.zip", exdir="~/git/stem_edu/data/stem_edu/working/IPEDS_working/")
 
 
 palette1 <- brewer.pal(3,"Spectral")
@@ -179,8 +171,8 @@ colnames(IPEDS_2015_degrees)[17] <- "Race/Ethnicity Unknown Total"
 colnames(IPEDS_2015_degrees)[18] <- "Nonresident Alien Total"
 
 
-IPEDS_2010_2015_degrees <- rbind(IPEDS_2010_degrees,IPEDS_2011_degrees, IPEDS_2012_degrees, IPEDS_2013_degrees, IPEDS_2014_degrees, IPEDS_2015_degrees)
-allDegrees_2010_2015 <- rbind(all2010,IPEDS_2011_degrees, IPEDS_2012_degrees, IPEDS_2013_degrees, IPEDS_2014_degrees, IPEDS_2015_degrees, phd2011,phd2012,phd2013, phd2014, phd2015)
+IPEDS_2010_2015_degrees <- rbind(IPEDS_2011_degrees, IPEDS_2012_degrees, IPEDS_2013_degrees, IPEDS_2014_degrees, IPEDS_2015_degrees)
+allDegrees_2010_2015 <- rbind(IPEDS_2011_degrees, IPEDS_2012_degrees, IPEDS_2013_degrees, IPEDS_2014_degrees, IPEDS_2015_degrees, phd2011,phd2012,phd2013, phd2014, phd2015)
 
 allDegrees_2010_2015_2<-mutate(allDegrees_2010_2015,`Award Level Code`=sapply(strsplit(allDegrees_2010_2015$`Award Level Code`, split='-', fixed=TRUE),function(x) (x[1])))
 
@@ -190,7 +182,7 @@ ipedsM<-melt(IPEDS_2010_2015_degrees,id=c("unitid","institution name","year","Fi
 
 
 #####This is the melted data table with all STEM awards from 2010-2015
-save(ipedsM, file = "~/git/stem_edu/data/stem_edu/working/IPEDS_working/meltTable.RData")
+#save(ipedsM, file = "~/git/stem_edu/data/stem_edu/working/IPEDS_working/meltTable.RData")
 
 
 
@@ -198,13 +190,13 @@ save(ipedsM, file = "~/git/stem_edu/data/stem_edu/working/IPEDS_working/meltTabl
 ####################################################
 ### The next section creates heat tile plots to visualize trends in STEM degrees by race/ethnicity.
 ### This imports the data to plot.
-load(file = "./data/stem_edu/working/meltTable.RData")
+load(file = "./git/stem_edu/data/stem_edu/working/meltTable.RData")
 
-ipedsbyRace <- read.csv("./data/stem_edu/working/ipedsbyRace.csv")
-associatesByRace <- read.csv("./data/stem_edu/working/associatesByRace.csv")
-bachelorsByRace <- read.csv("./data/stem_edu/working/bachelorsByRace.csv")
-mastersByRace <- read.csv("./data/stem_edu/working/mastersByRace.csv")
-doctorsByRace <- read.csv("./data/stem_edu/working/doctorsByRace.csv")
+ipedsbyRace <- read.csv("./git/stem_edu/data/stem_edu/working/ipedsbyRace.csv")
+associatesByRace <- read.csv("./git/stem_edu/data/stem_edu/working/associatesByRace.csv")
+bachelorsByRace <- read.csv("./git/stem_edu/data/stem_edu/working/bachelorsByRace.csv")
+mastersByRace <- read.csv("./git/stem_edu/data/stem_edu/working/mastersByRace.csv")
+doctorsByRace <- read.csv("./git/stem_edu/data/stem_edu/working/doctorsByRace.csv")
 
 ipedsbyRace$raceEth<-as.factor(ipedsbyRace$raceEth)
 ipedsbyRace$raceEth = factor(ipedsbyRace$raceEth,levels(ipedsbyRace$raceEth)[c(5,4,1,2,3,8,6,7)])
