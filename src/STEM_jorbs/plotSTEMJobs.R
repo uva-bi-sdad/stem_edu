@@ -2,13 +2,14 @@ library(ggplot2)
 library(dplyr)
 library(viridis)
 library(reshape)
+library(data.table)
 
-data.dir = "./data/stem_edu/original/"
+data.dir = "./data/stem_edu/working/"
 
 # Load in the file containing the locations and onet codes of all job postings
 
-parsedJobs = readRDS(paste0(data.dir, "parsed_jobs_df.RDS"))[,-1]
-smallJobs = parsedJobs[,-2]
+parsedJobs = fread(paste0(data.dir, "allOpenjobsParsed.csv"))
+
 
 # Load in the block codes atc for all the lat/longs from above
 
