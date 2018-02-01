@@ -1,3 +1,6 @@
+## DON'T RUN THIS
+## Unless something tragic happens, this code should never have to be run again (or until there's more jobs data
+
 library(data.table)
 library(stringr)
 library(jsonlite)

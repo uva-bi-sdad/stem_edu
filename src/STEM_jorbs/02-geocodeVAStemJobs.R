@@ -1,3 +1,6 @@
+## DON'T RUN THIS
+## Unless something tragic happens, this code should never have to be run again (or until there's more jobs data.)
+
 library(ggplot2)
 library(sp)
 library(data.table)
@@ -15,21 +18,11 @@ dt = data.table(tlats, tlons)
 
 uniqueLocations = na.omit(dt[,.N,by = c("tlats", "tlons")])
 
-uniqueJobsGeocode <- sdalr::FCClocation2FIPS(1, lat = uniqueLocations$tlats[1], lon = uniqueLocations$tlons[1])
+uniqueJobsGeocode = sdalr::FCClocations2FIPS(1:length(uniqueLocations$tlats), uniqueLocations$tlats, uniqueLocations$tlons)
 
-cutoffs = c(2, (1:12)*50, 637)
 
-for(i in 2:652){
-  #lower = cutoffs[i]
-  #upper = cutoffs[1+1]
-  uniqueJobsGeocode = rbind(allJobsGeocode, sdalr::FCClocation2FIPS(i, uniqueLocations$tlats[i], uniqueLocations$tlons[i]))
-  #Sys.sleep(60)
-}
+uniqueJobsGeocode = cbind(uniqueLocations, uniqueJobsGeocode)[,-c("place_id", "state_name", "N")]
 
-uniqueJobsGeocode = cbind(uniqueLocations, uniqueJobsGeocode)
-
-allJobsGeocode = dt[uniqueJobsGeocode, on = c("tlats", "tlons")]
-
-fwrite(allJobsGeocode, "./data/stem_edu/working/allOpenjobsGeocoded.csv")
+fwrite(uniqueJobsGeocode, "./data/stem_edu/working/allOpenjobsGeocoded.csv")
 
 
