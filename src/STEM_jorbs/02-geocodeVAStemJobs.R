@@ -20,7 +20,6 @@ uniqueLocations = na.omit(dt[,.N,by = c("tlats", "tlons")])
 
 uniqueJobsGeocode = sdalr::FCClocations2FIPS(1:length(uniqueLocations$tlats), uniqueLocations$tlats, uniqueLocations$tlons)
 
-
 uniqueJobsGeocode = cbind(uniqueLocations, uniqueJobsGeocode)[,-c("place_id", "state_name", "N")]
 
 fwrite(uniqueJobsGeocode, "./data/stem_edu/working/allOpenjobsGeocoded.csv")
