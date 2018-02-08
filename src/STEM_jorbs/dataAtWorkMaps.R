@@ -21,19 +21,19 @@ setwd("~/Documents/NSF STEM/DataAtWork/cleaned_geo_title_count/")
 filenames<-list.files(pattern="2016Q1.csv", full.names=TRUE)
 
 for (i in 1: length(filenames)) {
-  
+
   tmp<-read.csv(filenames[i],stringsAsFactors = F)
   tmp<-tmp[,c(1:5,7,12:21)]
-  
+
   col_names<-c("cbsa_fips","cbsa_name","state_code","title","soc_code_common_1","soc_code_common_total","skills_1","skills_2","skills_3","skills_4","skills_5","skills_6","skills_7","skills_8",
                "skills_9","skills_10")
   colnames(tmp) <- col_names
-  
+
   tmp<-dplyr::group_by(tmp,state_code,title,soc_code_common_1,skills_1,skills_2,skills_3,skills_4,skills_5,skills_6,skills_7,skills_8,skills_9,skills_10) %>%
     dplyr::summarize(total=sum(soc_code_common_total))
- 
+
   tmp$yearQtr<-str_sub(filenames[i],3,8)
-  
+
   if (i==1) {
     dw<-tmp
   } else {
@@ -79,7 +79,7 @@ dw_state_agg$job_pop<-dw_state_agg$total_job_postings/dw_state_agg$`HD01_VD01.Es
 dw_state<-left_join(state.df,dw_state_agg,by=c("STUSPS"="state_code"))
 
 # map states by number of job postings
-ggplot() + 
+ggplot() +
   geom_polygon(data=dw_state,aes(long,lat,group=group,fill=job_pop)) +
   geom_path(color="grey70",lwd=.25) +
   scale_fill_viridis(option="magma",direction=-1,name=expression("Job Postings \nper Population")) +
@@ -139,7 +139,7 @@ plotData<-filter(dw_steml_geo2,value2!="Non-STEM")
 plotData$variable<-as.character(plotData$variable)
 
 pdf("DataAtWork/stem_jobs.pdf",height=5,width=10)
-ggplot(data=plotData) + 
+ggplot(data=plotData) +
   geom_polygon(aes(long,lat,group=group,fill=percent),colour="grey70",lwd=.25) +
   scale_fill_viridis(
     option = "viridis",
@@ -172,7 +172,7 @@ ggplot(data=plotData) +
 dev.off()
 
 
-# ggplot(data=filter(dw_steml_geo2,value2!="Non-STEM")) + 
+# ggplot(data=filter(dw_steml_geo2,value2!="Non-STEM")) +
 #   geom_polygon(aes(long,lat,group=group,fill=jobsPerPopulation)) +
 #   #geom_path(color="grey70",lwd=.25) +
 #   scale_fill_viridis(option="magma",direction=-1,name=expression("Job Postings \nper Population")) +
@@ -187,7 +187,7 @@ dev.off()
 #   labs(title="STEM jobs per Population", x="", y="", caption="Source: Data at Work, University of Chicago, 2016")
 
 
-# map nuclear medicine technologist
+# map  technologist
 # filter for occupation
 nmt<-filter(dw_stem,soc_code_common_1=="29-2033.00")
 swd<-filter(dw_stem,soc_code_common_1=="15-1132.00")
@@ -202,7 +202,7 @@ nmt_top<-nmt_agg[1:20,]
 nmt_top<-dplyr::rename(nmt_top,skill=value)
 nmt_top$skill<-factor(nmt_top$skill,levels=nmt_top$skill)
 nmt_top$percent<-nmt_top$total/total_ads
-nmt_top$occ<-"Nuclear Medicine Technologists"
+nmt_top$occ<-" Technologists"
 
 swd<-swd[,c(3:14)]
 swd_l<-melt(swd,id=c("soc_code_common_1","total"))
@@ -230,7 +230,7 @@ ggplot(nmt_top,aes(skill,percent)) +
   scale_y_continuous(labels = scales::percent, limits = c(0, .12)) +
   theme_bw() +
   labs(x="Skill",y="Percentage Appearing in Job Postings",
-       title="Percentage of Nuclear Medicine Technologist Job Postings with Top 20 Skills",
+       title="Percentage of  Technologist Job Postings with Top 20 Skills",
        subtitle="Source: Data at Work, University of Chicago, 2016") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 dev.off()
@@ -267,9 +267,9 @@ dw_stemoccl<-left_join(dw_stemoccl,st_pop,by=c("state_code"="Abbreviation"))
 dw_stemoccl$state_name<-tolower(dw_stemoccl$VALUE)
 dw_stemoccl_geo<-left_join(fifty_states,dw_stemoccl,by=c("id"="state_name"))
 
-# map of nuclear medicine technologist
+# map of  technologist
 pdf("DataAtWork/nuclear_medicine.pdf",height = 4.4, width = 5.5)
-ggplot() + 
+ggplot() +
   geom_polygon(data=filter(dw_stemoccl_geo,value=="29-2033.00"),
                aes(long,lat,group=group,fill=percent),colour="grey70",lwd=.25) +
   coord_map() +
@@ -290,17 +290,17 @@ ggplot() +
       label.hjust = 1,
       nrow = 1,
       byrow = T,
-      label.position = "bottom",na.value="lightgray")) + 
+      label.position = "bottom",na.value="lightgray")) +
   labs(x=NULL,y=NULL,
-       title="Proportion of posted jobs for Nuclear Medicine Technologists",
+       title="Proportion of posted jobs for  Technologists",
        subtitle="Source: Data at Work, University of Chicago, 2016") +
   #caption = "Geometry: Virginia counties from ggplot2") +
-  theme(legend.position = "bottom") + fifty_states_inset_boxes() 
+  theme(legend.position = "bottom") + fifty_states_inset_boxes()
 dev.off()
 
 # map of software developer
 pdf("DataAtWork/software_developer.pdf",height = 4.4, width = 5.5)
-ggplot() + 
+ggplot() +
   geom_polygon(data=filter(dw_stemoccl_geo,value=="15-1132.00"),
                aes(long,lat,group=group,fill=percent),colour="grey70",lwd=.25) +
   coord_map() +
@@ -321,12 +321,12 @@ ggplot() +
       label.hjust = 1,
       nrow = 1,
       byrow = T,
-      label.position = "bottom",na.value="lightgray")) + 
+      label.position = "bottom",na.value="lightgray")) +
       labs(x=NULL,y=NULL,
                title="Proportion of posted jobs for Software Developers, Applications",
                subtitle="Source: Data at Work, University of Chicago, 2016") +
                #caption = "Geometry: Virginia counties from ggplot2") +
-  theme(legend.position = "bottom") + fifty_states_inset_boxes() 
+  theme(legend.position = "bottom") + fifty_states_inset_boxes()
 dev.off()
 
 theme_map <- function(...) {
