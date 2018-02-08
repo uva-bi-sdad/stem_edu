@@ -117,15 +117,16 @@ stemPlot =
   theme(legend.position = "bottom",
         strip.text.x = element_text(size = 12),
         strip.text.y = element_text(size = 14),
-        legend.title=element_text(size=14),legend.text=element_text(size=12)) +
-  facet_grid(type ~ variable, labeller = as_labeller(c(
+        legend.title=element_text(size=14),legend.text=element_text(size=12),
+        plot.title=element_text(size=20,hjust=0.5,face="bold")) +
+  facet_wrap(type ~ variable, strip.position="top", labeller = as_labeller(c(
     "NSF" = "NSF Science & Engineering",
     "Rothwell" = "Rothwell Super and High STEM",
     "SOC" = "BLS Standard Occupational Classification",
-    "STEM"="STEM \n(S&E or Super STEM)", "STEM-Related"="STEM-Related \n(S&E-related or High STEM)")))
+    "STEM"="", "STEM-Related"="")))
 
 
-pdf("./output/virginia STEMmaps.pdf", height = 6, width = 18)
+pdf("./output/virginia STEMmaps.pdf", height = 6, width = 10)
 plot(stemPlot)
 dev.off()
 
@@ -140,8 +141,8 @@ completeJobs %>%
   na.omit %>%
   mutate(county_name = tolower(county_name)) %>%
   group_by(county_name) %>%
-  summarise(propNMT = sum(normalizedTitle_onetCode == "29-2033.00"),
-            propSoftDev = sum(normalizedTitle_onetCode == "15-1132.00")) %>%
+  summarise(propNMT = mean(normalizedTitle_onetCode == "29-2033.00"),
+            propSoftDev = mean(normalizedTitle_onetCode == "15-1132.00")) %>%
   merge(subset(map_data("county"), region == "virginia"), by.y = "subregion", by.x = "county_name", all.y = T) %>%
   arrange(order) ->
   propNMTandSoftwareDev
@@ -152,7 +153,8 @@ nmtPlot = ggplot() + geom_polygon(data = propNMTandSoftwareDev, aes(x = long, y 
   scale_fill_viridis(
     option = "viridis",
     direction = -1,
-    name = "Count",
+    labels = percent,
+    name = "Percentage",
     guide = guide_colorbar(
       ticks = F,
       nbins=100,
@@ -168,7 +170,7 @@ nmtPlot = ggplot() + geom_polygon(data = propNMTandSoftwareDev, aes(x = long, y 
     )
   ) + labs(x=NULL,
            y=NULL,
-           title = "Count of Nuclear Medicine Technologist Jobs") +
+           title = "Nuclear Medicine Technologist Jobs") +
   theme(legend.position = "bottom",
         strip.text.x = element_text(size = 12),
         strip.text.y = element_text(size = 14),
@@ -181,7 +183,8 @@ softDevPlot = ggplot() + geom_polygon(data = propNMTandSoftwareDev, aes(x = long
   scale_fill_viridis(
     option = "viridis",
     direction = -1,
-    name = "Count",
+    labels = percent,
+    name = "Percentage",
     guide = guide_colorbar(
       ticks = F,
       nbins=100,
@@ -197,13 +200,13 @@ softDevPlot = ggplot() + geom_polygon(data = propNMTandSoftwareDev, aes(x = long
     )
   ) + labs(x=NULL,
            y=NULL,
-           title="Count of Software Developer Jobs") +
+           title="Software Developer Jobs") +
   theme(legend.position = "bottom",
         strip.text.x = element_text(size = 12),
         strip.text.y = element_text(size = 14),
         legend.title=element_text(size=14),legend.text=element_text(size=12),
         plot.title=element_text(size=20,hjust=0.5,face="bold"))
 
-pdf("./output/nmtAndSoftDevCountVA.pdf", height = 4.4, width = 11)
+pdf("./output/nmtAndSoftDevProportionVA.pdf", height = 4.4, width = 11)
 grid.arrange(nmtPlot, softDevPlot, ncol = 2)
 dev.off()
