@@ -24,9 +24,12 @@ theme_map <- function(...) {
       #panel.grid.major = element_line(color = "#ebebe5", size = 0.2),
       panel.grid.minor=element_blank(),
       #panel.grid.minor = element_line(color = "#ebebe5", size = 0.2),
-      plot.background=element_rect(fill="#f5f5f2", color = NA),
-      panel.background=element_rect(fill="#f5f5f2", color = NA),
-      legend.background=element_rect(fill="#f5f5f2", color = NA),
+      # plot.background=element_rect(fill="#f5f5f2", color = NA),
+      # panel.background=element_rect(fill="#f5f5f2", color = NA),
+      # legend.background=element_rect(fill="#f5f5f2", color = NA),
+      plot.background=element_blank(),
+      panel.background=element_blank(),
+      legend.background=element_blank(),
       panel.border=element_blank(),
       ...
     )
@@ -115,14 +118,14 @@ stemPlot =
   ) + labs(x=NULL,
            y=NULL) +
   theme(legend.position = "bottom",
-        strip.text.x = element_text(size = 12),
+        strip.text.x = element_text(size = 14),
         strip.text.y = element_text(size = 14),
         legend.title=element_text(size=14),legend.text=element_text(size=12),
         plot.title=element_text(size=20,hjust=0.5,face="bold")) +
   facet_wrap(type ~ variable, strip.position="top", labeller = as_labeller(c(
     "NSF" = "NSF Science & Engineering",
     "Rothwell" = "Rothwell Super and High STEM",
-    "SOC" = "BLS Standard Occupational Classification",
+    "SOC" = "BLS Standard Occupational\n Classification",
     "STEM"="", "STEM-Related"="")))
 
 
