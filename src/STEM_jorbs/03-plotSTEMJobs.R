@@ -123,9 +123,9 @@ stemPlot =
         legend.title=element_text(size=14),legend.text=element_text(size=12),
         plot.title=element_text(size=20,hjust=0.5,face="bold")) +
   facet_wrap(type ~ variable, strip.position="top", labeller = as_labeller(c(
-    "NSF" = "NSF Science & Engineering",
-    "Rothwell" = "Rothwell Super and High STEM",
-    "SOC" = "BLS Standard Occupational\n Classification",
+    "NSF" = "",
+    "Rothwell" = "",
+    "SOC" = "",
     "STEM"="", "STEM-Related"="")))
 
 
