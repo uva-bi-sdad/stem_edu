@@ -95,7 +95,12 @@ jobsUrls = c("http://opendata.cs.vt.edu/dataset/ab0abac3-2293-4c9d-8d80-22d45025
     json_dat <- jsonlite::fromJSON(json_dat)
     return(json_dat$jobDescription)
   }
+  hiringOrg = function(json_dat) {
+    json_dat <- jsonlite::fromJSON(json_dat)
+    return(json_dat$hiringOrganization$organizationName)
+  }
 }
+
 
 i = 1
 raw_data <- readLines(jobsUrls[i], warn = F)
@@ -109,6 +114,7 @@ parsedJobs$datePosted = sapply(raw_data, datePosted, USE.NAMES = FALSE)
 parsedJobs$responsibilities = sapply(raw_data, responsibilities, USE.NAMES = FALSE)
 parsedJobs$experienceRequirements = sapply(raw_data, experienceRequirements, USE.NAMES = FALSE)
 parsedJobs$jobDescription = sapply(raw_data, jobDescription, USE.NAMES = FALSE)
+parsedJobs$hiringOrg = sapply(raw_data, hiringOrg, USE.NAMES = FALSE)
 
 allParsedJobs = parsedJobs
 
@@ -124,6 +130,7 @@ for(i in 2:17){
   parsedJobs$responsibilities = sapply(raw_data, responsibilities, USE.NAMES = FALSE)
   parsedJobs$experienceRequirements = sapply(raw_data, experienceRequirements, USE.NAMES = FALSE)
   parsedJobs$jobDescription = sapply(raw_data, jobDescription, USE.NAMES = FALSE)
+  parsedJobs$hiringOrg = sapply(raw_data, hiringOrg, USE.NAMES = FALSE)
   allParsedJobs = rbind(allParsedJobs, parsedJobs)
   print(i)
 }
