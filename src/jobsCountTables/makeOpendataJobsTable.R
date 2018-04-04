@@ -60,8 +60,9 @@ jobsByCbsa = na.omit(jobsStemcwCBSA[, .(nJobs = .N,
                                   nRothStem = sum(rothwell_stem == "STEM")),
                               by = .(year, month, cbsa)])
 
-#fwrite(jobsByCounty, "./data/stem_edu/working/openDataJobsCounty.csv")
-#fwrite(jobsByCbsa, "./data/stem_edu/working/openDataJobsCbsa.csv")
+fwrite(jobsByCounty, "./data/stem_edu/working/openDataJobsCounty.csv")
+fwrite(jobsByCbsa, "./data/stem_edu/working/openDataJobsCbsa.csv")
+
 
 #
 # To compare to DAW, we need to aggregate the OJ data by month and by CBSA in Virginia

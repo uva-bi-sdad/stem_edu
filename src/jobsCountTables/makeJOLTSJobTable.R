@@ -3,6 +3,7 @@
 # Data aggregations needed: for JOLTS, Datawork, and Openjobs, a table with CBSA/County/Month-Yr/#jobs/#stem jobs
 library(data.table)
 library(stringr)
+library(dplyr)
 joltsData = fread("./data/stem_edu/original/JOLTS/joltsJobOpenings.txt")
 
 # The first column is a series_id which encodes all the information about the values for the period
@@ -23,7 +24,7 @@ parsedJolts = data.table(parseSeriesId(joltsData[,1]), joltsData[,2:4])
 
 filterJolts = function(seas, ind, Region, rate = FALSE, startyear, endyear, startmonth, endmonth){
   rateCode = ifelse(rate, "R", "L")
-  activeData = filter(parsedJolts, seasonal == as.character(seas) & industry == as.character(ind) & region == as.character(Region) & rateOrLevel == as.character(rateCode))
+  activeData = dplyr::filter(parsedJolts, seasonal == as.character(seas) & industry == as.character(ind) & region == as.character(Region) & rateOrLevel == as.character(rateCode))
 
   startmonth = ifelse(nchar(startmonth) == 1, paste0("M0", startmonth), paste0("M", startmonth))
   endmonth = ifelse(nchar(endmonth) == 1, paste0("M0", endmonth), paste0("M", endmonth))
@@ -36,4 +37,10 @@ filterJolts = function(seas, ind, Region, rate = FALSE, startyear, endyear, star
   return(activeData)
 }
 
+# Reference: https://download.bls.gov/pub/time.series/jt/jt.txt
+# USE THIS FUNCTION
+
 allRegionAllInd = filterJolts(seas = "U", ind = "000000", Region = "00", rate = FALSE, startyear = 2009, endyear = 2016, startmonth = 1, endmonth = 12)
+plot(allRegionAllInd$value, ylim = c(0, 6500), type = 'l')
+
+
