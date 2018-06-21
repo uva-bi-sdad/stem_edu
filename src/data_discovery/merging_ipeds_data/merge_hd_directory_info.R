@@ -54,4 +54,8 @@ totRows <- nrow(hd2012) + nrow(hd2013) +
 colnames(hd2012_2017)  #notice more columns from mismatching variables
 levels(as.factor(hd2012_2017$YEAR))
 
+#Write new CSV to the working folder area
+write.csv(x = hd2012_2017,
+          file = "data/stem_edu/working/DSPG18/IPEDS/hd2012_2017.csv",
+          row.names = FALSE)
 

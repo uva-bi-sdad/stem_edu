@@ -43,4 +43,9 @@ totRows <- nrow(efa2012) + nrow(efa2013) + nrow(efa2014) +
 colnames(efa2012_2016)  #same as for indiv. tables
 levels(as.factor(efa2012_2016$YEAR))  #all the years are in new dataframe
 
+#Write new CSV to the working folder area
+write.csv(x = efa2012_2016,
+          file = "data/stem_edu/working/DSPG18/IPEDS/efa2012_2016.csv",
+          row.names = FALSE)
+
 
