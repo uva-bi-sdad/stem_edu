@@ -41,3 +41,6 @@ totRows <- nrow(efaDist2012) + nrow(efaDist2013) +
 
 colnames(efaDist2012_2016)  #column names pulled correctly
 levels(as.factor(efaDist2012_2016$YEAR)) #joined all years of data
+
+#Write new CSV to the working folder area
+write.csv(x = efaDist2012_2016, file = "data/stem_edu/working/DSPG18/IPEDS/efaDist2012_2016.csv",row.names = FALSE)
