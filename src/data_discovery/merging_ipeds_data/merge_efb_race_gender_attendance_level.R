@@ -1,5 +1,5 @@
 #########################################################################
-###              Merging IPEDS ic data                                ###
+###              Merging IPEDS EF data                                ###
 ###    Fall Enrollment- Age category, gender, attendance and level    ###
 ###                 Raghav Sawhney                                    ###
 #########################################################################
