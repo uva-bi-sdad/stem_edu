@@ -10,3 +10,4 @@ om2016 <- read_csv("data/stem_edu/original/IPEDS_Data/8_Student_Persistance_Succ
 View(om2016)
 
 colnames(om2016)
+
