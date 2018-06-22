@@ -1,6 +1,6 @@
 ##############################################################
 ###              Merging IPEDS data                        ###
-###       Degrees and Certifacations Conferred             ###
+###       Degrees and Certifications Conferred             ###
 ###                 Raghav Sawhney                         ###
 ##############################################################
 
