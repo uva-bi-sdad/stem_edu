@@ -30,29 +30,23 @@ ef2016b$YEAR <- rep(2016, length(ef2016b$UNITID))
 # Join all 6 tables
 temp <- full_join(ef2012b, ef2013b)
 temp <- full_join(temp, ef2014b)
-
-
-
-
 temp <- full_join(temp, ef2015b)
 temp <- full_join(temp, ef2016b)
 
 
-
-
 #assign new table of all years as ef2012_2016b
-ef2012_2016b <- temp
+efb2012_2016 <- temp
 rm(temp) #removes from environment
 
 #Notice we have the correct number of observations
 totRows <- nrow(ef2012b) + nrow(ef2013b) +
   nrow(ef2014b) + nrow(ef2015b) + nrow(ef2016b)
 
-colnames(ef2012_2016b)  #notice more columns from mismatching variables
-levels(as.factor(ef2012_2016b$YEAR))
+colnames(efb2012_2016)  #correct number of columns = 23
+levels(as.factor(efb2012_2016$YEAR))
 
 #Write new CSV to the working folder area
-write.csv(x = ef2012_2016b,
+write.csv(x = efb2012_2016,
           file = "data/stem_edu/working/DSPG18/IPEDS/efb2012_2016.csv",
           row.names = FALSE)
-head(ef2012_2016b)
+head(efb2012_2016)
