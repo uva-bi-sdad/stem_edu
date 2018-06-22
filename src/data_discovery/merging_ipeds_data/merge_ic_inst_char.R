@@ -1,5 +1,5 @@
 ###########################################################
-###              Merging IPEDS ic data                  ###
+###              Merging IPEDS IC data                  ###
 ###    Institutional Characteristics & Edu Services     ###
 ###                 Raghav Sawhney                      ###
 ###########################################################
@@ -53,3 +53,4 @@ levels(as.factor(ic2012_2017$YEAR))
 write.csv(x = ic2012_2017,
           file = "data/stem_edu/working/DSPG18/IPEDS/ic2012_2017.csv",
           row.names = FALSE)
+head(ic2012_2017)
