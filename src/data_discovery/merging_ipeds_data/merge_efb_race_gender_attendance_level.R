@@ -53,6 +53,6 @@ levels(as.factor(ef2012_2016b$YEAR))
 
 #Write new CSV to the working folder area
 write.csv(x = ef2012_2016b,
-          file = "data/stem_edu/working/DSPG18/IPEDS/ef2012_2016b.csv",
+          file = "data/stem_edu/working/DSPG18/IPEDS/efb2012_2016.csv",
           row.names = FALSE)
 head(ef2012_2016b)
