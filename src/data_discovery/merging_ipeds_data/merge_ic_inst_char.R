@@ -28,14 +28,8 @@ ic2017$YEAR <- rep(2017, length(ic2017$UNITID))
 # Join all 6 tables
 temp <- full_join(ic2012, ic2013)
 temp <- full_join(temp, ic2014)
-
-
-
-
 temp <- full_join(temp, ic2015)
 temp <- full_join(temp, ic2016)
-
-
 temp <- full_join(temp, ic2017)
 
 #assign new table of all years as hd2012_2017
