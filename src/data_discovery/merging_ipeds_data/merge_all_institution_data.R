@@ -9,6 +9,7 @@ library("dplyr")
 library("readr")
 library("pacman")
 library(stringr)
+library(readxl)
 #pacman loads many libraries at once, auto downloads if you don't have it
 pacman::p_load(docstring, sdalr, DBI, dplyr, data.table, dtplyr)
 
@@ -56,6 +57,19 @@ output = dbWriteTable(conn = conn,
                       value = efaDist2012_2016,
                       row.names = FALSE,
                       overwrite = TRUE)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # use SQL to join tables
 # DBI is the library that talks to databases, conn = database connection
