@@ -78,7 +78,7 @@ hd2012_2017_key$valuelabel2 <- str_wrap(hd2012_2017_key$valuelabel, width = 20)
 
 #INCLUDE in PowerPoint: ICLEVEL bar graph for 2016 only
 ggplot(data = filter(hd2012_2017_key, YEAR == 2016)) +
-  geom_bar(aes(valuelabel2), fill = 'green') +
+  geom_bar(aes(valuelabel2), fill = 'magenta') +
   theme(text = element_text(size = 20), #size of axis label text
         axis.text.x = element_text(angle = 45, hjust = 1),
         plot.title = element_text(hjust = .5)) +
@@ -226,8 +226,8 @@ ggplot(data = offer_level,
   geom_line(y = offer_level$LEVEL2, color = 'red') +
   geom_line(y = offer_level$LEVEL3, color = 'green') +
   geom_line(y = offer_level$LEVEL4, color = 'magenta')
-#  xlab("Year") +
-#  ylab("Proportion of schools offering programs") +
+  xlab(Year) +
+  ylab(seq(0,1, by = 0.01)) +
   theme(text = element_text(size = 15), #size of text
         axis.text.x = element_text(angle = 0, hjust = .5),
         plot.title = element_text(hjust = .5))
