@@ -177,3 +177,61 @@ ggplot(data = filter(enroll_key, YEAR == 2016 & category == "part_time")) +
   xlab("Level of Full Time Students at all US Institution") +
   ylab("Total Student Enrollment") +
   ggtitle("2016 Fall Enrollment Totals by Student Level, Part-time")
+
+
+
+#########################################################################
+###    IC dataset: Plots for LEVEL indicators and                     ###
+###     DISTCRS, DISTNCED, DSTNCED1, DSTNCED2, DSTNCED3               ###
+#########################################################################
+
+
+library("reshape2")
+library("ggplot2")
+
+colnames(ic2012_2017)
+
+#Data must be in long format for ggplot to work...use melt function,
+# Our ic dataset is already in long format
+
+# Must change -2 code to NA for LEVEL5, LEVEL6, LEVEL7, LEVEL8, LEVEL17, LEVEL18, LEVEL19
+icLevels <- ic2012_2017
+levels(as.factor(icLevels$LEVEL8))
+
+icLevels$LEVEL5[icLevels$LEVEL5 == -2] <- NA
+icLevels$LEVEL6[icLevels$LEVEL6 == -2] <- NA
+icLevels$LEVEL7[icLevels$LEVEL7 == -2] <- NA
+icLevels$LEVEL8[icLevels$LEVEL8 == -2] <- NA
+icLevels$LEVEL17[icLevels$LEVEL17 == -2] <- NA
+icLevels$LEVEL18[icLevels$LEVEL18 == -2] <- NA
+icLevels$LEVEL19[icLevels$LEVEL19 == -2] <- NA
+
+#Remove unwanted columns
+colnames(icLevels)
+icLevels <- icLevels[,-(2:11)]
+icLevels <- icLevels[,-(14:168)]
+icLevels <- icLevels[,-(15:35)]
+
+# Create table of percent offering different degrees
+offer_level <- aggregate(icLevels, by = list(icLevels$YEAR),
+                   FUN=mean, na.rm = TRUE)
+offer_level <- rename(offer_level, "year" = Group.1)
+
+colnames(offer_level)
+
+#Plot line graphs manually
+ggplot(data = offer_level,
+       aes(x = offer_level$YEAR, y = seq(0,1, by = 0.01))) +
+  geom_line(y = offer_level$LEVEL1, color = 'blue') +
+  geom_line(y = offer_level$LEVEL2, color = 'red') +
+  geom_line(y = offer_level$LEVEL3, color = 'green') +
+  geom_line(y = offer_level$LEVEL4, color = 'magenta')
+#  xlab("Year") +
+#  ylab("Proportion of schools offering programs") +
+  theme(text = element_text(size = 15), #size of text
+        axis.text.x = element_text(angle = 0, hjust = .5),
+        plot.title = element_text(hjust = .5))
+
+
+
+
