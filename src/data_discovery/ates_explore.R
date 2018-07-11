@@ -33,26 +33,29 @@ codenames <- codenames[, -c(1,2,3)]
 
 #Histogram for educational attainment of survey participants
 key_eduattn <- filter(codenames, varname == "EDUATTN")
-hdkeySec$codevalue <- as.numeric(hdkeySec$codevalue)
+key_eduattn[1,3] <- "No high school diploma or GED"
+class(key_eduattn$varcode)
+class(ates$eduattn)
+key_eduattn$varcode <- as.integer(key_eduattn$varcode)
 
 #Merge data with key
-hd2012_2017_key <- left_join(as.data.frame(hd2012_2017), select(hdkeySec, codevalue, valuelabel), by = c("SECTOR" = "codevalue"))
-head(hd2012_2017_key)
+ates_key <- left_join(ates, select(key_eduattn, varcode, code_desc), by = c("eduattn" = "varcode"))
+head(ates_key)
 
-#Sector histogram: Not helpful, notice 99 = NA code
-ggplot(data = hd2012_2017) +
-  geom_histogram(aes(SECTOR), bins = 100) +
-  facet_wrap(~YEAR)
+#make code_desc wrap text for prettier plot
+ates_key$code_desc <- str_wrap(ates_key$code_desc, width = 20)
+ates_key$eduattn <- as.factor(ates_key$eduattn)
+levels(ates_key$eduattn)
+ates_key$code_desc <- factor(ates_key$code_desc, levels=levels(ates_key$eduattn),ordered=TRUE)
 
-hdSec <- filter(hd2012_2017, hd2012_2017$SECTOR != 99)
+levels(ates_key$code_desc)
 
-#Plot of SECTOR facet wrap Year
-ggplot(data = hd2012_2017_key) +
-  geom_bar(aes(valuelabel)) +
-  facet_wrap(~YEAR) +
+#Educational attainment histogram
+ggplot(data = ates_key) +
+  geom_bar(aes(code_desc)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  xlab("Sector of Institutions") +
-  ylab("Count of Institutions")
+  xlab("Educational Attainment of Survey Respondents") +
+  ylab("Count of Survey Respondents")
 
 
 #Analysis of first (most important) certifications
