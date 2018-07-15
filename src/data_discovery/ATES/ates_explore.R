@@ -59,3 +59,26 @@ ggplot(data = ates_key) +
   ylab("Count of Survey Respondents") +
   ggtitle("Fields of Study of Survey Respondents")
 
+
+levels(ates$cnnum)
+length(which(ates$cnnum >= 1))
+
+#Histogram for category of first certification
+key_cnfieldcat1 <- filter(codenames, varname == "CNFIELDCAT1")
+class(key_cnfieldcat1$varcode)
+class(ates$CNFIELDCAT1)
+key_cnfieldcat1$varcode <- as.integer(key_cnfieldcat1$varcode)
+#Merge data with key
+ates_key <- left_join(ates, select(key_cnfieldcat1, varcode, code_desc), by = c("CNFIELDCAT1" = "varcode"))
+head(ates_key)
+#make code_desc wrap text for prettier plot
+ates_key$code_desc <- str_wrap(ates_key$code_desc, width = 50)
+#filter out valid skips
+ates_key <- filter(ates_key, CNFIELDCAT1 > -1)
+#Educational attainment histogram
+ggplot(data = ates_key) +
+  geom_bar(aes(code_desc)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("Field Category of First Certification") +
+  ylab("Count of Survey Respondents") +
+  ggtitle("Fields of Certifications for Survey Respondents")
