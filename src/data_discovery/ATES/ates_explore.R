@@ -82,3 +82,24 @@ ggplot(data = ates_key) +
   xlab("Field Category of First Certification") +
   ylab("Count of Survey Respondents") +
   ggtitle("Fields of Certifications for Survey Respondents")
+
+
+#Histogram for whether first certification req by law
+key_cnprov1 <- filter(codenames, varname == "CNPROV1")
+class(key_cnprov1$varcode)
+class(ates$CNPROV1)
+key_cnprov1$varcode <- as.integer(key_cnprov1$varcode)
+#Merge data with key
+ates_key <- left_join(ates, select(key_cnprov1, varcode, code_desc), by = c("CNPROV1" = "varcode"))
+head(ates_key)
+#make code_desc wrap text for prettier plot
+ates_key$code_desc <- str_wrap(ates_key$code_desc, width = 50)
+#filter out valid skips
+ates_key <- filter(ates_key, CNFIELDCAT1 > -1)
+#Educational attainment histogram
+ggplot(data = ates_key) +
+  geom_bar(aes(x = code_desc, y = (..count..)/sum(..count..))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("First Certification required by Law?") +
+  ylab("Proportion of Respondents") +
+  ggtitle("Is your most important certification required by law?")
