@@ -104,97 +104,6 @@ length(k2$cluster)
 
 fviz_cluster(k2, data = schevNotNA)
 
-#add columns for school identifier variables
-clustered <- schevNotNA %>%
-  as_tibble() %>%
-  mutate(div_name = schev$div_name,
-         sch_num = schev$sch_num,
-         sch_name = schev$sch_name,
-         id_unique = schev$id_unique,
-         id_combine = schev$id_combine,
-         status = schev$status,
-         low_grade = schev$low_grade,
-         high_grade = schev$high_grade,
-         nces_school_num = schev$nces_school_num,
-         school_description = schev$school_description,
-         urbRural = schev$census_urban_rural,
-         lat = schev$lat,
-         long = schev$long,
-         SchoolName = schev$SchoolName,
-         cluster = k2$cluster)
-colnames(clustered)
-View(clustered)
-
-clus1 <- filter(clustered, cluster == 1)
-clus2 <- filter(clustered, cluster == 2)
-
-# SOME CLUSTER PLOTS
-ggplot(data = clustered, aes(adv_studies_diploma_prop, disadv_grad_prop, color = factor(cluster))) +
-  geom_point()
-
-theme_set(theme_bw())
-
-#install 'ggalt' pkg
-# devtools::install_github("hrbrmstr/ggalt")
-library(ggalt)
-ggplot(data = clustered, aes(urbRural, standard_diploma_prop)) +
-  geom_boxplot() +
-  geom_point(color = factor(clustered$cluster)) +
-  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
-              data=clus1,
-              color="black",
-              size=2,
-              expand=0.08) +  # encircle bloack
-  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
-                     data=clus2,
-                     color="red",
-                     size=2,
-                     expand=0.08)
-
-ggplot(data = clustered, aes(standard_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(cluster), label = sch_name)) +
-  geom_text()
-
-ggplot(data = clustered, aes(adv_studies_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(cluster), label = sch_name)) +
-  geom_text() +
-  geom_smooth(method="loess", se=F)
-
-
-
-
-#plot of disadv_dropout_prop vs. expulsion_prop
-ggplot(data = clustered, aes(disadv_dropout_prop, expulsion_prop, color = factor(cluster))) +
-  geom_point() +
-  geom_smooth(method="loess", se=F)
-
-
-#PLOT CLUSTERS ON THE MAP
-
-usa = map_data("usa")
-states = map_data("state")
-virginia <- subset(states, region %in% c("virginia"))
-mapSchools <- clustered
-mapSchools <- mapSchools[-which(mapSchools$long <= -120),]   # obs 277 has the long that is not in virginia
-
-#Notice one value has lat and long that don't make sense: obs 277
-ggplot(data = virginia) +
-  geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
-  coord_fixed(1.3) +
-  guides(fill=FALSE) +
-  geom_label(data = mapSchools,
-             aes(x = long, y = lat, color = as.factor(urbRural)),
-             size = 2,
-             label = mapSchools$cluster)
-
-
-ggplot(data = virginia) +
-  geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
-  coord_fixed(1.3) +
-  guides(fill=FALSE) +
-  geom_point(data = mapSchools,
-             aes(x = long, y = lat, color = as.factor(cluster)),
-             size = 2)
-
-
 
 ### TRY OTHER NUMBERS OF CLUSTERS
 
@@ -285,19 +194,112 @@ gap_stat <- clusGap(schevNotNA, FUN = kmeans, nstart = 25,
 print(gap_stat, method = "firstmax")
 
 fviz_gap_stat(gap_stat)
-# Gap statistic suggests 10 clusters is optimal
+# Gap statistic suggests 1 or possibly 4 clusters is optimal
 
 ####  THE OPTIMAL NUMBER OF CLUSTERS K IS DIFFERENT FROM EACH METHOD
 
-###   Assume 4 clusters is optimal, since 4 is between 2 and 10
 
-set.seed(123)
-final <- kmeans(schevNotNA, 4, nstart = 25)
+###   Assume 2 clusters is optimal
+
+final <- kmeans(schevNotNA, 2, nstart = 25)
 print(final)
 
 fviz_cluster(final, data = schevNotNA)
 
 #Append final cluster information to dataset
+
+#add columns for school identifier variables
+clustered <- schevNotNA %>%
+  as_tibble() %>%
+  mutate(div_name = schev$div_name,
+         sch_num = schev$sch_num,
+         sch_name = schev$sch_name,
+         id_unique = schev$id_unique,
+         id_combine = schev$id_combine,
+         status = schev$status,
+         low_grade = schev$low_grade,
+         high_grade = schev$high_grade,
+         nces_school_num = schev$nces_school_num,
+         school_description = schev$school_description,
+         urbRural = schev$census_urban_rural,
+         lat = schev$lat,
+         long = schev$long,
+         SchoolName = schev$SchoolName,
+         cluster = final$cluster)
+colnames(clustered)
+View(clustered)
+
+
+
+clus1 <- filter(clustered, cluster == 1)
+clus2 <- filter(clustered, cluster == 2)
+
+# SOME CLUSTER PLOTS
+ggplot(data = clustered, aes(adv_studies_diploma_prop, disadv_grad_prop, color = factor(cluster))) +
+  geom_point()
+
+theme_set(theme_bw())
+
+#install 'ggalt' pkg
+# devtools::install_github("hrbrmstr/ggalt")
+library(ggalt)
+ggplot(data = clustered, aes(urbRural, standard_diploma_prop)) +
+  geom_boxplot() +
+  geom_point(color = factor(clustered$cluster)) +
+  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
+                       data=clus1,
+                       color="black",
+                       size=2,
+                       expand=0.08) +  # encircle bloack
+  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
+                       data=clus2,
+                       color="red",
+                       size=2,
+                       expand=0.08)
+
+ggplot(data = clustered, aes(standard_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(cluster), label = sch_name)) +
+  geom_text()
+
+ggplot(data = clustered, aes(adv_studies_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(cluster), label = sch_name)) +
+  geom_text() +
+  geom_smooth(method="loess", se=F)
+
+
+
+
+#plot of disadv_dropout_prop vs. expulsion_prop
+ggplot(data = clustered, aes(disadv_dropout_prop, expulsion_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+
+#PLOT CLUSTERS ON THE MAP
+
+usa = map_data("usa")
+states = map_data("state")
+virginia <- subset(states, region %in% c("virginia"))
+mapSchools <- clustered
+mapSchools <- mapSchools[-which(mapSchools$long <= -120),]   # obs 277 has the long that is not in virginia
+
+#Notice one value has lat and long that don't make sense: obs 277
+
+ggplot(data = virginia) +
+  geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
+  coord_fixed(1.3) +
+  guides(fill=FALSE) +
+  geom_label(data = mapSchools,
+             aes(x = long, y = lat, color = as.factor(urbRural)),
+             size = 2,
+             label = mapSchools$cluster)
+
+
+ggplot(data = virginia) +
+  geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
+  coord_fixed(1.3) +
+  guides(fill=FALSE) +
+  geom_point(data = mapSchools,
+             aes(x = long, y = lat, color = as.factor(cluster)),
+             size = 2)
 
 
 
