@@ -17,8 +17,17 @@ library(gridExtra)
 #  Load Schools Data
 
 schev <- read_csv("data/stem_edu/original/schev-data/va_hs_ps_traj_model.csv")
+schev <- subset(schev, select = -c(locale1, locale2))
+
 colnames(schev)
 levels(as.factor(schev$locale2))
+
+extraInfo <- read_csv("data/stem_edu/original/schev-data/sch_general_info.csv")
+colnames(extraInfo)
+urb <- subset(extraInfo, select = c(id_unique, census_urban_rural))
+schev <- left_join(schev, urb, by = "id_unique")
+schev$census_urban_rural
+
 
 # Step 1) Delete NA VALUES & Select Only continuous predictors
 # We cannot perform k-means on categorical predictors (distance ill-defined)
@@ -44,7 +53,6 @@ contVars <- c("total_grads",
               "lt_suspension_prop",
               "st_suspension_prop",
               "expulsion_prop.1",
-              "spcl_ed_placement_prop",
               "non_disadv_dropout_prop",
               "disadv_dropout_prop",
               "non_disadv_grad_prop",
@@ -109,8 +117,7 @@ clustered <- schevNotNA %>%
          high_grade = schev$high_grade,
          nces_school_num = schev$nces_school_num,
          school_description = schev$school_description,
-         locale1 = schev$locale1,
-         locale2 = schev$locale2,
+         urbRural = schev$census_urban_rural,
          lat = schev$lat,
          long = schev$long,
          SchoolName = schev$SchoolName,
@@ -118,9 +125,31 @@ clustered <- schevNotNA %>%
 colnames(clustered)
 View(clustered)
 
+clus1 <- filter(clustered, cluster == 1)
+clus2 <- filter(clustered, cluster == 2)
+
 # SOME CLUSTER PLOTS
 ggplot(data = clustered, aes(adv_studies_diploma_prop, disadv_grad_prop, color = factor(cluster))) +
   geom_point()
+
+theme_set(theme_bw())
+
+#install 'ggalt' pkg
+# devtools::install_github("hrbrmstr/ggalt")
+library(ggalt)
+ggplot(data = clustered, aes(urbRural, standard_diploma_prop)) +
+  geom_boxplot() +
+  geom_point(color = factor(clustered$cluster)) +
+  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
+              data=clus1,
+              color="black",
+              size=2,
+              expand=0.08) +  # encircle bloack
+  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
+                     data=clus2,
+                     color="red",
+                     size=2,
+                     expand=0.08)
 
 ggplot(data = clustered, aes(standard_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(cluster), label = sch_name)) +
   geom_text()
@@ -130,29 +159,32 @@ ggplot(data = clustered, aes(adv_studies_diploma_prop, percentTeachersWProvision
   geom_smooth(method="loess", se=F)
 
 
+
+
 #plot of disadv_dropout_prop vs. expulsion_prop
 ggplot(data = clustered, aes(disadv_dropout_prop, expulsion_prop, color = factor(cluster))) +
   geom_point() +
   geom_smooth(method="loess", se=F)
 
 
-#DAN LIDEN CODE TO PLOT CLUSTERS ON THE MAP
+#PLOT CLUSTERS ON THE MAP
 
-virginia <- subset(states, region %in% c("virginia"))
 usa = map_data("usa")
 states = map_data("state")
+virginia <- subset(states, region %in% c("virginia"))
+mapSchools <- clustered
+mapSchools <- mapSchools[-which(mapSchools$long <= -120),]   # obs 277 has the long that is not in virginia
+
 #Notice one value has lat and long that don't make sense: obs 277
 ggplot(data = virginia) +
   geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
   coord_fixed(1.3) +
   guides(fill=FALSE) +
   geom_label(data = mapSchools,
-             aes(x = long, y = lat, color = as.factor(cluster)),
+             aes(x = long, y = lat, color = as.factor(urbRural)),
              size = 2,
-             label = clustered$sch_num)
+             label = mapSchools$cluster)
 
-mapSchools <- clustered
-mapSchools <- mapSchools[-which(mapSchools$long <= -120),]   # obs 277 has the long that is not in virginia
 
 ggplot(data = virginia) +
   geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
