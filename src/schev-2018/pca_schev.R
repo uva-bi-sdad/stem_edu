@@ -2,24 +2,33 @@
 
 ###   Principle Component Analysis on Schev Schools Data
 ###   Emily Sheen
-
+library(readr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(purrr)
 
 #Load the SCHEV data
 
 schev <- read_csv("data/stem_edu/original/schev-data/va_hs_ps_traj_model.csv")
+View(schev)
 colnames(schev)
 length(schev$sch_num)
+ncol(schev)
+
+
+#################    DATA CLEANING    ##########################
+
 schev <- as.data.frame(schev)
 length(unique(schev$id_unique))  #id_unique uniquely identifies schools, assign this value as row name
+
+abs(schev$expulsion_prop - schev$expulsion_prop.1) <= .18   #two different expulsion variables
+
+#make row names = id_unique
 row.names(schev) <- schev$id_unique
-View(schev)
-schev$percentTeachersNotHighlyQualified
 
 # Remove school identifier information for PCA, create new data.frame without identifiers
-contVars <- c("total_grads",
+keepVars <- c("total_grads",
               "adv_studies_diploma_prop",
               "other_diploma_prop",
               "certificate_of_program_completion_prop",
@@ -28,12 +37,11 @@ contVars <- c("total_grads",
               "isaep_prop",
               "attending_four_year_college_prop",
               "attending_two_year_college_prop",
-              "other_continuing_ed_plans_prop",
+              "other_continuing_ed_plans_prop",   #collinear with other postsecondary options
               "employment_prop",
               "military_prop",
               "no_plans_prop",
               "population",
-              "total_offenders",
               "offenses_prop",
               "expulsion_prop",
               "in_school_suspension_prop",
@@ -76,48 +84,37 @@ idVars <- c("div_name",
             "lat",
             "long",
             "SchoolName")
-length(contVars) + length(idVars) == ncol(schev)
-schevClust <- subset(schev, select = contVars)
-View(schevClust)
 
-# # change percents to proportions
-# unique(schevClust$percentTeachersBachelors)
-# schevClust$percentTeachersBachelors <- schevClust$percentTeachersBachelors/100
-# schevClust$percentTeachersGraduateDegree <- schevClust$percentTeachersGraduateDegree/100
-# schevClust$percentTeachersWProvisionalCredentials <- schevClust$percentTeachersWProvisionalCredentials/100
-# schevClust$percentPassedAPTest <- schevClust$percentPassedAPTest/100
+removeVars <- c("total_offenders",  # collinear with offenses proportion
+                "percentTeachersNotHighlyQualified")   # all == 0
+
+length(keepVars) + length(removeVars) + length(idVars)
+
+schevPCA <- subset(schev, select = contVars)
+View(schevPCA)
+
 
 map(schevClust, ~sum(is.na(.)))  #counts NA values for each variable
 
 
-#Assign the name of the high school as the row name
-rownames(schev)<-c("Bland","Grundy","Hurley","Twin","Council","Powhatan","Armstrong","TJ","JM",
-                   "Richmond","GW","Huguenot","Open","WF","PH","Cave","Hidden","Glenvar","Northside","WB","Sussex")
-#Arrange the rows by county (1:12) versus city (13:21)
-schev<-schev[c(1:6,16:21,7:15),]
-schev$studyArea<-c(rep("County",12),rep("City",9))
-
 #Clean and organize data into repsonse variables (10) and predictor variables
-responseColnames<-c("attending_two_year_college_prop","attending_four_year_college_prop","non_disadv_2year_ps_prop","non_disadv_4year_ps_prop",
-                    "disadv_2year_ps_prop","disadv_4year_ps_prop","other_continuing_ed_plans_prop","employment_prop","military_prop","no_plans_prop")
-responses<-select(schev, responseColnames)
-predictors<-select(schev, -c(1, 2, which(colnames(schev) %in% responseColnames)))
-colnames(predictors)<-c("Study Area", "Standard Diploma (prop)", "Adv. Studies Diploma (prop)", "Other Diploma (prop)", "COPC (prop)", "GED (prop)", "ISAEP (prop)", "Expulsion (prop)", "In-School Suspension (prop)", "LT Suspension (prop)", "EXP1", "ST Suspension (prop)", "Spcl. Ed (prop)", "Non-Disadvantaged Dropout (prop)", "Non-Disadvantaged On-time (prop)", "Disadvantaged Dropout (prop)", "Disadvantaged Graduation (prop)", "Female Dropout Rate", "Female On-Time Rate", "Male Dropout Rate", "Male On-Time Rate", "Non-Disadvantaged SOL Score", "Disadvantaged SOL Score", "Female SOL Score", "Male SOL Score", "Disciplinary Actions (prop)", "County Homeless Rate", "AP Test Takers (prop)", "AP Course Enrolees (prop)", "Dual Course Enrolees (prop)", "Governor School Enrolees (prop)", "AP Test Pass Rate", "CTE Completion Rate", "Teachers With Provisional Creds. (prop)", "Not-Highly Qualified Teachers (prop)", "Teachers With Bachelors (prop)", "Teachers With Grad. Degree (prop)", "Job Zone 1", "Job Zone 2", "job Zone 3", "Job Zone 4", "Education Req 1", "Education Req 2", "Education Req 3", "Education Req 4", "Limited English Household (prop)", "No Ps 25 And Over", "Unemployment Rate", "SNAP Benefits (prop)", "distribution_enrolled_in_2Year", "distribution_enrolled_in_4Year", "distribution_enrolled_in_career", "distribution_enrolled_in_vocational", "All Colleges In County", "Four-Year Colleges in County", "Community Colleges in County", "Career Schools in County", "CTE Schools in County", "Percent Recieving Aid", "Net Price", "Admitted Students SAT Reading", "Admitted Students SAT Math", "Four Year Admit Rate", "Four Year Yield Rate", "PSAT Junior Test Takers", "PSAT Soph. Test Takers", "SAT Critical Reading Mean", "SAT Math Mean", "SAT Subject Test Takers (prop)", "SAT Subject Tests Taken", "SAT Test Takers (prop)", "SAT Writing Mean")
-#Arrange the columnns into 5 categories
-#Community columns(1:12)
-#HS Student Body Tests columns(13:16)
-#Postsecondary Availability columns(17:29)
-#Postsecondary Going Culture columns(30:70)
-#HS Student Body Students column (71)
-#Only using Postsecondary Going Culture
+responseColnames <- c("attending_two_year_college_prop","attending_four_year_college_prop",
+                    "other_continuing_ed_plans_prop", "employment_prop","military_prop","no_plans_prop")
+responses <- select(schev, responseColnames)
+
+predictors<-select(schev, -c(which(colnames(schev) %in% idVars), which(colnames(schev) %in% removeVars), which(colnames(schev) %in% responseColnames)))
+colnames(predictors)
+
+
 predictors<-as.data.frame(predictors[,c(1,38:49,22:25,50:62,2:21,26,28:37,63:72,27)])
 #Only using Postsecondary Going Culture
 pgc<-as.data.frame(predictors[,c(1,31:71)])
 #reorder the columns by Bianica's Category 2
-pgc<-pgc[,c(1,3,2,4:7,8,10,12,9,11,13,22,14,16,18,20,15,17,19,21,25,26,28,32,31,29,30,33,34,23,24,27,35:42)]
+
+pgc <- pgc[,c(1,3,2,4:7,8,10,12,9,11,13,22,14,16,18,20,15,17,19,21,25,26,28,32,31,29,30,33,34,23,24,27,35:42)]
 
 #Preliminary PCA
-pgc.pca<-prcomp(pgc[,c(2:42)], scale.=TRUE, center=TRUE)
+pgc.pca <- prcomp(pgc[,c(2:42)], scale.=TRUE, center=TRUE)
 #eigenvalues
 pgc.pca$sdev^2
 #loadings
