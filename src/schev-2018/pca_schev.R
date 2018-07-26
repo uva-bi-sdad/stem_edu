@@ -7,6 +7,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(purrr)
+library(factoextra)
 
 #Load the SCHEV data
 
@@ -94,7 +95,7 @@ schevPCA <- subset(schev, select = contVars)
 View(schevPCA)
 
 
-map(schevClust, ~sum(is.na(.)))  #counts NA values for each variable
+map(schevPCA, ~sum(is.na(.)))  #counts NA values for each variable
 
 
 #Clean and organize data into repsonse variables (10) and predictor variables
@@ -105,16 +106,8 @@ responses <- select(schev, responseColnames)
 predictors<-select(schev, -c(which(colnames(schev) %in% idVars), which(colnames(schev) %in% removeVars), which(colnames(schev) %in% responseColnames)))
 colnames(predictors)
 
-
-predictors<-as.data.frame(predictors[,c(1,38:49,22:25,50:62,2:21,26,28:37,63:72,27)])
-#Only using Postsecondary Going Culture
-pgc<-as.data.frame(predictors[,c(1,31:71)])
-#reorder the columns by Bianica's Category 2
-
-pgc <- pgc[,c(1,3,2,4:7,8,10,12,9,11,13,22,14,16,18,20,15,17,19,21,25,26,28,32,31,29,30,33,34,23,24,27,35:42)]
-
 #Preliminary PCA
-pgc.pca <- prcomp(pgc[,c(2:42)], scale.=TRUE, center=TRUE)
+pgc.pca <- prcomp(predictors, scale.=TRUE, center=TRUE)
 #eigenvalues
 pgc.pca$sdev^2
 #loadings
@@ -124,8 +117,9 @@ pgc.pca$x
 
 library(psych)
 library(pracma)
+
 #Varimax rotation
-rawLoadings<-pgc.pca$rotation[,1:21] %*% diag(pgc.pca$sdev, 21, 21)
+rawLoadings <- pgc.pca$rotation[,1:21] %*% diag(pgc.pca$sdev, 21, 21)
 rotatedLoadings<-varimax(rawLoadings)$loadings
 invLoadings<-t(pracma::pinv(rotatedLoadings))
 rotatedscores<-scale(pgc[,-1]) %*% invLoadings
