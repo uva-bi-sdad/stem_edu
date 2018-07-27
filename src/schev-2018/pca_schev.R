@@ -91,14 +91,13 @@ removeVars <- c("total_offenders",  # collinear with offenses proportion
 
 length(keepVars) + length(removeVars) + length(idVars)
 
-schevPCA <- subset(schev, select = contVars)
-View(schevPCA)
+schevPCA <- subset(schev, select = keepVars)
+#View(schevPCA)
+
+map(schevPCA, ~sum(is.na(.)))  #counts NA values for each variable: no NAs
 
 
-map(schevPCA, ~sum(is.na(.)))  #counts NA values for each variable
-
-
-#Clean and organize data into repsonse variables (10) and predictor variables
+#Clean and organize data into response and predictor variables
 responseColnames <- c("attending_two_year_college_prop","attending_four_year_college_prop",
                     "other_continuing_ed_plans_prop", "employment_prop","military_prop","no_plans_prop")
 responses <- select(schev, responseColnames)
@@ -106,8 +105,18 @@ responses <- select(schev, responseColnames)
 predictors<-select(schev, -c(which(colnames(schev) %in% idVars), which(colnames(schev) %in% removeVars), which(colnames(schev) %in% responseColnames)))
 colnames(predictors)
 
+#NOTES ON PCA
+# Spectral decomposition examines the covariances / correlations between variables
+# Singular value decomposition examines the covariances / correlations between individuals
+# princomp() uses the spectral decomposition approach (covariance between variables).
+# The functions prcomp() and PCA()[FactoMineR] use the singular value decomposition (SVD).
+
+# According to the R help, SVD (covariance between individuals) has slightly better
+# numerical accuracy. Therefore, the function prcomp() is preferred compared to princomp().
+
 #Preliminary PCA
 pgc.pca <- prcomp(predictors, scale.=TRUE, center=TRUE)
+pgc.varPCA <- princomp(predictors, cor = TRUE)
 #eigenvalues
 pgc.pca$sdev^2
 #loadings
