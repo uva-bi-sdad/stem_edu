@@ -16,7 +16,7 @@ library(gridExtra)
 
 #  Load Schools Data
 
-schev <- read_csv("data/stem_edu/original/schev-data/va_hs_ps_traj_model.csv")
+schev <- read_csv("data/stem_edu/workingDSPG18/SCHEV/hs_model_data_merged2.csv")
 schev <- subset(schev, select = -c(locale1, locale2))
 
 colnames(schev)
