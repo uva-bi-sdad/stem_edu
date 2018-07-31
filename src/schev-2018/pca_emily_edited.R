@@ -1,5 +1,3 @@
-path <- "C:/Users/eshee/Box Sync/Documents/Virginia Tech DSPG SDAL/Data Dump/Schev Schools/New PCA"
-setwd(path)
 
 library(readxl)
 library(readr)
@@ -13,12 +11,12 @@ library(devtools)
 library(ggbiplot)
 # install.packages("psych")
 library(psych)
-# install.packages("pracma")
+install.packages("pracma")
 library(pracma)
 
 #BEFORE I WAS USING THIS FILE, some of the code is broken from this change
 # VAHS <- read.xls("VAHS.xls")
-VAHS <- read.csv("hs_model_data_merged2.csv")
+VAHS <- read.csv("./data/stem_edu/working/DSPG18/SCHEV/hs_model_data_merged2.csv")
 View(VAHS)
 colnames(VAHS)
 length(unique(VAHS$percentTeachersNotHighlyQualified))  # NOT all == 0 with new data
@@ -41,7 +39,8 @@ View(clean)
 ##     https://stats.stackexchange.com/questions/50537/should-one-remove-highly-correlated-variables-before-doing-pca
 
 
-
+# THE VARIABLE NAMES IN THE FILE BELOW HAVE BEEN REDUCED AND MODIFIED,
+#  BUT THE "keep" variables used to subset the data in this analysis are up-to-date.
 
 id <- c("div_name",
         "sch_num",
