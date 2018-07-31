@@ -17,6 +17,7 @@ colnames(schev)
 length(schev$sch_num)
 ncol(schev)
 
+na_count <-sapply(schev, function(y) sum(length(which(y == "NA"))))
 
 #################    DATA CLEANING    ##########################
 
@@ -116,13 +117,14 @@ colnames(predictors)
 
 #Preliminary PCA
 pgc.pca <- prcomp(predictors, scale.=TRUE, center=TRUE)
-pgc.varPCA <- princomp(predictors, cor = TRUE)
+#   pgc.varPCA <- princomp(predictors, cor = TRUE)
+
 #eigenvalues
 pgc.pca$sdev^2
 #loadings
 pgc.pca$rotation
 #scores
-pgc.pca$x
+pgc.pca$x   #this is the output
 
 library(psych)
 library(pracma)
