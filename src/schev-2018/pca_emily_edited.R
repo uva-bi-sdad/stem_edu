@@ -16,7 +16,7 @@ library(pracma)
 
 #BEFORE I WAS USING THIS FILE, some of the code is broken from this change
 # VAHS <- read.xls("VAHS.xls")
-VAHS <- read.csv("./data/stem_edu/working/DSPG18/SCHEV/hs_model_data_merged2.csv")
+VAHS <- read.csv("./data/stem_edu/working/DSPG18/SCHEV/hs_model_data_merged5.csv")
 View(VAHS)
 colnames(VAHS)
 length(unique(VAHS$percentTeachersNotHighlyQualified))  # NOT all == 0 with new data
@@ -184,7 +184,7 @@ colnames(clean)
 
 
 
-
+View(clean)
 
 ############################################################################
 ###     END OF DATA CLEANING, START PCA ANALYSIS                         ###
@@ -218,7 +218,7 @@ wheel(cbPalette)
 g<-ggbiplot(clean.pca, obs.scale=1, var.scale=1,
             groups=VAHSnotNA$census_urban_rural, ellipse=TRUE, cex=3,
             circle=TRUE) +
-  scale_colour_manual(values=c(cbPalette[3],cbPalette[2])) +  #City=mustard/Rural=Light Blue
+  scale_colour_manual(values=c(cbPalette[3],cbPalette[2], cbPalette[1])) +  #City=mustard/Rural=Light Blue
   theme(legend.direction='horizontal', legend.position='top')
 print(g)
 
@@ -232,7 +232,7 @@ ggplot(data=scores,
        aes(x=PC1, y=PC2,
            fill=factor(urbRural))) + coord_fixed() +
   geom_point(shape=21, colour="black", size=3.5, stroke=1) +
-  scale_fill_manual(values=cbPalette[c(3,2)]) +
+  scale_fill_manual(values=cbPalette[c(3,2,4)]) +
   geom_hline(yintercept=0, colour="gray65") +
   geom_vline(xintercept=0, colour="gray65") +
   ggtitle("High School PCA Scores Identified by Area")

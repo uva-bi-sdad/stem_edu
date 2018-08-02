@@ -16,63 +16,99 @@ library(gridExtra)
 
 #  Load Schools Data
 
-schev <- read_csv("data/stem_edu/original/schev-data/va_hs_ps_traj_model.csv")
-schev <- subset(schev, select = -c(locale1, locale2))
+schev <- read_csv("./data/stem_edu/working/DSPG18/SCHEV/hs_model_data_merged5.csv")
+# schev <- subset(schev, select = -c(locale1, locale2))
 
 colnames(schev)
-levels(as.factor(schev$locale2))
 
-extraInfo <- read_csv("data/stem_edu/original/schev-data/sch_general_info.csv")
-colnames(extraInfo)
-urb <- subset(extraInfo, select = c(id_unique, census_urban_rural))
-schev <- left_join(schev, urb, by = "id_unique")
-schev$census_urban_rural
+###  T
+pcaVars <- c("adv_studies_diploma_prop",
+             "certificate_of_program_completion_prop",
+             "ged_certificate_prop",
+             "standard_diploma_prop",     # removed the collinear variable "other_diploma_prop"
+             "isaep_prop",
+             "offenses_prop",     # removed sub-categories
+             "disadv_dropout_prop",
+             "non_disadv_dropout_prop",   # corr with disadv dropout = 0.37
+             "percentAPCourseEnrollees",  # collinear with AP test takers
+             "percentPassedAPTest",     # corr with "percentAPCourseEnrollees" = .6
+             "percentGovernorsSchoolEnrollees",
+             "percentDualCourseEnrollees",
+             "percentCTECompleters",
+             "percentTeachersGraduateDegree",  #collinear with percentTeachersBachelorsDegree (-0.96)
+             "percentTeachersWProvisionalCredentials",
+             "admitRate4YearInstitution",
+             "yieldRate4YearInstitution",
+             "sat_math_mean",
+             "sat_test_takers",
+             "psat_soph_test_takers",  #corr with sat_test_takers = 0.53, with psat_junior is 0.43
+             "psat_junior_test_takers")   #corr with sat_test_takers = 0.53, with psat_soph is 0.43
 
 
-# Step 1) Delete NA VALUES & Select Only continuous predictors
-# We cannot perform k-means on categorical predictors (distance ill-defined)
+idVars <- c("id_combine.y",
+            "div_name",
+            "sch_name",
+            "long",
+            "lat",
+            "census_urban_rural")
 
-contVars <- c("total_grads",
-              "adv_studies_diploma_prop",
-              "other_diploma_prop",
-              "certificate_of_program_completion_prop",
-              "ged_certificate_prop",
-              "standard_diploma_prop",
-              "isaep_prop",
-              "attending_four_year_college_prop",
-              "attending_two_year_college_prop",
-              "other_continuing_ed_plans_prop",
-              "employment_prop",
-              "military_prop",
-              "no_plans_prop",
-              "population",
-              "total_offenders",
-              "offenses_prop",
-              "expulsion_prop",
-              "in_school_suspension_prop",
-              "lt_suspension_prop",
-              "st_suspension_prop",
-              "expulsion_prop.1",
-              "non_disadv_dropout_prop",
-              "disadv_dropout_prop",
-              "non_disadv_grad_prop",
-              "disadv_grad_prop",
-              "dropout_prop_F",
-              "dropout_prop_M",
-              "grad_prop_F",
-              "grad_prop_M",
-              "percentAPCourceEnrollees",
-              "percentAPTestTakers",
-              "percentGovernorsSchoolEnrollees",
-              "percentDualCourseEnrollment",
-              "percentCTECompleters",
-              "percentTeachersBachelors",
-              "percentTeachersGraduateDegree",
-              "percentTeachersWProvisionalCredentials",
-              "percentPassedAPTest",
-              "admitRate4YearInstitution",
-              "yieldRate4YearInstitution")
-schevClust <- subset(schev, select = contVars)
+predictorVars <- c("standard_diploma_prop",
+                   "adv_studies_diploma_prop",
+                   "other_diploma_prop",
+                   "certificate_of_program_completion_prop",
+                   "ged_certificate_prop",
+                   "isaep_prop",
+                   "expulsion_prop",
+                   "in_school_suspension_prop",
+                   "lt_suspension_prop",
+                   "expulsion_prop.1",
+                   "st_suspension_prop",
+                   "spcl_ed_placement_prop",
+                   "offenses_prop",
+                   "non_disadv_ontime_prop",
+                   "disadv_grad_prop",
+                   "non_disadv_dropout_prop",
+                   "disadv_dropout_prop",
+                   "F_ontime_prop",
+                   "M_ontime_prop",
+                   "F_dropout_prop",
+                   "M_dropout_prop",
+                   "percentAPCourseEnrollees",
+                   "percentAPTestTakers",
+                   "percentGovernorsSchoolEnrollees",
+                   "percentDualCourseEnrollees",
+                   "percentTeachersNotHighlyQualified",
+                   "percentTeachersWProvisionalCredentials",
+                   "percentCTECompleters",
+                   "percentPassedAPTest",
+                   "sat_test_takers",
+                   "sat_critical_reading_mean",
+                   "sat_math_mean",
+                   "sat_writing_mean",
+                   "sat_subj_test_takers",
+                   "sat_subj_total_tests_taken",
+                   "psat_soph_test_takers",
+                   "psat_junior_test_takers",
+                   "admitRate4YearInstitution",
+                   "yieldRate4YearInstitution",
+                   "percentTeachersBachelors",
+                   "percentTeachersGraduateDegree",
+                   "ontime_prop",
+                   "dropout_prop",
+                   "F_cohort_prop",
+                   "M_cohort_prop",
+                   "nondisadvantaged_cohort_prop",
+                   "disadvantaged_cohort_prop")
+
+responseVars <- c("attending_two_year_college_prop",
+                  "attending_four_year_college_prop",
+                  "other_continuing_ed_plans_prop",
+                  "employment_prop",
+                  "military_prop",
+                  "no_plans_prop")
+
+schevClust <- subset(schev, select = predictorVars)
+
 View(schevClust)
 
 # # change percents to proportions
@@ -82,12 +118,11 @@ View(schevClust)
 # schevClust$percentTeachersWProvisionalCredentials <- schevClust$percentTeachersWProvisionalCredentials/100
 # schevClust$percentPassedAPTest <- schevClust$percentPassedAPTest/100
 
-map(schevClust, ~sum(is.na(.)))  #counts NA values for each variable
-
-length(schevClust$total_grads)   # length before NA deletion
+na_count <- sapply(schev, function(y) sum(length(which(is.na(y)))))
+na_count <- sapply(clean, function(y) sum(length(which(y == "NA"))))
+View(na_count)   #No NA values
 
 schevNotNA <- na.omit(schevClust)
-length(schevNotNA$total_grads) #lost no observations: no NA values
 
 # Scale all variables
 schevNotNA <- scale(schevNotNA)
@@ -131,7 +166,7 @@ grid.arrange(p2, p3, p4, p5, p6, nrow = 2)
 
 ### ELBOW METHOD: plot the "within cluster sum of squared distances against the # clusters K
 
-fviz_nbclust(schevNotNA, kmeans, method = "wss", k.max = 15)  #Notice bend at elbow at 4-6 clusters
+fviz_nbclust(schevNotNA, kmeans, method = "wss", k.max = 15)  #Notice bend at elbow at 2-3 clusters
 
 #  fvis_nbclust function is essentially mapping the number of clusters k
 #  against the total within cluster sum of squared distances (sq. distance
@@ -156,7 +191,7 @@ plot(k.values, wss_values,
      xlab="Number of clusters K",
      ylab="Total within-clusters sum of squares")
 
-# Optimal number of clusters appears to be between 4-5 (when flattens)
+# Optimal number of clusters = 2
 
 
 
@@ -194,12 +229,11 @@ gap_stat <- clusGap(schevNotNA, FUN = kmeans, nstart = 25,
 print(gap_stat, method = "firstmax")
 
 fviz_gap_stat(gap_stat)
-# Gap statistic suggests 1 or possibly 4 clusters is optimal
-
-####  THE OPTIMAL NUMBER OF CLUSTERS K IS DIFFERENT FROM EACH METHOD
 
 
-###   Assume 2 clusters is optimal
+####  THE OPTIMAL NUMBER OF CLUSTERS K =2, suggested by all three methods
+
+
 
 final <- kmeans(schevNotNA, 2, nstart = 25)
 print(final)
@@ -212,19 +246,10 @@ fviz_cluster(final, data = schevNotNA)
 clustered <- schevNotNA %>%
   as_tibble() %>%
   mutate(div_name = schev$div_name,
-         sch_num = schev$sch_num,
          sch_name = schev$sch_name,
-         id_unique = schev$id_unique,
-         id_combine = schev$id_combine,
-         status = schev$status,
-         low_grade = schev$low_grade,
-         high_grade = schev$high_grade,
-         nces_school_num = schev$nces_school_num,
-         school_description = schev$school_description,
-         urbRural = schev$census_urban_rural,
+         urban_rural = schev$census_urban_rural,
          lat = schev$lat,
          long = schev$long,
-         SchoolName = schev$SchoolName,
          cluster = final$cluster)
 colnames(clustered)
 View(clustered)
@@ -235,40 +260,45 @@ clus1 <- filter(clustered, cluster == 1)
 clus2 <- filter(clustered, cluster == 2)
 
 # SOME CLUSTER PLOTS
-ggplot(data = clustered, aes(adv_studies_diploma_prop, disadv_grad_prop, color = factor(cluster))) +
+ggplot(data = clustered, aes(adv_studies_diploma_prop, disadv_dropout_prop, color = factor(cluster))) +
   geom_point()
 
 theme_set(theme_bw())
 
 #install 'ggalt' pkg
 # devtools::install_github("hrbrmstr/ggalt")
+
+theme_set(theme_classic())
 library(ggalt)
-ggplot(data = clustered, aes(urbRural, standard_diploma_prop)) +
+library(RColorBrewer)
+ggplot(data = clustered, aes(urban_rural, standard_diploma_prop)) +
+  scale_color_manual(values=c("#99d8c9", "#2ca25f")) +
   geom_boxplot() +
   geom_point(color = factor(clustered$cluster)) +
-  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
+  ggalt::geom_encircle(aes(x=urban_rural, y=standard_diploma_prop),
                        data=clus1,
-                       color="black",
+                       color="magenta",
                        size=2,
                        expand=0.08) +  # encircle bloack
-  ggalt::geom_encircle(aes(x=urbRural, y=standard_diploma_prop),
+  ggalt::geom_encircle(aes(x=urban_rural, y=standard_diploma_prop),
                        data=clus2,
-                       color="red",
+                       color="green",
                        size=2,
                        expand=0.08)
 
-ggplot(data = clustered, aes(standard_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(cluster), label = sch_name)) +
-  geom_text()
+#TRIED COLORING BY URBAN/RURAL BUT NOT SIGNIFICANT
+ggplot(data = clustered, aes(standard_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(urban_rural))) +
+  geom_point()
 
 ggplot(data = clustered, aes(adv_studies_diploma_prop, percentTeachersWProvisionalCredentials, color = factor(cluster), label = sch_name)) +
   geom_text() +
   geom_smooth(method="loess", se=F)
 
 
-
+colnames(clustered)
 
 #plot of disadv_dropout_prop vs. expulsion_prop
-ggplot(data = clustered, aes(disadv_dropout_prop, expulsion_prop, color = factor(cluster))) +
+ggplot(data = clustered, aes(disadv_dropout_prop, offenses_prop, color = factor(urban_rural))) +
   geom_point() +
   geom_smooth(method="loess", se=F)
 
@@ -287,11 +317,17 @@ ggplot(data = virginia) +
   geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
   coord_fixed(1.3) +
   guides(fill=FALSE) +
-  geom_label(data = mapSchools,
-             aes(x = long, y = lat, color = as.factor(urbRural)),
-             size = 2,
-             label = mapSchools$cluster)
+  geom_point(data = mapSchools,
+             aes(x = long, y = lat, color = as.factor(urban_rural), shape = as.factor(mapSchools$cluster)),
+             size = 2)
 
+ggplot(data = virginia) +
+  geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
+  coord_fixed(1.3) +
+  guides(fill=FALSE) +
+  geom_point(data = mapSchools,
+             aes(x = long, y = lat, color = as.factor(urban_rural)),
+             size = 2)
 
 ggplot(data = virginia) +
   geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
@@ -301,6 +337,97 @@ ggplot(data = virginia) +
              aes(x = long, y = lat, color = as.factor(cluster)),
              size = 2)
 
+ggplot(data = virginia) +
+  geom_polygon(aes(x = long, y = lat, group = group), color = "white") +
+  coord_fixed(1.3) +
+  guides(fill=FALSE) +
+  geom_point(data = mapSchools,
+             aes(x = long, y = lat, color = as.factor(urban_rural)),
+             size = 2)
+
+
+
+#CLUSTER PLOTS WITH MOST IMPORTANT VARIABLES FROM PCA
+#    MOST IMPORTANT VARIABLES FROM PCA ARE:
+mvp <- c("standard_diploma_prop",
+         "offenses_prop",
+         "non_disadv_dropout_prop",
+         "percentCTECompleters",
+         "percentTeachersWProvisionalCredentials",
+         "ged_certificate_prop",
+         "psat_junior_test_takers",
+         "percentTeachersGraduateDegree",
+         "sat_test_takers",
+         "percentPassedAPTest",
+         "sat_math_mean",
+         "adv_studies_diploma_prop")
+
+mvpClust <- subset(clustered, select = mvp)
+pairs(mvpClust)
+
+ggplot(data = clustered, aes(offenses_prop, standard_diploma_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(offenses_prop, standard_diploma_prop, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(non_disadv_dropout_prop, standard_diploma_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(non_disadv_dropout_prop, standard_diploma_prop, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(percentCTECompleters, standard_diploma_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(percentCTECompleters, standard_diploma_prop, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(percentTeachersWProvisionalCredentials, standard_diploma_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(percentTeachersWProvisionalCredentials, standard_diploma_prop, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(ged_certificate_prop, standard_diploma_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(ged_certificate_prop, standard_diploma_prop, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(ged_certificate_prop, standard_diploma_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(ged_certificate_prop, standard_diploma_prop, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(ged_certificate_prop, standard_diploma_prop, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(ged_certificate_prop, standard_diploma_prop, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(percentTeachersGraduateDegree, percentPassedAPTest, color = factor(cluster))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
+
+ggplot(data = clustered, aes(percentTeachersGraduateDegree, percentPassedAPTest, color = factor(urban_rural))) +
+  geom_point() +
+  geom_smooth(method="loess", se=F)
 
 
 
