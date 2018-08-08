@@ -1,3 +1,9 @@
+# INPUT
+#        "~/stem_edu/data/stem_edu/original/DSPG2018DataDiscovery/EDITED_harvardx_mitx/Year 4 Appendices - Data Tables_UPDATED.csv"
+#        "~/stem_edu/data/stem_edu/original/DSPG2018DataDiscovery/EDITED_harvardx_mitx/Year 4 Appendices - Data Tables-2_UPDATED.csv"
+#        "~/stem_edu/data/stem_edu/original/DSPG2018DataDiscovery/EDITED_harvardx_mitx/Year 4 Appendices - Data Tables-3_UPDATED.csv"
+
+
 library(ggplot2)
 library(dplyr)
 ds1 <- read.csv('~/stem_edu/data/stem_edu/original/DSPG2018DataDiscovery/EDITED_harvardx_mitx/Year 4 Appendices - Data Tables_UPDATED.csv')
