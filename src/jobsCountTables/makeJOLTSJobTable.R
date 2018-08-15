@@ -40,7 +40,8 @@ filterJolts = function(seas, ind, Region, rate = FALSE, startyear, endyear, star
 # Reference: https://download.bls.gov/pub/time.series/jt/jt.txt
 # USE THIS FUNCTION
 
-allRegionAllInd = filterJolts(seas = "U", ind = "000000", Region = "00", rate = FALSE, startyear = 2009, endyear = 2016, startmonth = 1, endmonth = 12)
-plot(allRegionAllInd$value, ylim = c(0, 6500), type = 'l')
-
-
+allRegionAllInd = filterJolts(seas = "U", ind = "000000", Region = "00", rate = FALSE, startyear = 2006, endyear = 2013, startmonth = 1, endmonth = 12)
+allRegionAllIndSeas = filterJolts(seas = "S", ind = "000000", Region = "00", rate = FALSE, startyear = 2006, endyear = 2013, startmonth = 1, endmonth = 12)
+plot(allRegionAllInd$value/1000, ylim = c(0, 6), type = 'l', xlab = 'Time', ylab = "Job Openings (Mil)")
+lines(allRegionAllIndSeas$value/1000, xlab = 'Time', col = 'red')
+legend("topright", bty = 'n', legend = c("Seasonally Adjusted", "Raw Data"), fill = c("red", "black"))
