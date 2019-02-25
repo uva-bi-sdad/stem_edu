@@ -87,20 +87,38 @@ networkD3::sankeyNetwork(Links = links, Nodes = nodes,
 #remove the valid skips
 tabs_noskip <-data.frame(table(filter(ates,ates$CNFIELD1 != "Valid Skip")))
 #doing this step reduces the amount of rows from 47,744 to 11,744
-colnames(tabs_noskip) <- c('Edu_Attain', 'Cert_Type','Freq')
 
-links <- tabs_noskip
-nodes <- data.frame(node = c(1:39),
-                    name = c(unique(as.character(tabs_noskip$Edu_Attain)),unique(as.character(tabs_noskip$Cert_Type))))
+#take out higher education
+set_2 <- tabs_noskip
+colnames(set_2) <- c('Edu_Attain', 'Cert_Type','Freq')
+set_2 <- subset(set_2, set_2$Edu_Attain != "1+ year College")
+set_2 <- subset(set_2, set_2$Edu_Attain != "Associate Degree")
+set_2 <- subset(set_2, set_2$Edu_Attain != "Master's Degree")
+set_2 <- subset(set_2, set_2$Edu_Attain != "Bachelor's Degree")
+set_2 <- subset(set_2, set_2$Edu_Attain != "Professional past Bachelor")
+set_2 <- subset(set_2, set_2$Edu_Attain != "Doctorate")
+
+#doing this step reduces the amount of rows from 11,744 to 2151
+colnames(set_2) <- c('Edu_Attain', 'Cert_Type','Freq')
+
+#only look at stem jobs
+stem_jobs <- c("Engineering","Computers and IT", "Other science and math","Health practitioner","Nursing",
+               "Other healthcare","Environmental, water, and food safety")
+set_2 <- set_2[set_2$Cert_Type %in% stem_jobs,]
+#this drops us to 185 observations
+
+links <- set_2
+nodes <- data.frame(node = c(1:10),
+                    name = c(unique(as.character(set_2$Edu_Attain)),unique(as.character(set_2$Cert_Type))))
 links$IDsource=match(links$Edu_Attain, nodes$name)-1
 links$IDtarget=match(links$Cert_Type, nodes$name)-1
 networkD3::sankeyNetwork(Links = links, Nodes = nodes,
                          Source = 'IDsource',
                          Target = 'IDtarget',
                          Value = 'Freq',
-                         NodeID = 'name')
+                         NodeID = 'name', fontSize = 15)
 #produce a table from the last diagram without skips
-tabs3 <- table(tabs_noskip$Edu_Attain, tabs_noskip$Cert_Type)
+tabs3 <- table(set_2$Edu_Attain, set_2$Cert_Type)
 
 #old network plotting
 # network <- graph_from_data_frame(tabs,directed = F)
