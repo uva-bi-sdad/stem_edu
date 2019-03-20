@@ -35,5 +35,5 @@ va_map <- ggmap(va_map)
 va_map
 
 va_map + geom_point(data= mar2016, aes(x=mar2016$jobLocation_geo_longitude, y= mar2016$jobLocation_geo_latitude),
-                    color = 'red') + ggtitle('February Openjobs Locations')
+                    color = 'red') + ggtitle('March 2016 Openjobs Locations')
 
