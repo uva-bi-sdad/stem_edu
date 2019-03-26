@@ -59,5 +59,14 @@ len <- length(unique(data$rawdata_id))
 32*len == (sum(as.numeric(lapply(data$rawdata_id, nchar))))
 #identifiers look good
 
-#
-
+### consistency (duplicates) ####
+# check for duplicate rows by dropping unique identifier
+data_dup <- data[,-1]
+data_dup <- data_dup[duplicated(data_dup)]
+nrow(data_dup)
+# we see that there are 13555 duplicates overall
+cleaned_data <- data %>% distinct(jobLocation_geo_latitude, jobLocation_geo_longitude, normalizedTitle_onetCode,
+                                  normalizedTitle_onetName, datePosted, responsibilities, experienceRequirements,
+                                  jobDescription, hiringOrg, .keep_all = TRUE)
+#check to see the right amount of rows removed
+nrow(data) - nrow(cleaned_data)
