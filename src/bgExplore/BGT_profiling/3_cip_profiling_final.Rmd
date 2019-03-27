@@ -1,0 +1,98 @@
+
+```{r options, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+
+```{r packages}
+library(DataExplorer)
+library(dplyr)
+library(magrittr)
+library(data.table)
+library(ggplot2)
+#library(sdalr)
+#library(DBI)
+```
+
+
+```{r load data}
+#con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "dnair1", pass = "dnair1")
+#cip_query <- "SELECT * FROM \"ads_cip\" WHERE LEFT(\"jobdate\", 7) = \'2017-07\'"
+#ads_cip_0717 <- as.data.table(dbGetQuery(con, cip_query))
+#saveRDS(ads_cip_0717, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/ads_cip_0717.RDS")
+ads_cip_0717 <- readRDS(file = "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/ads_cip_0717.RDS")
+```
+
+## CIP Table Summary 
+
+```{r dataexplorer}
+overall <- melt(DataExplorer::introduce(ads_cip_0717))
+colnames(overall) <- c("Metric", "Value")
+knitr::kable(overall)
+missing <- DataExplorer::profile_missing(ads_cip_0717)
+colnames(missing) <- c("Column", "# Missing", "% Missing")
+knitr::kable(missing)
+```
+
+
+
+
+```{r uniqueID}
+### Uniqueness of Unique ID
+
+#IDs that appear more than once
+dupejobids <- ads_cip_0717 %>% dplyr::group_by(bgtjobid) %>% dplyr::summarise(count = dplyr::n()) %>% dplyr::filter(count > 1)
+
+#Multi-appearance ID by date
+dupecount <- ads_cip_0717[bgtjobid %in% dupejobids$bgtjobid, c("bgtjobid", "jobdate")] %>% group_by(bgtjobid, jobdate) %>% summarise(count = n())
+
+nonuniqueIDs <- nrow(dupejobids) - nrow(dupecount)
+cat(paste(nonuniqueIDs, "unique job ids have multiple dates associated with them.") )
+
+```
+
+## HISTOGRAMS
+
+Job Date
+```{r jobdate hist}
+##Job Date
+values <-  ads_cip_0717[!is.na(lubridate::as_date(jobdate)), lubridate::as_date(jobdate)]
+unique_values <- length(unique(values))
+frequencies <- as.data.table(table( values))
+ggplot(frequencies, aes(values, N)) +
+  geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+  ggtitle(paste("Job Date", "Value Distribution")) +
+  xlab("Job Date") +
+  ylab("N") +
+  theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+CIP
+```{r cip hist}
+### CIP
+values <-  ads_cip_0717[!is.na(as.numeric(cip)), as.numeric(cip)]
+unique_values <- length(unique(values))
+frequencies <- as.data.table(table( values))
+ggplot(frequencies, aes(as.integer(values), N)) +
+  geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+  ggtitle(paste("CIP", "Value Distribution")) +
+  xlab("CIP") +
+  ylab("N") +
+  theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Salary
+```{r salary hist}
+### Salary
+values <-  ads_cip_0717[salary >0, salary]
+unique_values <- length(unique(values))
+frequencies <- as.data.table(table( values))
+ggplot(frequencies, aes(as.integer(values)/1000, N)) +
+  geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+  ggtitle(paste("Salary (thousands)", "Value Distribution")) +
+  xlab("Salary") +
+  ylab("N") +
+  theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
