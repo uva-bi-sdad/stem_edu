@@ -1,127 +1,133 @@
-library(sdalr)
-library(DBI)
-
-sqlquery_0717 <-
-  "
-SELECT
-\"bgtjobid\",
-\"jobid\",
-\"jobdate\",
-\"cleantitle\",
-\"canontitle\",
-\"occfam\",
-\"occfamname\",
-\"soc\",
-\"socname\",
-\"onet\",
-\"onetname\",
-\"bgtocc\",
-\"bgtoccname\",
-\"bgtoccgroupname\",
-\"bgtoccgroupname2\",
-\"bgtcareerareaname\",
-\"bgtcareerareaname2\",
-\"employer\",
-\"sector\",
-\"sectorname\",
-\"naics3\",
-\"naics4\",
-\"naics5\",
-\"naics6\",
-\"city\",
-\"state\",
-\"county\",
-\"fipsstate\",
-\"fipscounty\",
-\"fips\",
-\"lat\",
-\"lon\",
-\"bestfitmsa\",
-\"bestfitmsaname\",
-\"bestfitmsatype\",
-\"msa\",
-\"msaname\",
-\"edu\",
-\"maxedu\",
-\"degree\",
-\"maxdegree\",
-\"exp\",
-\"maxexp\",
-\"minsalary\",
-\"maxsalary\",
-\"minhrlysalary\",
-\"maxhrlysalary\",
-\"payfrequency\",
-\"salarytype\",
-\"jobhours\",
-\"taxterm\",
-\"internship\",
-\"subocc\"
-
-FROM \"ads_main_2017\" WHERE LEFT(\"jobdate\", 7) = '2017-07' AND \"fipsstate\" = 51
-"
-
-# Database + SQL Query
-con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "dnair1", pass = "dnair1")
-query_0717_1000r <- dbGetQuery(con, sqlquery_0717)
-
-# Datatable filter out unknown geographies - have 991 jobs across 13 MSAs + na + blank (but lat/lons are populated)
 library(data.table)
-query_0717_min999 <- query_0717_1000r[query_0717_1000r$lat != -999 | query_0717_1000r$lon != -999, ]
-plot(query_0717_min999$lat, query_0717_min999$lon)
-unique(query_0717_1000r$msaname)
-
-# Get Geometry CRS of the counties
-# va_counties came from 3_VAshapes.R from tigris package - NEED to clean this script up!!
 library(sf)
 library(dplyr)
-sp::geometry(va_counties) # CRS:  +proj=longlat +datum=NAD83 +no_defs +ellps=GRS80 +towgs84=0,0,0
+
+# Import datasets - Economic Regions + BGT
+econ_va_counties <- read_rds("data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
+query_0717 <- read_rds("data/stem_edu/working/BGexplorevalidate/BGT_main_0717.RDS")
+
+# ------------------------------------------------------------------------------------
+
+# Datatable filter out unknown geographies - have 991 jobs across 13 MSAs + na + blank (but lat/lons are populated)
+query_0717_min999 <- query_0717[query_0717$lat != -999 | query_0717$lon != -999, ] #430 observations removed out of 63K
 
 # convert the job geographies to sf dataframe using va counties geography CRS
 bgt_point <- sf::st_as_sf(x = query_0717_min999,
                         coords = c("lon", "lat"),
-                        crs = "+proj=longlat +datum=NAD83 +no_defs +ellps=GRS80 +towgs84=0,0,0")
-
-# from the other script
-econ_va_counties_sf <- sf::st_as_sf(econ_va_counties)
-plot(econ_va_counties_sf["Region"])
-
-# checking everything is now sf
-class(bgt_point)
-class(econ_va_counties_sf)
-
-#checking geography matches
-sf::st_geometry(bgt_point)
-sf::st_geometry(econ_va_counties_sf)
+                        crs = st_crs(econ_va_counties))
 
 # determining jobs that are within a va county or not
 bgt_point$within <- st_within(bgt_point$geometry, econ_va_counties_sf$geometry) %>% lengths > 0
+joined <- st_join(bgt_point, econ_va_counties)
+joined_within <- joined %>% filter(within == TRUE) # removes 1314 observations
 
-joined <- st_join(bgt_point, econ_va_counties_sf)
-isTRUE(joined$within)
-class(joined)
+# aggregate jobs per county
+#join_cty_ct <- joined_within %>% group_by(fipscounty) %>% summarise(count = n())
+join_cty_ct <- joined_within %>% group_by(NAME) %>% summarise(count = n())
+econ_va_counties$COUNTYFP <- as.integer(econ_va_counties$COUNTYFP)
+#econ_va_counties <- econ_va_counties %>% filter(`County/City` != "City")
+join_cty_ct <- join_cty_ct %>% filter(!is.na(fipscounty))
+#join_shape_ct <- st_join(econ_va_counties, join_cty_ct, suffix = c("COUNTYFP" = "fipscounty"))
+join_shape_ct <- st_join(econ_va_counties, join_cty_ct, suffix = c("NAME" = "NAME"))
 
-joined_within <- joined %>% filter(within == TRUE)
+# ------------------------------------------------------------------------------------
 
-plot(joined_within["Region"])
-plot(joined_within["Support Org"])
-plot(joined_within["sectorname"])
-
-
-#join_reg_ct <- joined_within %>% group_by(Region) %>% summarise(count = n())
-join_cty_ct <- joined_within %>% group_by(fipscounty) %>% summarise(count = n())
-#st_join(econ_va_counties_sf, join_ct, suffix = c("Region"))
-econ_va_counties_sf$COUNTYFP <- as.integer(econ_va_counties_sf$COUNTYFP)
-join_shape_ct <- st_join(econ_va_counties_sf, join_cty_ct, suffix = c("COUNTYFP" = "fipscounty"))
-
-
-join_shape_ct$bucket <-  ifelse(join_shape_ct$count > 1000, 1000, ifelse(join_shape_ct$count > 500, 500, join_shape_ct$count/100))
-join_shape_ct$bucket <- (cut(x = join_shape_ct$count, breaks = c(0, 100, 200, 300, 400, 500, 1000, 2000)))
-join_shape_ct$bucket2 <- (cut(x = join_shape_ct$count, breaks = c(0, 20, 40, 60, 80, 100, 16000)))
+# INDIVIDUAL & AGGREGATE JOB PLOTS
+plot(joined_within["occfam"], key.pos = 4, key.width =lcm(2))
 plot(join_shape_ct["count"])
+text(join_shape_ct["count"])
+
+# ------------------------------------------------------------------------------------
+
+# Mucking around with buckets
+join_shape_ct$bucket <- (cut(x = join_shape_ct$count, breaks = c(0, 100, 200, 300, 400, 500, 1000, 16000)))
 plot(join_shape_ct["bucket"])
-plot(join_shape_ct["bucket2"])
+ggplot(join_shape_ct) +
+  geom_sf(mapping = aes(fill = GOorg)) +
+  geom_sf_text(mapping = aes(label = count))
+library(leaflet)
+leaflet(join_shape_ct) %>%
+  addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
+              opacity = 1.0, fillOpacity = 0.5,
+              fillColor = ~colorQuantile("YlOrRd", count)(count),
+              highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                  bringToFront = TRUE))
+
+# ------------------------------------------------------------------------------------
+
+(hist(join_shape_ct$count[count < 2000]))
+
+join_shape_ct %>% filter(NAMENAME == "Fairfax")
+econ_va_counties %>% filter(NAME == "Fairfax")
+join_cty_ct %>% filter(fipscounty == 59)
+join_shape_ct %>% filter(NAME == "Arlington")
+
+# ------------------------------------------------------------------------------------
+
+# ~/git/stem_edu/data/stem_edu/original/STWcheatsheet.xlsx
+
+
+#join_shape_ct$bucket <-  ifelse(join_shape_ct$count > 1000, 1000, ifelse(join_shape_ct$count > 500, 500, join_shape_ct$count/100))
+join_shape_ct$bucket <- (cut(x = join_shape_ct$count, breaks = c(0, 100, 200, 300, 400, 500, 1000, 16000)))
+join_shape_ct$bucket2 <- (cut(x = join_shape_ct$count, breaks = c(0, 20, 40, 60, 80, 100, 16000)))
+
+plot(join_shape_ct["bucket"])
+plot(join_shape_ct["bucket2"]) #, joined_within["sectorname"], add = TRUE)
+
+points(joined_within$INTPTLAT, joined_within$INTPTLON)
+
+plot(join_shape_ct["bucket"])
+plot(joined_within, add = TRUE)
+
+geom_joinshape <- st_geometry(join_shape_ct)
+geom_joinwithin <- st_geometry(joined_within)
+
+st_bbox(join_shape_ct)
+st_bbox(joined_within)
+sf::
+
+sf::st_drop_geometry()
+sf::st_set_geometry(joined_within, geom_joinshape)
+
+joined_within
+
+
+
+# ------------------------------------------------------------------------------------
+
+# Plot multiple shapefiles
+plot(aoiBoundary_HARV,
+     col = "grey93",
+     border="grey",
+     main="NEON Harvard Forest Field Site")
+
+plot(lines_HARV,
+     col=roadColors,
+     add = TRUE)
+
+plot(point_HARV,
+     add  = TRUE,
+     pch = 19,
+     col = "purple")
+
+
 
 join_shape_ct %>% select(count) %>% arrange(count) %>% slice(1:10) %>% plot(add = TRUE, col = 'grey')
 title("the ten counties with smallest area")
+
+# Test plots - remove or shift later
+#joined_within$GOorg <- as.factor(joined_within$GOorg)
+plot(joined_within["Region"])
+plot(joined_within["GOorg"])
+
+plot_sf(joined_within, bgc = "#CCCCCC")
+plot(joined_within["GOorg"])
+plot(econ_va_counties["Region"])
+thing <- st_centroid(econ_va_counties)
+st_set_crs(thing, value = st_crs(econ_va_counties))
+st_set_geometry(thing, value = st_geometry(econ_va_counties))
+st_set_precision(thing, value = st_bbox(econ_va_counties))
+st_set_geometry(thing, value = st_bbox(econ_va_counties))
+plot(thing, add = TRUE)
+plot_sf(econ_va_counties)
 
