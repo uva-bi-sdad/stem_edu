@@ -1,0 +1,130 @@
+
+---------- SQL STATEMENT FOR CLEANING DATABASE ------------------------
+
+----CIP TABLE------------------------------------------
+--- correct data types & convert na & -999 to NULL
+
+SELECT
+  CAST("bgtjobid" as numeric),
+  CAST("jobdate" as date),
+  CAST(NULLIF("cip", 'na') as numeric) as "cip",
+  CAST(NULLIF("salary", '-999' ) as numeric) as "salary"
+FROM "ads_cip"
+
+----DEGREE TABLE------------------------------------------
+--- correct data types & convert na & -999 to NULL
+--- degreelevel was already integer
+
+SELECT
+  CAST("bgtjobid" as numeric),
+  CAST("jobdate" as date),
+  degreelevel,
+  CAST(NULLIF("salary", '-999' ) as numeric) as "salary"
+FROM "ads_degrees"
+
+----MAJOR TABLE------------------------------------------
+--- correct data types & convert na & -999 to NULL
+
+SELECT
+  CAST("bgtjobid" as numeric),
+  CAST("jobdate" as date),
+  NULLIF("stdmajor", 'na') as "stdmajor",
+  CAST(NULLIF("salary", '-999' ) as numeric) as "salary"
+FROM "ads_major"
+
+----CERTIFICATION TABLE------------------------------------------
+--- correct data types & convert na & -999 to NULL
+
+SELECT
+  CAST("bgtjobid" as numeric),
+  CAST("jobdate" as date),
+  NULLIF("certification", 'na') as "certification",
+  CAST(NULLIF("salary", '-999' ) as numeric) as "salary"
+FROM "ads_certs"
+
+----SKILLS TABLE------------------------------------------
+--- correct data types & convert na & -999 to NULL
+--- need to repeat this for 2010:2017 as well
+
+SELECT
+  CAST("bgtjobid" as integer),
+  CAST("jobdate" as date),
+  NULLIF("skillcluster", 'na') as "skillcluster",
+  NULLIF("skillclusterfamily", 'na') as "skillclusterfamily",
+  NULLIF("salary", '-999') as "salary",
+  isspecialized, isbaseline, issoftware
+FROM "ads_skills_2007"
+
+----MAIN TABLE------------------------------------------
+--- correct data types & convert na & -999 to NULL
+--- need to repeat this for 2010:2017 as well
+
+SELECT
+CAST("bgtjobid" as integer),
+CAST("jobid" as integer),
+CAST("jobdate" as date),
+NULLIF(cleantitle, 'na') as cleantitle,
+NULLIF(canontitle, 'na') as canontitle,
+NULLIF(occfam, 'na') as occfam,
+NULLIF(occfamname, 'na') as occfamname,
+NULLIF(soc, 'na') as soc,
+NULLIF(socname, 'na') as socname,
+NULLIF(onet, 'na') as onet,
+NULLIF(onetname, 'na') as onetname,
+NULLIF(bgtocc, 'na') as bgtocc,
+NULLIF(bgtoccname, 'na') as bgtoccname,
+NULLIF(bgtoccgroupname, 'na') as bgtoccgroupname,
+NULLIF(bgtoccgroupname2, 'na') as bgtoccgroupname2,
+NULLIF(bgtcareerareaname, 'na') as bgtcareerareaname,
+NULLIF(bgtcareerareaname2, 'na') as bgtcareerareaname2,
+NULLIF(employer, 'na') as employer,
+NULLIF(sector, 'na') as sector,
+NULLIF(sectorname, 'na') as sectorname,
+CAST(NULLIF("naics3", '-999') as integer) as naics3,
+CAST(NULLIF("naics4", '-999') as integer) as naics4,
+CAST(NULLIF("naics5", '-999') as integer) as naics5,
+CAST(NULLIF("naics6", '-999') as integer) as naics6,
+NULLIF(city, 'na') as city,
+NULLIF(state, 'na') as state,
+NULLIF(county, 'na') as county,
+NULLIF(fipsstate, '-999') as fipsstate,
+NULLIF(fipscounty, '-999') as fipscounty,
+NULLIF(fips, '-999') as fips,
+NULLIF(lat, '-999') as lat,
+NULLIF(lon, '-999') as lon,
+NULLIF(bestfitmsa, '-999') as bestfitmsa,
+NULLIF(bestfitmsaname, '-999') as bestfitmsaname,
+NULLIF(bestfitmsatype, '-999') as bestfitmsatype,
+NULLIF(msa, '-999') as msa,
+NULLIF(msaname, 'na') as msaname,
+NULLIF(edu, '-999') as edu,
+NULLIF(maxedu, '-999') as maxedu,
+NULLIF(degree, 'na') as degree,
+NULLIF(maxdegree, 'na') as maxdegree,
+NULLIF(exp, '-999') as exp,
+NULLIF(maxexp, '-999') as maxexp,
+NULLIF(minsalary, '-999') as minsalary,
+NULLIF(maxsalary, '-999') as maxsalary,
+NULLIF(minhrlysalary, '-999') as minhrlysalary,
+NULLIF(maxhrlysalary, '-999') as maxhrlysalary,
+NULLIF(payfrequency, 'na') as payfrequency,
+NULLIF(salarytype, 'na') as salarytype,
+NULLIF(jobhours, 'na') as jobhours,
+NULLIF(taxterm, 'na') as taxterms,
+NULLIF(internship, '-999') as internship,
+NULLIF(subocc, 'na') as subocc
+
+FROM ads_main_2007
+
+
+
+
+---------- FUTURE CLEANING IDEAS ------------------------
+
+----- SEPARATE DATE COLUMNS------------------------------
+--LEFT("jobdate", 4) AS "cleaned_year",
+--SUBSTR("jobdate", 6, 2) AS "cleaned_month",
+--RIGHT("jobdate", 2) AS "cleaned_day",
+
+----- REMOVE NON VALID------------------------------
+--WHERE "salary" != '-999' AND "cip" != 'na'
