@@ -1,0 +1,95 @@
+---
+title: "openjobs profile"
+author: "Eirik Iversen"
+date: "4/2/2019"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, include = FALSE}
+#load data and libs 
+library(dplyr)
+library(DataExplorer)
+library(data.table)
+library(lubridate)
+ojobs <-  fread('../../../data/stem_edu/working/allOpenjobsParsed.csv')
+```
+
+# Introduction, missingness 
+```{r}
+#missingness plots
+introduce(ojobs)
+plot_intro(ojobs)
+plot_missing(ojobs)
+```
+
+Count # of Missing or NA or Empty 
+```{r}
+na_tab <- apply(ojobs, 2, function(x) {sum(is.na(x)) + sum(x == "",na.rm = T)})
+na_tab 
+#percent output
+(t(na_tab) / nrow(ojobs))
+```
+
+# Investigation of date validity
+
+```{r}
+# How many rows have values that don't make sense?
+tab <- data.frame(table(ojobs$datePosted))
+barplot(height = tab$Freq, names.arg = tab$Var1)
+#note that 3/17/2016, 09/09/2016, and 4/22/2016 have unusually high counts
+#let's look at the distribution for those months
+```
+
+3 dates in particular seem to have unusually high counts. We'll look at the distribution for each of these months to see what is happening.
+
+```{r}
+march <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-03-01'),]
+march <- march[as_date(march$datePosted) < as_date('2016-03-31'),]
+m_tab <- data.frame(table(march$datePosted))
+barplot(height = m_tab$Freq, names.arg = m_tab$Var1)
+
+april <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-04-01'),]
+april <- april[as_date(april$datePosted) < as_date('2016-04-30'),]
+a_tab <- data.frame(table(april$datePosted))
+barplot(height = a_tab$Freq, names.arg = a_tab$Var1)
+
+sep <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-09-01'),]
+sep <- sep[as_date(sep$datePosted) < as_date('2016-09-30'),]
+s_tab <- data.frame(table(sep$datePosted))
+barplot(height = s_tab$Freq, names.arg = s_tab$Var1)
+```
+
+It seems that the data for each of these 3 months has been collected on one day. This might be due to error in data collection, but will not matter in analysis unless we are looking at the daily level for information from 2016. We will most likely be dealing with 2017 information, so we can leave this be. 
+
+# Length of unique identifiers
+each openjobs identifier is made of 32 characters. If we multiply that by the number of observations, then that 
+*should* be the number of characters in the column. Let's count the number of characters in the column to double check:
+```{r,echo = TRUE,include =TRUE}
+len <- length(unique(ojobs$rawdata_id))
+32*len
+32*len == (sum(as.numeric(lapply(ojobs$rawdata_id, nchar))))
+```
+
+# Duplicates
+by dropping the unique identifier from the data, we can search for duplicates. A duplicate here is a row that is identical to another row in all columns
+other than identifier
+```{r}
+data_dup <- ojobs[,-1]
+data_dup <- data_dup[duplicated(data_dup)]
+nrow(data_dup)
+# we see that there are 13555 duplicates overall
+cleaned_data <- ojobs %>% distinct(jobLocation_geo_latitude, jobLocation_geo_longitude, normalizedTitle_onetCode,
+                                  normalizedTitle_onetName, datePosted, responsibilities, experienceRequirements,
+                                  jobDescription, hiringOrg, .keep_all = TRUE)
+#check to see the right amount of rows removed
+nrow(ojobs) - nrow(cleaned_data)
+```
+There are 13,555 duplicate rows in the data, which is fairly small. These duplicates could be postings for multiple openings of the same position, so we decide not to remove these.
+
+
