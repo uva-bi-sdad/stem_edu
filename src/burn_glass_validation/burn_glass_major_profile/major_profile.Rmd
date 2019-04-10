@@ -1,0 +1,94 @@
+---
+title: "major_profile"
+author: "Eirik Iversen"
+date: "4/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library(DataExplorer)
+library(dplyr)
+library(magrittr)
+library(data.table)
+library(ggplot2)
+library(sdalr)
+library(DBI)
+```
+
+
+```{r load data}
+con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "eiriki", pass = "eiriki")
+major_query <- "SELECT * FROM \"ads_major\" WHERE LEFT(\"jobdate\", 7) = \'2017-07\'"
+ads_major_0717 <- as.data.table(dbGetQuery(con, major_query))
+#save RDS giving an error, probably file permission issues
+#don't run this set wd
+#setwd("~/git/lab/stem_edu/data/stem_edu/working/BGexplorevalidate")
+#saveRDS(ads_certs_0717, "./ads_certs_0717.RDS")
+```
+
+```{r dataexplorer}
+overall <- melt(DataExplorer::introduce(ads_major_0717))
+colnames(overall) <- c("Metric", "Value")
+knitr::kable(overall)
+missing <- DataExplorer::profile_missing(ads_major_0717)
+colnames(missing) <- c("Column", "# Missing", "% Missing")
+knitr::kable(missing)
+```
+
+```{r uniqueID}
+### Uniqueness of Unique ID
+
+#IDs that appear more than once
+dupejobids <- ads_major_0717 %>% dplyr::group_by(bgtjobid) %>% dplyr::summarise(count = dplyr::n()) %>% dplyr::filter(count > 1)
+
+#Multi-appearance ID by date
+dupecount <- ads_major_0717[bgtjobid %in% dupejobids$bgtjobid, c("bgtjobid", "jobdate")] %>% group_by(bgtjobid, jobdate) %>% summarise(count = n())
+
+nonuniqueIDs <- nrow(dupejobids) - nrow(dupecount)
+cat(paste(nonuniqueIDs, "unique job ids have multiple dates associated with them.") )
+```
+
+## HISTOGRAMS
+
+Job Date
+```{r jobdate hist}
+##Job Date
+values <-  ads_major_0717[!is.na(lubridate::as_date(jobdate)), lubridate::as_date(jobdate)]
+unique_values <- length(unique(values))
+frequencies <- as.data.table(table( values))
+ggplot(frequencies, aes(values, N)) +
+  geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+  ggtitle(paste("Job Date", "Value Distribution")) +
+  xlab("Job Date") +
+  ylab("N") +
+  theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Major is a text field so let's look for empty and missing strings
+```{r cip hist, echo = TRUE, inclue = TRUE}
+### Certification 
+maj <- ads_major_0717$stdmajor
+sum(is.na(maj)) + sum(maj == '') + sum(maj == 'na') / length(maj)
+
+```
+
+Major is about 72.5% missing
+
+Salary
+```{r salary hist}
+### Salary
+values <-  ads_major_0717[salary >0, salary]
+unique_values <- length(unique(values))
+frequencies <- as.data.table(table( values))
+ggplot(frequencies, aes(as.integer(values)/1000, N)) +
+  geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+  ggtitle(paste("Salary (thousands)", "Value Distribution")) +
+  xlab("Salary") +
+  ylab("N") +
+  theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
