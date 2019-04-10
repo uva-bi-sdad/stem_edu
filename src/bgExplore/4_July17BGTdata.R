@@ -47,22 +47,49 @@ ggplot2::ggplot(join_shape_ct) +
   geom_sf(mapping = aes(fill = GOorg)) +
   geom_sf_text(mapping = aes(label = count))
 
-map <- leaflet(join_shape_ct) %>%
+join_shape_ct$popup <- paste(join_shape_ct$Locations, join_shape_ct$count)
+
+
+# ------------------------------------------------------------------------------------
+
+##LEAFLET PLOTS
+
+palette <- colorNumeric("YlOrRd", domain = log(join_shape_ct$count), na.color = "#FFFFFF")
+
+leaflet(join_shape_ct) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
   addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
               opacity = 1.0, fillOpacity = 0.5,
-              fillColor = ~colorQuantile("YlOrRd", count)(count),
+              fillColor = ~palette(log(count)),
               highlightOptions = highlightOptions(color = "white", weight = 2,
                                                   bringToFront = TRUE),
-              popup = ~htmltools::htmlEscape(Locations, as.character(count))) #%>%
-  addLegend(pal = colorQuantile("YlOrRd", count), values = ~count)
+              popup = ~htmltools::htmlEscape(popup)) %>%
+  addLegend(pal =  palette, values = ~log(count), labels = ~count, title = "Jobs", opacity = 0.5)
 
-qpal <- colorQuantile("RdYlBu", join_shape_ct$count, n = 5)
 
-map %>%
-  addPolygons(stroke = FALSE, smoothFactor = 0.2,
-              color = ~qpal(count)
-  ) %>%
-  addLegend(pal = qpal, values = ~count)
+#saveRDS(join_shape_ct, "data/stem_edu/working/BGexplorevalidate/BG_join_shape_ct.RDS")
+#saveRDS(joined, "data/stem_edu/working/BGexplorevalidate/BG_join_point.RDS")
+
+# ------------------------------------------------------------------------------------
+openjoinshapect <- readRDS("data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_join_shape_ct.RDS")
+setdiff(colnames(openjoinshapect), colnames(join_shape_ct))
+head(openjoinshapect)
+st_join(openjoinshapect, join_shape_ct, join = st_equals_exact)
+
+openjoinshapect %>% filter(NAMENAME == "Wythe")
+join_shape_ct %>% filter(NAMENAME == "Wythe")
+
+BGTcount <- join_shape_ct %>% select(GOorg, count) %>% as.data.frame() %>% select(-geometry)
+OJcount <- openjoinshapect %>% select(GOorg, count) %>% as.data.frame() %>% select(-geometry)
+
+
+test <- left_join(BGTcount, OJcount, by = c("GOorg" = "GOorg")) %>%
+  mutate(diff = count.x - count.y) %>%
+  group_by(GOorg) %>%
+  summarise(bgt = sum(count.x),
+            oj = sum(count.y))
+
+# ------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------
 
