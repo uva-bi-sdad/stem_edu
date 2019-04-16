@@ -33,12 +33,8 @@ testthat::expect_true(nrow(zip_files) == 649)
 
 ## SPLIT ZIP FILES BY TABLE NAME
 zip_split <- split(zip_files$zip_p, zip_files$table)
-zip_certs <- unlist(zip_split$Certs)
-zip_cip <- unlist(zip_split$CIP)
 zip_main <- unlist(zip_split$Main)
 zip_skill <- unlist(zip_split$Skill)
-zip_degree <- unlist(zip_split$Degree)
-zip_major <- unlist(zip_split$Major)
 
 zip_mains <- split(zip_main, rep(1:9,each=12))
 
@@ -49,139 +45,138 @@ con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = 
 ### ZIP MAIN
 datalist = list()
 
+ for (f in zip_mains$`1`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2007" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2007mainsize.RDS")
 
-# for (f in zip_mains$`1`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2007" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2007mainsize.RDS")
+ for (f in zip_mains$`2`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2010" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2010mainsize.RDS")
 
-# for (f in zip_mains$`2`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2010" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2010mainsize.RDS")
-#
-# for (f in zip_mains$`3`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2011" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2011mainsize.RDS")
-#
-# for (f in zip_mains$`4`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2012" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2012mainsize.RDS")
-#
-# for (f in zip_mains$`5`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2013" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2013mainsize.RDS")
-#
-# for (f in zip_mains$`6`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2014" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2014mainsize.RDS")
-#
-# for (f in zip_mains$`7`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2015" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2015mainsize.RDS")
-#
-# for (f in zip_mains$`8`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2016" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2016mainsize.RDS")
-#
-# for (f in zip_mains$`9`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_main_2017" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2017mainsize.RDS")
+ for (f in zip_mains$`3`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2011" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2011mainsize.RDS")
+
+ for (f in zip_mains$`4`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2012" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2012mainsize.RDS")
+
+ for (f in zip_mains$`5`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2013" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2013mainsize.RDS")
+
+ for (f in zip_mains$`6`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2014" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2014mainsize.RDS")
+
+ for (f in zip_mains$`7`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2015" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2015mainsize.RDS")
+
+ for (f in zip_mains$`8`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2016" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2016mainsize.RDS")
+
+ for (f in zip_mains$`9`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_main_2017" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/check2/2017mainsize.RDS")
 

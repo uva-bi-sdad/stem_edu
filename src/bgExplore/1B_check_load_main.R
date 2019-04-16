@@ -39,6 +39,10 @@ dbdata <- rbind(db07, db10, db11, db12, db13, db14, db15, db16, db17)
 
 dbdata <- dplyr::arrange(dbdata, left)
 
-compare <- tibble::tibble(rdata, dbdata)
-compare <- dplyr::mutate(.data = compare, diff = compare$rdata[,1] - compare$dbdata$count)
+compare1 <- tibble::tibble(rdata, dbdata)
+compare2 <- dplyr::mutate(.data = compare, diff = compare$rdata[,1] - compare$dbdata$count)
+
+saveRDS(compare1, "data/stem_edu/working/BGexplorevalidate/sizechecks/check2/maincompare1.RDS")
+saveRDS(compare2, "data/stem_edu/working/BGexplorevalidate/sizechecks/check2/maincompare2.RDS")
+
 
