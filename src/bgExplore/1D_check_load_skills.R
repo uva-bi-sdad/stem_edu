@@ -1,7 +1,7 @@
 
 ## zip objects
 
-skillsize <- readRDS("data/stem_edu/working/BGexplorevalidate/skill_zip_sizes.RDS")
+#skillsize <- readRDS("./data/stem_edu/working/BGexplorevalidate/sizechecks/check1/skill_zip_sizes.RDS")
 
 ##DATABASE
 
@@ -59,3 +59,7 @@ dbskillsize <- rbind(dbskillsize07, dbskillsize10, dbskillsize11, dbskillsize12,
 dbskillsize <- dplyr::arrange(dbskillsize, left)
 
 sum(dbskillsize$count) - sum(skillsize)
+
+saveRDS(dbskillsize, "data/stem_edu/working/BGexplorevalidate/sizechecks/check2/dbskillsize.RDS")
+
+

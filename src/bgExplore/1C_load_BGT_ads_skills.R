@@ -33,12 +33,7 @@ testthat::expect_true(nrow(zip_files) == 649)
 
 ## SPLIT ZIP FILES BY TABLE NAME
 zip_split <- split(zip_files$zip_p, zip_files$table)
-zip_certs <- unlist(zip_split$Certs)
-zip_cip <- unlist(zip_split$CIP)
-zip_main <- unlist(zip_split$Main)
 zip_skill <- unlist(zip_split$Skill)
-zip_degree <- unlist(zip_split$Degree)
-zip_major <- unlist(zip_split$Major)
 
 zip_skills <- split(zip_skill, rep(1:9,each=12))
 
@@ -46,109 +41,115 @@ zip_skills <- split(zip_skill, rep(1:9,each=12))
 con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "dnair1", pass = "dnair1")
 
 
-### ZIP MAIN
-# datalist = list()
-#
-# for (f in zip_skills$`1`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_skills_2007" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2007skillsize.RDS")
+### ZIP SKILLS 2007
+ datalist = list()
 
-# datalist = list()
-#
-# for (f in zip_skills$`2`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_skills_2010" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2010skillsize.RDS")
-#
-# datalist = list()
-#
-# for (f in zip_skills$`3`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_skills_2011" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2011skillsize.RDS")
-#
-# datalist = list()
-#
-# for (f in zip_skills$`4`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_skills_2012" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2012skillsize.RDS")
-#
-# datalist = list()
-#
-# for (f in zip_skills$`5`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_skills_2013" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2013skillsize.RDS")
-#
-# datalist = list()
-#
-# for (f in zip_skills$`6`) {
-#   print(paste("Reading", f))
-#   data <- fread(cmd = paste("zcat", f))
-#   colnames(data) <- tolower(colnames(data))
-#   print(sum(nrow(data)))
-#   x <- list()
-#   x$f <- nrow(data)
-#   datalist[f] <- x
-#   print(paste("Writing", f))
-#   dbWriteTable(con, "ads_skills_2014" , data, row.names = F, append = TRUE)
-# }
-# y = do.call(rbind, datalist)
-# sum(y[,1])
-# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2014skillsize.RDS")
+ for (f in zip_skills$`1`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_skills_2007" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2007skillsize.RDS")
 
+ ### ZIP SKILLS 2010
+ datalist = list()
+
+ for (f in zip_skills$`2`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_skills_2010" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2010skillsize.RDS")
+
+ ### ZIP SKILLS 2011
+ datalist = list()
+
+ for (f in zip_skills$`3`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_skills_2011" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2011skillsize.RDS")
+
+ ### ZIP SKILLS 2012
+ datalist = list()
+
+ for (f in zip_skills$`4`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_skills_2012" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2012skillsize.RDS")
+
+ datalist = list()
+
+ ### ZIP SKILLS 2013
+ for (f in zip_skills$`5`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_skills_2013" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2013skillsize.RDS")
+
+ ### ZIP SKILLS 2014
+ datalist = list()
+
+ for (f in zip_skills$`6`) {
+   print(paste("Reading", f))
+   data <- fread(cmd = paste("zcat", f))
+   colnames(data) <- tolower(colnames(data))
+   print(sum(nrow(data)))
+   x <- list()
+   x$f <- nrow(data)
+   datalist[f] <- x
+   print(paste("Writing", f))
+   dbWriteTable(con, "ads_skills_2014" , data, row.names = F, append = TRUE)
+ }
+ y = do.call(rbind, datalist)
+ sum(y[,1])
+ saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2014skillsize.RDS")
+
+### ZIP SKILLS 2015
 datalist = list()
 
 for (f in zip_skills$`7`) {
@@ -166,6 +167,7 @@ y = do.call(rbind, datalist)
 sum(y[,1])
 saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2015skillsize.RDS")
 
+### ZIP SKILLS 2016
 datalist = list()
 
 for (f in zip_skills$`8`) {
@@ -183,6 +185,7 @@ y = do.call(rbind, datalist)
 sum(y[,1])
 saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2016skillsize.RDS")
 
+### ZIP SKILLS 2017
 datalist = list()
 
 for (f in zip_skills$`9`) {

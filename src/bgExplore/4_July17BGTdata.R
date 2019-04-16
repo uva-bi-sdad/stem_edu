@@ -3,8 +3,8 @@ library(sf)
 library(dplyr)
 
 # Import datasets - Economic Regions + BGT
-econ_va_counties <- read_rds("data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
-query_0717 <- read_rds("data/stem_edu/working/BGexplorevalidate/BGT_main_0717.RDS")
+econ_va_counties <- readRDS("data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
+query_0717 <- readRDS("data/stem_edu/working/BGexplorevalidate/BGT_main_0717.RDS")
 
 # ------------------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ bgt_point <- sf::st_as_sf(x = query_0717_min999,
                         crs = st_crs(econ_va_counties))
 
 # determining jobs that are within a va county or not
-bgt_point$within <- st_within(bgt_point$geometry, econ_va_counties_sf$geometry) %>% lengths > 0
+bgt_point$within <- st_within(bgt_point$geometry, econ_va_counties$geometry) %>% lengths > 0
 joined <- st_join(bgt_point, econ_va_counties)
 joined_within <- joined %>% filter(within == TRUE) # removes 1314 observations
 
@@ -26,7 +26,6 @@ joined_within <- joined %>% filter(within == TRUE) # removes 1314 observations
 join_cty_ct <- joined_within %>% group_by(NAME) %>% summarise(count = n())
 econ_va_counties$COUNTYFP <- as.integer(econ_va_counties$COUNTYFP)
 #econ_va_counties <- econ_va_counties %>% filter(`County/City` != "City")
-join_cty_ct <- join_cty_ct %>% filter(!is.na(fipscounty))
 #join_shape_ct <- st_join(econ_va_counties, join_cty_ct, suffix = c("COUNTYFP" = "fipscounty"))
 join_shape_ct <- st_join(econ_va_counties, join_cty_ct, suffix = c("NAME" = "NAME"))
 
@@ -38,24 +37,66 @@ plot(join_shape_ct["count"])
 text(join_shape_ct["count"])
 
 # ------------------------------------------------------------------------------------
+library(ggplot2)
+library(leaflet)
 
 # Mucking around with buckets
 join_shape_ct$bucket <- (cut(x = join_shape_ct$count, breaks = c(0, 100, 200, 300, 400, 500, 1000, 16000)))
 plot(join_shape_ct["bucket"])
-ggplot(join_shape_ct) +
+ggplot2::ggplot(join_shape_ct) +
   geom_sf(mapping = aes(fill = GOorg)) +
   geom_sf_text(mapping = aes(label = count))
-library(leaflet)
+
+join_shape_ct$popup <- paste(join_shape_ct$Locations, join_shape_ct$count)
+
+
+# ------------------------------------------------------------------------------------
+
+##LEAFLET PLOTS
+
+palette <- colorNumeric("YlOrRd", domain = log(join_shape_ct$count), na.color = "#FFFFFF")
+
 leaflet(join_shape_ct) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
   addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
               opacity = 1.0, fillOpacity = 0.5,
-              fillColor = ~colorQuantile("YlOrRd", count)(count),
+              fillColor = ~palette(log(count)),
               highlightOptions = highlightOptions(color = "white", weight = 2,
-                                                  bringToFront = TRUE))
+                                                  bringToFront = TRUE),
+              popup = ~htmltools::htmlEscape(popup)) %>%
+  addLegend(pal =  palette, values = ~log(count), labels = ~count, title = "Jobs", opacity = 0.5)
+
+
+#saveRDS(join_shape_ct, "data/stem_edu/working/BGexplorevalidate/BG_join_shape_ct.RDS")
+#saveRDS(joined, "data/stem_edu/working/BGexplorevalidate/BG_join_point.RDS")
+
+# ------------------------------------------------------------------------------------
+openjoinshapect <- readRDS("data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_join_shape_ct.RDS")
+setdiff(colnames(openjoinshapect), colnames(join_shape_ct))
+head(openjoinshapect)
+st_join(openjoinshapect, join_shape_ct, join = st_equals_exact)
+
+openjoinshapect %>% filter(NAMENAME == "Wythe")
+join_shape_ct %>% filter(NAMENAME == "Wythe")
+
+BGTcount <- join_shape_ct %>% select(GOorg, count) %>% as.data.frame() %>% select(-geometry)
+OJcount <- openjoinshapect %>% select(GOorg, count) %>% as.data.frame() %>% select(-geometry)
+
+
+test <- left_join(BGTcount, OJcount, by = c("GOorg" = "GOorg")) %>%
+  mutate(diff = count.x - count.y) %>%
+  group_by(GOorg) %>%
+  summarise(bgt = sum(count.x),
+            oj = sum(count.y))
+
+# ------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------
 
 (hist(join_shape_ct$count[count < 2000]))
+
+joined_within %>% group_by(NAME, fipscounty, Locations, `County/City`) %>% summarise(count = n()) %>% filter(Locations == "Fairfax")
+joined_within %>% group_by(city, state, county, `County/City`) %>% summarise(count = n()) %>% View()
 
 join_shape_ct %>% filter(NAMENAME == "Fairfax")
 econ_va_counties %>% filter(NAME == "Fairfax")
