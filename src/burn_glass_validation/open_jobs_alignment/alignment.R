@@ -2,6 +2,7 @@
 library(data.table)
 library(sf)
 library(dplyr)
+library(stringr)
 
 
 # Import datasets - Economic Regions + BGT
@@ -11,37 +12,26 @@ openjobs <- fread('data/stem_edu/working/allOpenjobsParsed.csv')
 # ------------------------------------------------------------------------------------
 
 # Filter out all missing geographies
-open_coords <- select(openjobs, 'jobLocation_geo_longitude','jobLocation_geo_latitude')
-names(open_coords) <- c('lon','lat')
-open_coords <- open_coords[complete.cases(open_coords)]
+open_jobs <- openjobs[complete.cases(openjobs$jobLocation_geo_longitude)]
 #84,734 jobs removed for a total of 761,879
 
 # convert the job geographies to sf dataframe using va counties geography CRS
-open_point <- sf::st_as_sf(x = open_coords,
-                          coords = c("lon", "lat"),
+open_point <- sf::st_as_sf(x = open_jobs,
+                           coords = c('jobLocation_geo_longitude','jobLocation_geo_latitude'),
                           crs = st_crs(econ_va_counties))
 
 # determining jobs that are within a va county or not
-# this messes up - takes too long to run? econ_va_counties_sf not found
+# this takes a long time to run
 open_point$within <- st_within(open_point$geometry, econ_va_counties$geometry) %>% lengths > 0
-
-#load back in the data
-open_point <- readRDS('./data/stem_edu/working/open_points.RDS')
-#attach back to regular data
-open_prev <- openjobs[!is.na(openjobs$jobLocation_geo_latitude)]
-open_prev <- sf::st_as_sf(x = open_prev,
-                           coords = c('jobLocation_geo_longitude','jobLocation_geo_latitude'),
-                           crs = st_crs(econ_va_counties))
-open_new <- cbind(open_prev,open_point$within)
-open_point <- open_new
+#SAVE OUT TO FILE IF U RUN ABOVE LINE, otherwise use readRDS
+#open_point <- readRDS('./data/stem_edu/working/open_point.RDS')
 joined <- st_join(open_point, econ_va_counties)
 #filter out the correct dates
 library(lubridate)
-x <- filter(as.Date(joined$datePosted) >= "2017-07-01")
+joined <- filter(joined,as.Date(joined$datePosted) >= "2017-07-01")
 
-#rename the within column
-colnames(joined)[colnames(joined)=="open_point.within"] <- "within"
-joined_within <- joined %>% filter(within == TRUE) # removes 1855 observations
+#
+joined_within <- joined %>% filter(within == TRUE) # removes 101 observations
 
 # aggregate jobs per county
 #join_cty_ct <- joined_within %>% group_by(fipscounty) %>% summarise(count = n())
@@ -70,6 +60,39 @@ leaflet(join_shape_ct) %>% addTiles() %>%
                 style = list("font-weight" = "normal", padding = "3px 8px"),
                 textsize = "15px",
                 direction = "auto"))
-ggplot(join_shape_ct) +
-  geom_sf(mapping = aes(fill = GOorg)) +
-  geom_sf_text(mapping = aes(label = count))
+
+######### make new script later
+open_join_shape_ct <-join_shape_ct
+saveRDS(open_join_shape_ct, './data/stem_edu/working/BGexplorevalidate/open_join_shape_ct.RDS')
+
+####new plot for onet
+#onet code grouping- make first two digits
+joined_within$two_dig_onet <- str_extract(joined_within$normalizedTitle_onetCode, "[0-9]{2}")
+join_cty_onet <- joined_within %>% group_by(NAME) %>% summarise(job_count = n())
+join_cty_onet <- joined_within %>% group_by(NAME, two_dig_onet) %>% summarise(onet_count = n())
+
+#get rid of missing onet codes
+join_cty_onet <- join_cty_onet[complete.cases(join_cty_onet$two_dig_onet),]
+
+onet_11 <- filter(join_cty_onet, two_dig_onet == '11')
+join_shape_onet <- st_join(econ_va_counties, onet_11, suffix = c("NAME" = "NAME"))
+
+#plotting onet code 11
+labels <- sprintf(
+  "<strong>%s</strong><br/>%s",
+  join_shape_onet$onet_count, join_shape_onet$NAMELSAD
+) %>% lapply(htmltools::HTML)
+
+leaflet(join_shape_onet) %>% addTiles() %>%
+  addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
+              opacity = 1.0, fillOpacity = 0.5,
+              fillColor = ~colorQuantile("YlOrRd", onet_count)(onet_count),
+              highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                  bringToFront = TRUE),
+              label = labels,
+              labelOptions = labelOptions(
+                style = list("font-weight" = "normal", padding = "3px 8px"),
+                textsize = "15px",
+                direction = "auto"))
+
+#### Find way to add each onet code as a layer in the leaflet plot

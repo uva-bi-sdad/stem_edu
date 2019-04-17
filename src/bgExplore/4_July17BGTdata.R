@@ -1,6 +1,7 @@
 library(data.table)
 library(sf)
 library(dplyr)
+library(readr)
 
 # Import datasets - Economic Regions + BGT
 econ_va_counties <- read_rds("data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
@@ -17,7 +18,7 @@ bgt_point <- sf::st_as_sf(x = query_0717_min999,
                         crs = st_crs(econ_va_counties))
 
 # determining jobs that are within a va county or not
-bgt_point$within <- st_within(bgt_point$geometry, econ_va_counties_sf$geometry) %>% lengths > 0
+bgt_point$within <- st_within(bgt_point$geometry, econ_va_counties$geometry) %>% lengths > 0
 joined <- st_join(bgt_point, econ_va_counties)
 joined_within <- joined %>% filter(within == TRUE) # removes 1314 observations
 
@@ -46,6 +47,10 @@ ggplot(join_shape_ct) +
   geom_sf(mapping = aes(fill = GOorg)) +
   geom_sf_text(mapping = aes(label = count))
 library(leaflet)
+
+open_join_shape_ct <- readRDS('./data/stem_edu/working/BGexplorevalidate/open_join_shape_ct.RDS')
+merge(open_join_shape_ct, join_shape_ct,by = 'geometry')
+
 leaflet(join_shape_ct) %>%
   addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
               opacity = 1.0, fillOpacity = 0.5,
