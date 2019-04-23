@@ -42,7 +42,7 @@ zip_degree <- unlist(zip_split$Degree)
 zip_major <- unlist(zip_split$Major)
 
 # Connect to database
-con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "dnair1", pass = "dnair1")
+con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "dtn2ep", pass = "dtn2ep")
 
 # Drop table if you want to start empty
 #dbGetQuery(con, "DROP TABLE IF EXISTS CIP")

@@ -72,7 +72,8 @@ leaflet(join_shape_ct) %>%
 
 # ------------------------------------------------------------------------------------
 openjoinshapect <- readRDS("data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_join_shape_ct.RDS")
-setdiff(colnames(openjoinshapect), colnames(join_shape_ct))
+openjoinshapect <- sf::st_as_sf(openjoinshapect)
+#setdiff(colnames(openjoinshapect), colnames(join_shape_ct))
 head(openjoinshapect)
 st_join(openjoinshapect, join_shape_ct, join = st_equals_exact)
 

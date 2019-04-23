@@ -13,7 +13,7 @@ econ_reg_orgs <- readxl::read_excel("data/stem_edu/original/BurningGlassData/Eco
 econ_reg_locs <- readxl::read_excel("data/stem_edu/original/BurningGlassData/Economic Regions.xlsx", sheet = "2019RegionsLoc")
 
 # Import US & VA County Geographies
-con <- sdalr::con_db(dbname = "sdad", host = "127.0.0.1", port = 5433, user = "anonymous", pass = "anonymous")
+con <- sdalr::con_db(dbname = "sdad", host = "127.0.0.1", port = 5433, user = "dtn2ep", pass = "dtn2ep")
 sql <- "SELECT * FROM geospatial$census_tl.tl_2017_us_county WHERE \"STATEFP\" = \'51\'"
 va_counties <- st_read(con, query = sql)
 plot(va_counties["COUNTYFP"])
