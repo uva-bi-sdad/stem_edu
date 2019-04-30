@@ -24,7 +24,7 @@ open_point <- sf::st_as_sf(x = open_jobs,
 # this takes a long time to run
 open_point$within <- st_within(open_point$geometry, econ_va_counties$geometry) %>% lengths > 0
 #SAVE OUT TO FILE IF U RUN ABOVE LINE, otherwise use readRDS
-#open_point <- readRDS('./data/stem_edu/working/open_point.RDS')
+open_point <- readRDS('./data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS')
 joined <- st_join(open_point, econ_va_counties)
 #filter out the correct dates
 library(lubridate)
