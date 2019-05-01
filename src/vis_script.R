@@ -8,8 +8,7 @@ library(readxl)
 
 #import shapes and attribute data
 states <- states(cb = FALSE, resolution = "500k", year = NULL)
-SEflow <- read_excel("data/stem_edu/original/visualization_proj_s&edocinflow.xlsx",
-                     sheet = "Sheet2")
+SEflow <- read_excel("data/stem_edu/original/visualization_proj_s&edocinflow.xlsx", sheet = "Sheet2")
 #clean and combine data
 states <- st_as_sf(states)
 statedocsflow <- merge(x = states, y = SEflow, by.x = "NAME", by.y = "State")
@@ -24,7 +23,6 @@ pal2 <- colorNumeric(
   domain = statedocsflow$`Non-Doctorate Flow`)
 
 #create color palette
-
 scale_range <- c(-300:300)
 
 pal1 <- colorNumeric(

@@ -28,7 +28,18 @@ ORDER BY "occfam"
 
 ```
 
-THis is what it did.. 
+
+
+```{sql connection = con}
+Select  "occfam", "occfamname", COUNT( DISTINCT "skillclusterfamily") as "skf_count", COUNT(a.bgtjobid) as "job_count"
+FROM (SELECT * FROM ads_main_2017 WHERE "mo" = 7 AND "occfam" ) a 
+LEFT JOIN (SELECT  * FROM ads_skills_2017 WHERE "skillclusterfamily" != 'na') b on a.bgtjobid = b.bgtjobid 
+GROUP BY "occfam", "occfamname" 
+ORDER BY "occfam"
+```
+
+
+
 
 ```{sql connection = con}
 Select  "occfam", "occfamname", "skillclusterfamily", COUNT(DISTINCT b.skill) as "skillcount", COUNT(a.bgtjobid) as "jobcount"

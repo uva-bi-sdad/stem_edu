@@ -1,0 +1,231 @@
+---
+title: "BGT technical document"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(DataExplorer)
+library(dplyr)
+library(magrittr)
+library(data.table)
+library(ggplot2)
+library(sdalr)
+library(DBI)
+
+```
+
+```{r}
+main <- readRDS('~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BGT_main_0717.RDS')
+
+```
+
+
+## Burning Glass Background
+
+#### Literature Background?
+TBD
+#### Company Background
+
+#### Data Inventory
+
+We have `r nrow(mtcars)` cars in our dataset. 
+
+#### Data Profiling
+
+```{r}
+main <- select(main, "bgtjobid",'jobdate', 'occfam', 'occfamname', 'employer', 'city', 
+               'state', 'county', 'fipsstate', 'fipscounty', 'fips', 'lat', 'lon')
+main <- as.data.table(main)
+overall <- melt(DataExplorer::introduce(main))
+colnames(overall) <- c("Metric", "Value")
+
+missing <- DataExplorer::profile_missing(main)
+colnames(missing) <- c("Column", "# Missing", "% Missing")
+
+knitr::kable(overall)
+knitr::kable(missing)
+```
+
+```{r}
+datalist = list()
+for (i in colnames(main)){
+  evalrow <- tibble::tibble(
+    "Column" = i,
+    "Example" = head(main[[i]], 1),
+    "Class" = class(main[[i]]),
+    "Blanks" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE),
+    "NA" = sum(is.na(x = main[[i]])),
+    "na" = sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE),
+    "Unique" = length(unique(main[[i]]))
+    )
+  datalist[[i]] <- evalrow
+}
+
+evaluate = do.call(rbind, datalist)
+evaluate
+
+
+main <- main[complete.cases(main)]
+
+```
+
+
+
+
+```{r}
+### Uniqueness of Unique ID
+
+#IDs that appear more than once
+dupejobids <- main %>% dplyr::group_by(bgtjobid) %>% dplyr::summarise(count = dplyr::n()) %>% dplyr::filter(count > 1)
+
+#Multi-appearance ID by date
+dupecount <- main[bgtjobid %in% dupejobids$bgtjobid, c("bgtjobid", "jobdate")] %>% group_by(bgtjobid, jobdate) %>% summarise(count = n())
+
+nonuniqueIDs <- nrow(dupejobids) - nrow(dupecount)
+cat(paste(nonuniqueIDs, "unique job ids have multiple dates associated with them.") )
+```
+
+
+#### Exploratory Data Analysis
+
+## HISTOGRAMS
+
+Job Date
+```{r jobdate hist}
+
+#main <- main[occfam != "na" & occfamname != "na"]
+
+datalist = list()
+for (i in colnames(main)){
+  evalrow <- tibble::tibble(
+    "Column" = i,
+    "Example" = head(main[[i]], 1),
+    "Class" = class(main[[i]]),
+    "Blanks" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE),
+    "NA" = sum(is.na(x = main[[i]])),
+    "na" = sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE)
+    )
+  datalist[[i]] <- evalrow
+}
+
+evaluate = do.call(rbind, datalist)
+
+
+remove(i)
+frequencies <- list()
+plotfreq <- list()
+for (i in colnames(main[,c(2,4,5,6,8, 12, 13)])) {
+  print(i)
+  #print(length(unique(main[[i]])))
+  frequencies[[i]] <- as.data.table(table(main[[i]]))
+  #print(nrow(frequencies[[i]]))
+  
+  ifelse(nrow(frequencies[[i]]) > 50, 
+         yes = plotfreq[[i]] <- head(arrange(frequencies[[i]], desc(N)), 20),
+         no = plotfreq[[i]] <- frequencies[[i]])
+  
+  #print(plotfreq[[i]])
+    }
+remove(i)
+for (i in seq_along(plotfreq)) {
+  plot <-  ggplot(plotfreq[[i]], aes(V1, N)) +
+    geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+    ggtitle(paste(Hmisc::capitalize(names(plotfreq[i])), ": Top Value Distribution")) + 
+    xlab(Hmisc::capitalize(names(plotfreq[i]))) + ylab("N") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    coord_flip()
+
+  print(plot)
+}    
+
+evaluate
+
+
+```
+
+
+
+```{r}
+# values <-  main[!is.na((occfam))&&!dataplumbr::is_blank(occfam), (occfam)]
+# unique_values <- length(unique(values))
+# frequencies <- as.data.table(table( values))
+# ggplot(frequencies, aes(values, N)) +
+#   geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+#   ggtitle(paste("OccFam", "Value Distribution")) +
+#   xlab("Occupation Family Code") +
+#   ylab("N") +
+#   theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1))
+# 
+# 
+# types <- sapply(main, class)
+# 
+# plot_bar(main) # jobdate, occfam, occfamname, state
+# plot_histogram(main) #fips, fipscounty, fipsstate, lat, lon
+```
+
+
+
+Employer, occfam, and occfamname are text fields so let's look for empty and missing strings
+```{r cip hist, echo = TRUE, inclue = TRUE}
+### Certification 
+emp <- main$employer
+(sum(is.na(emp)) + sum(emp == 'na') +sum(emp == '')) / length(emp)
+
+
+occ <- main$occfam
+(sum(is.na(occ)) + sum(occ == 'na') +sum(occ == '')) / length(occ)
+
+
+occname <- main$occfamname
+(sum(is.na(occname)) + sum(occname == 'na') +sum(occname == '')) / length(occname)
+
+```
+Employer is around 21% missing (filled with 'na'), occfam and occfamname are around 3% missing
+
+
+#### Maps
+
+#### Validation
+
+## Questions 
+
+* If occfam is missing, is occfamname always missing as well?
+* what naming standardizations have been done to the employer column? 
+* How does burning glass handle subsidiaries?
+
+
+
+#########################
+
+Data Inventory
+At the data inventory stage, potential data sources (identified in the data discovery stage) are further screened to determine if they would support the research questions. Specifically, the screening process involves assessing data sources on six factors including purpose, method, description, timeliness, selectivity, and accessibility.
+Purpose. Purpose assesses why the data were collected any their intended use by the organization collecting the data.
+Method. Assessment of method examines the methodology used to collect the data (e.g., online survey, paper questionnaire, interview), the level of data (e.g., individual, group, aggregate), and the type of data (e.g., numerical, text, discrete, continuous).
+Description. Describes the data in terms of the general topics captured and timeframe that the data cover (e.g., earliest and latest dates).
+Timeliness. Specifies how often data were collected (e.g., one snapshot, yearly) and when data are available after collection.
+Selectivity. Specifies the population in which the data are intended to represent.
+Accessibility. Describes how the data are accessed in terms of formatting (e.g., API, download) and restrictions to accessibility (e.g., open data, data use agreements, cost to access).
+Data Profiling
+At the data profiling stage, determinations are made in terms of the quality of the data and its utility to research questions.
+Data quality measures. Depending on what research requires, various categories of desirable attributes are needed to be specified for the data.
+Completeness.
+Value validity.
+Consistency.
+Uniqueness.
+Duplication.
+Data structure. Refers to the way in which the data are structured and organized. Data can be messy and not always conducive to statistical analysis so the structure of the data needs to be assessed to identify any issues that might need to be cleaned or transformed/restructured.
+Metadata and provenance. Metadata refers to information about the data. Serving the purpose of providing relevant information pertaining to a particular data element or object, metadata captures elements like unit definitions, unit attribute definitions, semantic confusion, multiple attribute names, and inconsistent attribute formats. In addition, metadata can provide a history of the data, or provenance. Provenance refers to where the data originated, what the data are, and the history of access, transmission, and/or modification in terms of when and by whom.
+Data Preparation
+In prior stages, issues with the data were identified, in the data preparation stage, determinations on what to fix and how are made.
+Cleaning and transformation. Data cleaning refers to the process of fixing or removing data that is incorrect, incomplete, improperly formatted, or duplicated. Data transformation refers to the mapping of original data values into values that are in a more useful format.
+Restructuring. Refers to the process of creating multiple new datasets from the data source that can be more easily analyzed.
+Data Linkage
+In the data linkage stage, elements of a dataset are linked to the same corresponding elements in another dataset (e.g., ID numbers, geolocation, index variables).
+Data Exploration
+In the data exploration stage, the data are analyzed by summarizing main characteristics and depicting them using visual tools (e.g., tables, graphs, dashboards).
+Fitness-for-Use Assessment
+
+
+
