@@ -1,5 +1,6 @@
 ---
 title: "BGT technical document"
+author: "Devika Nair, Vicki Lancaster, Eirik Iverson, Nat Ratcliffe"
 output: html_document
 ---
 
@@ -16,25 +17,24 @@ library(DBI)
 
 ```
 
-```{r}
-main <- readRDS('~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BGT_main_0717.RDS')
+<style>
+  .col2 {
+    columns: 2 200px;         /* number of columns and width in pixels*/
+    -webkit-columns: 2 200px; /* chrome, safari */
+    -moz-columns: 2 200px;    /* firefox */
+  }
+  .col3 {
+    columns: 3 100px;
+    -webkit-columns: 3 100px;
+    -moz-columns: 3 100px;
+  }
+</style>
 
+```{r load_data}
+main <- readRDS('~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BGT_main_0717.RDS')
 ```
 
-
-## Burning Glass Background
-
-#### Literature Background?
-TBD
-#### Company Background
-
-#### Data Inventory
-
-We have `r nrow(mtcars)` cars in our dataset. 
-
-#### Data Profiling
-
-```{r}
+```{r profiling_data}
 main <- select(main, "bgtjobid",'jobdate', 'occfam', 'occfamname', 'employer', 'city', 
                'state', 'county', 'fipsstate', 'fipscounty', 'fips', 'lat', 'lon')
 main <- as.data.table(main)
@@ -44,11 +44,9 @@ colnames(overall) <- c("Metric", "Value")
 missing <- DataExplorer::profile_missing(main)
 colnames(missing) <- c("Column", "# Missing", "% Missing")
 
-knitr::kable(overall)
-knitr::kable(missing)
 ```
 
-```{r}
+```{r profiling_extended}
 datalist = list()
 for (i in colnames(main)){
   evalrow <- tibble::tibble(
@@ -56,22 +54,122 @@ for (i in colnames(main)){
     "Example" = head(main[[i]], 1),
     "Class" = class(main[[i]]),
     "Blanks" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE),
+    "% Blank" = round(100*(sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE)/nrow(main)), 1),
     "NA" = sum(is.na(x = main[[i]])),
+    "% NA" = round(100*(sum(is.na(x = main[[i]]))/nrow(main)), 1),
     "na" = sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE),
+    "% na" = round(100*(sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE)/nrow(main)), 1),
     "Unique" = length(unique(main[[i]]))
     )
   datalist[[i]] <- evalrow
 }
 
 evaluate = do.call(rbind, datalist)
-evaluate
-
 
 main <- main[complete.cases(main)]
-
 ```
 
 
+*CAVEAT I'M ONLY WORKING ON MAIN TABLE I ONLY USED A FEW COLUMNS FROM MAIN*
+
+## Table of Contents
+
+1. Introduction
+2. Burning Glass Technology (BGT)
+	+ Background
+	+ Review of Academic Literature
+	+ Data Review
+		- BGT Job-Ad Data
+		- Data Profiling
+		- Exploratory Data Analysis
+3. Virginia Open Data/Open Jobs Data
+	+ Background
+	+ Data Analysis	
+		- Data Profiling
+		- Exploratory Data Analysis
+4. BGT Job-ad Data Validation
+	+ Validation Results in the Literature
+	+ Comparison with Virginia Open Data/Open Jobs Data
+	+ Conclusions
+5. Recommendations
+
+
+## Introduction
+
+This technical document evaluates the feasibility of using the real-time labor market information (LMI) collected by Burning Glass Technology to supplement survey and administrative data collected by federal and state governments. In contrast to designed and administrative data which have varying lag times between collection and dissemination and are often aggregated over broad occupation categories, the real-time job ads collected by Burning Glass Technology are made available within a day of the job-ad being posted and provide information at a granular level that links skill set requirements to specific occupations within broad occupation categories. In this document, the data are evaluated for use in identifying the skills sets necessary for a job in the skilled technical workforce and how these skill sets and employer demands vary within a state and across the country.
+
+This document reviews the use of the BGT job-ads in academic research highlighting issues with the data and any validation results. It provides the results of profiling and exploratory data analyses, for both the BGT job-ads data and the Virginia Open Data/Open Jobs Data which is used to validate the BGT job-ads data. The document concludes with recommendations regarding fitness-for-use.
+
+
+## Burning Glass Technology
+
+#### Company Background
+
+Burning Glass Technologies is a Boston-headquartered labor market analytics firm founded in 1999, that uses artificial intelligence to collect and host a massive repository of workforce and employment data. Burning Glass collects these data primarily for commercial purposes and secondarily for research purposes. The company markets both the data as a product as well as their consulting expertise on labor market questions to customers across a variety of industries, education institutions, local and regional governments, recruiting and staffing agencies, and corporate firms. 
+
+The company makes use of text-parsing and predictive matching methods to extract and aggregate LMI data, currently from over 40,000 sources (the number of websites has changed over the years). Data has been extracted since 2007 with the exception of 2008 and 2009. Job boards, corporate websites, and other places where job ads are posted are scanned daily and algorithms are used to identify and remove duplicate postings (close to 80% of all postings collected are marked as duplicates.)  From the job-ad, the BGT software extracts the title, occupation, employer, and location, and uses natural-language technology to identify specific occupations, skills, and qualifications from the job description. Both the algorithms used to identify duplicates and scrape websites are proprietary as well as the addresses of the website that are scraped. 
+
+#### Review of Academic Literature
+Favorite articles:
+
+  * Deming, David, and Lisa B. Kahn. "Skill Requirements across Firms and Labor Markets: Evidence from Job Postings for Professionals." Journal of Labor Economics 36, no. S1 (2018): S337-S369.
+  * Liu, Yukun. "Vacancy Postings, Skill Requirements, and the Cross-Sectional Return Predictability."
+  * Jeffrey Clemens, Lisa B. Kahn, and Jonathan Meer.  “Dropouts Need Not Apply: The Minimum Wage and Skill Upgrading.” (Sept 2018) 
+  * Paul Mohnen, Enrico Berkes, and Bledi Taska “Can Skill Mismatch Explain Geographic and Time Variation in the Returns to College Majors? Evidence from Online Job Postings” (2017) Northwestern University
+  * Papageorgiou, Theodore. "Worker sorting and agglomeration economies." McGill University (2017) 
+  * Wardrip, Keith, Stuart T. Andreason, and Mels De Zeeuw. "Uneven Opportunity: Exploring Employers' Educational. Preferences for Middle-Skills Jobs." Special Report of the Federal Reserve Banks of Philadelphia, and Atlanta (2017). 
+  * Fuller, Joseph B., Jennifer Burrowes, Manjari Raman, Dan Restuccia, and Alexis Young. "Bridge the Gap: Rebuilding America's Middle Skills." Report, U.S. Competitiveness Project, Harvard Business School, November 2014
+  * Hershbein, Brad and Lisa B. Kahn (2018) Do Recessions Accelerate Routine-Biased Technological Change? Evidence from Vacancy Postings. American Economic Review 108(7): 1737-1772. **cited all the time
+  * Templin, Thomas, and Lesley Hirsch. 2013. “Do Online Job Ads Predict Hiring?” New York: New York City Labor Market Information Services. ** validation example
+
+#### Data Review
+
+##### BGT Job-Ad Data
+		
+At the data inventory stage, potential data sources (identified in the data discovery stage) are further screened to determine if they would support the research questions. Specifically, the screening process involves assessing data sources on six factors including purpose, method, description, timeliness, selectivity, and accessibility. 
+
+* Purpose: Burning Glass collects this data primarily for commercial purposes and secondarily for research purposes. The company markets both the data as a product as well as their consulting expertise on labor market questions to customers across a variety of industries, such as higher education, local and regional government, recruiting and staffing agencies, and other corporate firms. 
+* Method: Burning Glass scrapes over 40,000 websites to collect data from online job postings. The data is cleaned and deduplicated to present a national view of the labor market landscape across time. 
+* Description: The data is centered around individual positions, with one-to-many related tables for requirements for skills, certification, and education. While the data includes various types of data, the bulk of this data is text-based. 
+* Timeliness: The data is collected in real-time and covers 2007 and 2010-2017. [How soon after collection is data available?]
+* Selectivity: The data is intended to represent the universe of all US jobs posted online over the years mentioned above. 
+* Accessibility: The data is accessible via file-transfer protocol, but a data-sharing agreement may fetter its accessibility outside of the lab staff.
+
+The structure of this data includes 8 discrete columns and 5 continuous ones. 
+
+```{r overall_table}
+knitr::kable(overall)
+```
+
+```{r }
+DataExplorer::plot_str(main)
+```
+
+##### Data Profiling
+
+This section profiles the Burning Glass data, reviews its  quality, and seeks to determine its useability on the following metrics. 
+
+* Completeness.
+* Value validity.
+* Consistency.
+* Uniqueness.
+* Duplication.
+
+Here, we focus on the postings themselves which represent the central table of the data. 
+
+This first table summarizes the postings dataset. Of note, this shows that `r 100*(overall[7,2]/overall[1,2])` % of the data are complete cases. 
+
+This second table breaks down the postings dataset by column using a superficial check for blanks. Of note, this shows that only two columns have blanks: the FIPS county and FIPS value columns are both missing 452 observations. It is important to note, however, this table qualifies missing values as blanks or `r NA ` only.
+
+```{r missing_table}
+knitr::kable(missing)
+```
+
+We would like also to capture invalid values in addition to the missing ones. This last table captures blanks, NA, and 'na' text values (Burning Glass entered). Here we see that more missing values are captured for the County column and new invalid values are captured for the Occupation Family code, Occupation Family Name, Employer, and City columns.
+
+```{r evaluate_table}
+knitr::kable(evaluate)
+```
 
 
 ```{r}
@@ -84,40 +182,44 @@ dupejobids <- main %>% dplyr::group_by(bgtjobid) %>% dplyr::summarise(count = dp
 dupecount <- main[bgtjobid %in% dupejobids$bgtjobid, c("bgtjobid", "jobdate")] %>% group_by(bgtjobid, jobdate) %>% summarise(count = n())
 
 nonuniqueIDs <- nrow(dupejobids) - nrow(dupecount)
-cat(paste(nonuniqueIDs, "unique job ids have multiple dates associated with them.") )
 ```
 
-
-#### Exploratory Data Analysis
-
-## HISTOGRAMS
-
-Job Date
-```{r jobdate hist}
-
-#main <- main[occfam != "na" & occfamname != "na"]
-
-datalist = list()
-for (i in colnames(main)){
-  evalrow <- tibble::tibble(
-    "Column" = i,
-    "Example" = head(main[[i]], 1),
-    "Class" = class(main[[i]]),
-    "Blanks" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE),
-    "NA" = sum(is.na(x = main[[i]])),
-    "na" = sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE)
-    )
-  datalist[[i]] <- evalrow
-}
-
-evaluate = do.call(rbind, datalist)
+We also perform a check for consistency, uniqueness, and duplication, and find that `r nonuniqueIDs ` have multiple dates associated with them. We can be reasonably confident the data is consistent and unique.  
 
 
+##### Exploratory Data Analysis
+
+This section walks through the data, to get ourselves acquainted iwth the data before we perform.. something
+
+These histograms show the top value distribution for each column in the dataset (except the identifier column). It may be interesting to note that the top three coordinates given in the last two plots for the Latitude and Longitude columns, (37.5776, -77.5347), (38.8863, -77.0977), and (38.8882, -77.4552), respectively represent Richmond, Arlington (Clarendon), and Chantilly respectively. 
+
+<div class="col2">
+![Figure 1. BGT Jobs in Virginia during July 2017 by County.](county.png)
+
+
+The employer is not well populated, at 20% of the values appearing at 'na.' As seen below, the 'na' values are the most common value by far, followed by Anthem Blue Cross and Booz Allen Hamilton Inc.
+</div>
+
+<div class="col2">
+Fairfax County is the county with the greatest number of jobs. Richmond and Arlington follow with less than half. 
+
+![Figure 2. BGT Jobs in Virginia during July 2017 by Employer](employer.png)
+</div>
+
+<div class="col2">
+![Figure 3. BGT Jobs in Virginia during July 2017 by Date](jobdate.png)
+
+
+Throughout the month, there does appear to be a few spikes in jobs, the highest of which taking place on July 4, 2017. The next 3 days have comparable job numbers: July 25, July 21, and July 14. 
+</div>
+
+
+```{r jobdate hist, eval=FALSE}
 remove(i)
 frequencies <- list()
 plotfreq <- list()
 for (i in colnames(main[,c(2,4,5,6,8, 12, 13)])) {
-  print(i)
+  #print(i)
   #print(length(unique(main[[i]])))
   frequencies[[i]] <- as.data.table(table(main[[i]]))
   #print(nrow(frequencies[[i]]))
@@ -134,98 +236,95 @@ for (i in seq_along(plotfreq)) {
     geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
     ggtitle(paste(Hmisc::capitalize(names(plotfreq[i])), ": Top Value Distribution")) + 
     xlab(Hmisc::capitalize(names(plotfreq[i]))) + ylab("N") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(plot.background = element_rect(fill = "white"), axis.text.x = element_text(angle = 90, hjust = 1)) +
     coord_flip()
 
   print(plot)
+  #png(filename=paste0(names(plotfreq[i]), ".png"))
+  #plot(plot)
+  #dev.off()
 }    
 
-evaluate
-
-
 ```
-
 
 
 ```{r}
-# values <-  main[!is.na((occfam))&&!dataplumbr::is_blank(occfam), (occfam)]
-# unique_values <- length(unique(values))
-# frequencies <- as.data.table(table( values))
-# ggplot(frequencies, aes(values, N)) +
-#   geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
-#   ggtitle(paste("OccFam", "Value Distribution")) +
-#   xlab("Occupation Family Code") +
-#   ylab("N") +
-#   theme(panel.background=element_blank(), axis.text.x = element_text(angle = 90, hjust = 1))
-# 
-# 
-# types <- sapply(main, class)
-# 
-# plot_bar(main) # jobdate, occfam, occfamname, state
-# plot_histogram(main) #fips, fipscounty, fipsstate, lat, lon
-```
-
-
-
-Employer, occfam, and occfamname are text fields so let's look for empty and missing strings
-```{r cip hist, echo = TRUE, inclue = TRUE}
-### Certification 
-emp <- main$employer
-(sum(is.na(emp)) + sum(emp == 'na') +sum(emp == '')) / length(emp)
-
-
-occ <- main$occfam
-(sum(is.na(occ)) + sum(occ == 'na') +sum(occ == '')) / length(occ)
-
-
-occname <- main$occfamname
-(sum(is.na(occname)) + sum(occname == 'na') +sum(occname == '')) / length(occname)
 
 ```
-Employer is around 21% missing (filled with 'na'), occfam and occfamname are around 3% missing
 
 
-#### Maps
+
 
 #### Validation
 
-## Questions 
+4. BGT Job-ad Data Validation
+	+ Validation Results in the Literature
+	+ Comparison with Virginia Open Data/Open Jobs Data
+	+ Conclusions
+
+FILTERING FOR VIRGINIA JULY 2017
+
+The distribution of jobs throughout Virginia appears as expected, with coverage throughout all regions of Virginia and density surrounding the major urban areas. Notably, the increased density aligns with the areas around the DC metro area, the Norfolk/Virginia Beach area, and the city of Richmond.  
+
+```{r}
+library(leaflet)
+library(sf)
+BGpoint <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_point.RDS")
+BGshape <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_shape_ct.RDS")
+# sf::write_sf(BGpoint, "/home/dnair1/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_point.shp")
+# sf::write_sf(BGshape, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_shape.shp")
+
+# leaflet(BGpoint) %>%
+#   addProviderTiles(providers$CartoDB.Positron) %>%
+#   addCircles(color = "orange") %>%
+#   setView( lng = -79.156541, lat = 37.298192, zoom = 5) %>%
+#   setMaxBounds( lng1 = -83.758734, lat1 = 36.560764,
+#                 lng2 = -75.744134, lat2 = 39.498217 )
+
+
+#ggplot() + geom_sf(data = BGpoint, aes(color = BGpoint$occfam, fill = BGpoint$occfam))
+```
+
+If we look at this same map in aggregate across counties, we see the same density patterns (darker reds indicating greater density) except Blacksburg and Charlottesville also become notable areas of density. 
+
+```{r}
+# palette <- colorNumeric("YlOrRd", domain = log(BGshape$count), na.color = "#FFFFFF")
+# 
+# leaflet(BGshape) %>%
+#   addProviderTiles(providers$CartoDB.Positron) %>%
+#   addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
+#               opacity = 1.0, fillOpacity = 0.5,
+#               fillColor = ~palette(log(count)),
+#               highlightOptions = highlightOptions(color = "white", weight = 2,
+#                                                   bringToFront = TRUE),
+#               popup = ~htmltools::htmlEscape(popup)) %>%
+#   addLegend(pal =  palette, values = ~log(count), labels = ~count, title = "Jobs", opacity = 0.5)
+
+```
+
+
+```{r}
+# BG1 <- BGpoint %>%
+#   group_by(occfam, occfamname) %>%
+#   summarise(count = n()) %>%
+#   filter(occfam != 'na')
+# 
+# 
+# OJ1 <- OJpoint %>%
+#   filter(as.Date(datePosted) >= "2017-07-01" ) %>%
+#   group_by(occfam) %>%
+#   summarise(count = n()) %>%
+#   filter(occfam != 99)
+```
+
+
+## Post Script? Questions Remaining for Burning Glass
 
 * If occfam is missing, is occfamname always missing as well?
 * what naming standardizations have been done to the employer column? 
 * How does burning glass handle subsidiaries?
 
 
-
-#########################
-
-Data Inventory
-At the data inventory stage, potential data sources (identified in the data discovery stage) are further screened to determine if they would support the research questions. Specifically, the screening process involves assessing data sources on six factors including purpose, method, description, timeliness, selectivity, and accessibility.
-Purpose. Purpose assesses why the data were collected any their intended use by the organization collecting the data.
-Method. Assessment of method examines the methodology used to collect the data (e.g., online survey, paper questionnaire, interview), the level of data (e.g., individual, group, aggregate), and the type of data (e.g., numerical, text, discrete, continuous).
-Description. Describes the data in terms of the general topics captured and timeframe that the data cover (e.g., earliest and latest dates).
-Timeliness. Specifies how often data were collected (e.g., one snapshot, yearly) and when data are available after collection.
-Selectivity. Specifies the population in which the data are intended to represent.
-Accessibility. Describes how the data are accessed in terms of formatting (e.g., API, download) and restrictions to accessibility (e.g., open data, data use agreements, cost to access).
-Data Profiling
-At the data profiling stage, determinations are made in terms of the quality of the data and its utility to research questions.
-Data quality measures. Depending on what research requires, various categories of desirable attributes are needed to be specified for the data.
-Completeness.
-Value validity.
-Consistency.
-Uniqueness.
-Duplication.
-Data structure. Refers to the way in which the data are structured and organized. Data can be messy and not always conducive to statistical analysis so the structure of the data needs to be assessed to identify any issues that might need to be cleaned or transformed/restructured.
-Metadata and provenance. Metadata refers to information about the data. Serving the purpose of providing relevant information pertaining to a particular data element or object, metadata captures elements like unit definitions, unit attribute definitions, semantic confusion, multiple attribute names, and inconsistent attribute formats. In addition, metadata can provide a history of the data, or provenance. Provenance refers to where the data originated, what the data are, and the history of access, transmission, and/or modification in terms of when and by whom.
-Data Preparation
-In prior stages, issues with the data were identified, in the data preparation stage, determinations on what to fix and how are made.
-Cleaning and transformation. Data cleaning refers to the process of fixing or removing data that is incorrect, incomplete, improperly formatted, or duplicated. Data transformation refers to the mapping of original data values into values that are in a more useful format.
-Restructuring. Refers to the process of creating multiple new datasets from the data source that can be more easily analyzed.
-Data Linkage
-In the data linkage stage, elements of a dataset are linked to the same corresponding elements in another dataset (e.g., ID numbers, geolocation, index variables).
-Data Exploration
-In the data exploration stage, the data are analyzed by summarizing main characteristics and depicting them using visual tools (e.g., tables, graphs, dashboards).
-Fitness-for-Use Assessment
 
 
 
