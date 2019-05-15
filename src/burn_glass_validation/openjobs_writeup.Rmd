@@ -124,49 +124,58 @@ nrow(ojobs) - nrow(cleaned_data)
 There are 13,555 duplicate rows in the data, which is fairly small. These duplicates could be postings for multiple openings of the same position, so we decide not to remove these.
 
 ##  Open Job Economic region job aggregates
-```{r}
+```{r,warning=FALSE,include=FALSE}
 library(data.table)
-library(sf)
 library(dplyr)
 library(stringr)
+library(sf)
+library(ggmap)
 library(lubridate)
-library(leaflet)
 BG_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_point.RDS')
 OJ_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS')
 econ_va_counties <- readRDS("../../data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
 ```
 
-```{r, echo = FALSE,warning=FALSE}
-OJ_join_point$occfam <- str_extract(OJ_join_point$normalizedTitle_onetCode, "[0-9]{2}")
-joined <- OJ_join_point
+![OpenJobs Job Count Aggregates by Economic Region](../burn_glass_validation/Images/oj_map.JPG)
 
+The above image was meant to be rendered in HTML to be interactive, but the below table represents the same information:
+
+```{r,warning = FALSE}
 #filter out the correct dates
-joined <- filter(joined,as.Date(joined$datePosted) >= "2017-07-01")
-
+joined <- filter(OJ_join_point,as.Date(OJ_join_point$datePosted) >= "2017-07-01")
 joined <- st_join(joined, econ_va_counties)
 
+#
 joined_within <- joined %>% filter(within == TRUE) # removes 101 observations
 
 # aggregate jobs per county
 #join_cty_ct <- joined_within %>% group_by(fipscounty) %>% summarise(count = n())
-join_ecoreg_ct <- joined_within %>% group_by(GOorg) %>% summarise(count = n())
-econ_va_counties$COUNTYFP <- as.integer(econ_va_counties$COUNTYFP)
-join_ecoreg_ct <- st_join(econ_va_counties, join_ecoreg_ct, suffix = c("NAME" = "NAME"))
+OJ_job <- joined_within %>% group_by(GOorg) %>% summarise(count = n())
+BG_job <- BG_join_point %>% group_by(GOorg) %>% summarise(count = n())
+#clean up
+st_geometry(OJ_job) <- NULL
+st_geometry(BG_job) <- NULL
+BG_job <- BG_job[complete.cases(BG_job$GOorg),]
 
-labels <- sprintf(
-  "<strong>%s</strong><br/>%s<br/>%s",
-  join_ecoreg_ct$count, join_ecoreg_ct$NAMELSAD, join_ecoreg_ct$GOorgNAME
-) %>% lapply(htmltools::HTML)
+jobtable <- left_join(OJ_job,BG_job, by='GOorg')
+colnames(jobtable) <- c("GOorg", "Open Jobs Count", "Burning Glass Count") 
+knitr::kable(jobtable)
 
-leaflet(join_ecoreg_ct) %>% addTiles() %>%
-  addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
-              opacity = 1.0, fillOpacity = 0.5,
-              fillColor = ~colorQuantile("YlOrRd", count)(count),
-              highlightOptions = highlightOptions(color = "white", weight = 2,
-                                                  bringToFront = TRUE),
-              label = labels,
-              labelOptions = labelOptions(
-                style = list("font-weight" = "normal", padding = "3px 8px"),
-                textsize = "15px",
-                direction = "auto"))
 ```
+
+## Spatial plot of Job Postings 
+```{r}
+#### Please don't use this API key for future use. 
+## If you want to use ggmap in the future, register a Google API here: 
+# https://cloud.google.com/maps-platform/
+OJ <- fread('../../data/stem_edu/working/allOpenjobsParsed.csv')
+#ggmap background
+api <- 'AIzaSyCqJUvDKU5BNB14AdIJFTvd8GTtNtW8MMg'
+register_google(api)
+
+va_map <- get_map(source = 'google', location = 'Virginia', crop = FALSE, zoom = 7)
+va_map <- ggmap(va_map)
+
+va_map + geom_point(data= OJ, aes(x=jobLocation_geo_longitude, y= jobLocation_geo_latitude),alpha = 0.05, color = 'red')  
+```
+
