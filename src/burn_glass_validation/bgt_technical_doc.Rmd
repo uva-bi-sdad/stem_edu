@@ -407,6 +407,7 @@ library(ggmap)
 library(lubridate)
 BG_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_point.RDS')
 OJ_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS')
+
 econ_va_counties <- readRDS("../../data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
 ```
 
