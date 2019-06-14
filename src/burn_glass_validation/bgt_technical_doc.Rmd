@@ -1,7 +1,8 @@
 ---
 title: "BGT technical document"
 output:
-  html_document: default
+  #html_document: default
+  output: word_document
 ---
 
 ```{r setup, include=FALSE}
@@ -13,7 +14,7 @@ library(dplyr)
 library(magrittr)
 library(data.table)
 library(ggplot2)
-library(sdalr)
+#library(sdalr)
 library(DBI)
 library(leaflet)
 library(sf)
@@ -79,14 +80,85 @@ for (i in colnames(main)){
     "% NA" = round(100*(sum(is.na(x = main[[i]]))/nrow(main)), 1),
     "na" = sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE),
     "% na" = round(100*(sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE)/nrow(main)), 1),
+    "Missing" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE) + 
+        sum(is.na(x = main[[i]])) 
+       , 
+    "% Missing" = (sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE) + 
+        sum(is.na(x = main[[i]]))  / 63610), 
+    "Invalid" =  sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE),
+    "% Invalid" =  (sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE) / 63610),
     "Unique" = length(unique(main[[i]]))
     )
   datalist[[i]] <- evalrow
 }
-
+nrow(main)
 evaluate = do.call(rbind, datalist)
-
+evaluate
 main <- main[complete.cases(main)]
+```
+
+```{r}
+bgt_cities <- as.data.frame(unique(main[, city]) )
+colnames(bgt_cities) <- c("counties")
+
+counties <- as.data.frame(c("Accomack", "Albemarle", "Alleghany", "Amelia", "Amherst", "Appomattox", "Arlington", "Augusta", "Bath", "Bedford", "Bland", "Botetourt", "Brunswick", "Buchanan", "Buckingham", "Campbell", "Caroline", "Carroll", "Charles City", "Charlotte","Chesterfield", "Clarke", "Craig", "Culpeper", "Cumberland", "Dickenson", "Dinwiddie", "Essex", "Fairfax", "Fauquier", "Floyd","Fluvanna", "Franklin", "Frederick", "Giles", "Gloucester", "Goochland", "Grayson", "Greene", "Greensville", "Halifax", "Hanover","Henrico", "Henry", "Highland", "Isle of Wight", "James City", "King and Queen", "King George", "King William", "Lancaster", "Lee","Loudoun", "Louisa", "Lunenburg", "Madison", "Mathews", "Mecklenburg", "Middlesex", "Montgomery", "Nelson", "New Kent", "Northampton","Northumberland", "Nottoway", "Orange", "Page", "Patrick", "Pittsylvania", "Powhatan", "Prince Edward", "Prince George","Prince William", "Pulaski", "Rappahannock", "Richmond", "Roanoke", "Rockbridge", "Rockingham", "Russell", "Scott", "Shenandoah","Smyth", "Southampton" , "Spotsylvania" , "Stafford" , "Surry" , "Sussex" , "Tazewell" , "Warren" , "Washington" ,"Westmoreland", "Wise" , "Wythe", "York"))
+colnames(counties) <- "counties"
+counties <- counties %>% mutate("cty" = 1)
+
+cities <- as.data.frame(c("Abingdon", "Accomac", "Adwolf", "Alberta", "Alexandria", "Altavista", "Amherst", "Annandale", "Appalachia", "Appomattox", "Aquia Harbour", "Arlington","Ashland", "Atkins", "Bailey's Crossroads", "Bassett", "Basye-Bryce Mountain", "Bedford", "Belle Haven", "Belle Haven", "Bellwood", "Bensley", "Berryville", "Big Stone Gap", "Blacksburg", "Blackstone", "Bloxom", "Bluefield", "Blue Ridge", "Bon Air", "BoonesMill", "Bowling Green", "Boyce", "Boydton", "Boykins", "Branchville", "Bridgewater", "Bristol", "Broadway", "Brodnax", "Brookneal", "Buchanan", "Buena Vista", "Bull Run", "Burke", "Burkeville", "Cana", "Cape Charles", "Capron", "Castlewood", "Cave Spring", "Cedar Bluff", "Centreville", "Chamberlayne", "Chantilly", "Charlotte Court House", "Charlottesville", "Chase City", "Chatham", "Chatmoss", "Cheriton", "Chesapeake", "Chester", "Chesterfield Court House", "Chilhowie", "Chincoteague", "Christiansburg", "Claremont", "Clarksville", "ClaypoolHill", "Cleveland", "Clifton", "Clifton Forge", "Clinchco", "Clinchport", "Clintwood", "Cloverdale", "Coeburn", "Collinsville", "Colonial Beach", "Colonial Heights", "Columbia", "Courtland", "Covington", "Craigsville", "Crewe", "Crimora", "Crozet", "Culpeper", "Dahlgren", "Dale City", "Daleville", "Damascus", "Danville", "Dayton", "Dendron", "Dillwyn", "Dooms", "Drakes Branch", "Dryden", "Dublin", "Duffield", "Dumbarton", "Dumfries", "Dungannon", "Dunn Loring", "East Highland Park", "Eastville", "Edinburg", "Elkton", "Elliston-Lafayette", "Emory-Meadow View", "Emporia", "Ettrick", "Ewing", "Exmore", "Fairfax", "Fairlawn", "Fairview Beach", "Falls Church", "Falmouth", "Fancy Gap", "Farmville","Ferrum", "Fieldale", "Fincastle", "Fishersville", "Floyd", "Forest", "Fort Belvoir", "Fort Chiswell", "Fort Hunt", "Fort Lee", "Franconia", "Franklin", "Fredericksburg", "Fries", "Front Royal", "Gainesville", "Galax", "Gate City", "GladeSpring", "Glasgow", "Glen Allen", "Glen Lyn", "Gloucester Courthouse", "Gloucester Point", "Gordonsville", "Goshen", "Great Falls", "Greenville", "Gretna", "Grottoes", "Groveton", "Grundy", "Halifax", "Hallwood", "Hamilton", "Hampden Sydney", "Hampton", "Harrisonburg", "Haymarket", "Haysi", "Herndon", "Highland Springs", "Hillsboro", "Hillsville", "Hollins", "Honaker", "Hopewell", "Horse Pasture", "Huntington", "Hurt", "Hybla Valley", "Idylwood", "Independence", "Iron Gate", "Irvington", "Ivor", "Jarratt", "Jefferson", "Jolivue", "Jonesville", "Keller", "Kenbridge", "Keokee", "Keysville", "Kilmarnock", "La Crosse", "Lake Barcroft", "Lake Monticello", "Lake Ridge", "Lakeside", "Laurel", "Laurel Park", "Lawrenceville", "Laymantown", "Lebanon", "Leesburg", "Lexington", "Lincolnia", "Linton Hall", "LochLomond", "Lorton", "Louisa", "Lovettsville", "Low Moor", "Luray", "Lynchburg", "Lyndhurst", "McKenney", "McLean", "Madison", "MadisonHeights", "Manassas", "Manassas Park", "Mantua", "Marion", "Martinsville", "Massanutten", "Matoaca", "Max Meadows", "Mechanicsville","Melfa", "Merrifield", "Merrimac", "Middleburg", "Middletown", "Mineral", "Montclair", "Monterey", "Montrose", "Montross", "Mount Crawford", "Mount Jackson", "Mount Vernon", "Narrows", "Nassawadox", "New Castle", "Newington", "New Market", "Newport News", "Newsoms", "Nickelsville", "Nokesville", "Norfolk", "North Shore", "North Springfield", "Norton", "Oak Level", "Oakton", "Occoquan", "Onancock", "Onley", "Orange", "Painter", "Pamplin City", "Parksley", "Patrick Springs", "Pearisburg", "Pembroke", "Penhook", "Pennington Gap", "Petersburg", "Phenix", "Pimmit Hills", "Pocahontas", "Poquoson", "Port Royal", "Portsmouth", "Pound", "Pulaski", "Purcellville", "Quantico", "Quantico Station", "Radford", "Raven", "Remington", "Reston", "Rich Creek", "Richlands", "Richmond", "Ridgeway", "Roanoke", "Rocky Mount", "Rose Hill CDP (Fairfax County)", "Rose Hill CDP (Lee County)", "Round Hill", "Rural Retreat", "Rushmere", "Rustburg", "St.Charles", "St. Paul", "Salem", "Saltville", "Sandy Level", "Saxis", "Scottsburg", "Scottsville", "Selma", "Seven Corners", "Shawsville", "Shenandoah", "Sherando", "Short Pump", "Smithfield", "South Boston", "South Hill", "Spotsylvania Courthouse", "Springfield","Stanardsville","Stanley", "Stanleytown", "Staunton", "Stephens City", "Stony Creek", "Strasburg", "Stuart", "Stuarts Draft", "Sudley", "Suffolk", "Sugar Grove", "Surry","Tangier", "Tappahannock", "Tazewell", "The Plains", "Timberlake", "Timberville", "Toms Brook", "Triangle", "Troutdale", "Troutville", "Tuckahoe", "Tysons Corner", "Union Hall", "Urbanna", "Vansant", "Verona", "Victoria", "Vienna", "Villa Heights", "Vinton", "Virgilina", "Virginia Beach", "Wachapreague", "Wakefield", "Warrenton", "Warsaw", "Washington", "Waverly", "Waynesboro", "Weber City", "West Gate", "Westlake Corner", "West Point", "West Springfield", "Weyers Cave", "White Stone", "Williamsburg", "Winchester", "Windsor","Wise", "Wolf Trap", "Woodbridge", "Woodlawn", "Woodstock", "Wyndham", "Wytheville", "Yorkshire", "Yorktown"))
+cities <- cities %>% mutate("city" = "1")
+
+bgt_cities <- bgt_cities %>% left_join(cities)
+bgt_cities %>% filter(cty)
+
+bgt_cities %>% group_by(city) %>% summarise(count = n()) 
+
+
+bgt_counties <- as.data.frame(unique(main[, county]) )
+colnames(bgt_counties) <- c("counties")
+
+bgt_counties <- bgt_counties %>% left_join(counties)
+
+bgt_counties %>% filter(is.na(cty)) %>% mutate(county_minus = stringr::str_remove(counties, "\\scity|\\sCity")) %>% left_join(cities, by = c("county_minus" = "counties")) %>% filter(is.na(city))
+
+cities %>% filter(grepl(counties, "Manassas") == TRUE)
+
+unique(main[, fips])
+bgt_fips_cty <- as.data.frame((unique(main[, fipscounty])))
+colnames(bgt_fips_cty) <- c("fipscty")
+bgt_fips_cty$fipscty <- as.character(bgt_fips_cty$fipscty)
+bgt_fips_cty <- bgt_fips_cty %>% 
+  mutate(fipscounty_short = ifelse(nchar(fipscty) == 3, fipscty, 
+                             ifelse(nchar(fipscty) == 2, stringr::str_pad(fipscty, width = 3, pad = "0"), 
+                             stringr::str_pad(fipscty, width = 3, pad = "0")))) %>%
+  mutate(fipscounty = paste0("51", fipscounty_short))
+
+
+fipscounties <- as.data.frame(c("51001", "51003","51005","51007","51009","51011","51013","51015","51017","51019","51021","51023","51025","51027","51029","51031","51033", "51035", "51036","51037","51041","51043","51045","51047","51049","51051","51053","51057","51059","51061","51063","51065","51067","51069","51071", "51073","51075","51077","51079","51081","51083","51085","51087","51089","51091","51093","51095","51097","51099","51101","51103","51105", "51107", "51109","51111","51113","51115","51117","51119","51121","51125","51127","51131","51133","51135","51137","51139","51141","51143", "51145","51147","51149","51153","51155","51157","51159","51161", "51163","51165","51167","51169","51171","51173","51175","51177","51179", "51181","51183","51185","51187","51191","51193","51195","51197","51199","51510","51515","51520","51530","51540","51550","51560","51570", "51580", "51590","51595","51600","51610","51620","51630","51640","51650","51660","51670","51678","51680","51683","51685","51690", "51700", "51710","51720","51730","51735","51740","51750","51760","51770","51775","51780","51790","51800","51810","51820","51830","51840"))
+
+colnames(fipscounties) <- c("fipscty")
+fipscounties <- fipscounties %>% mutate(fc = 1 ) 
+
+bgt_fips_cty <- bgt_fips_cty %>% left_join(fipscounties, by = c("fipscounty" = "fipscty"))
+
+main[1:6, c(fips,fipscounty)]
+
+bgt_fips <- as.data.frame(unique(main[, fips]))
+colnames(bgt_fips) <- c("fips")
+bgt_fips
+
+bgt_fips$fips <- as.factor(bgt_fips$fips)
+bgt_fips <- bgt_fips %>% left_join(fipscounties, by = c("fips" = "fipscty"))
+
+bgt_fips %>% filter(is.na(fc))
+bgt_fips_cty %>% filter(is.na(fc))
+###
+
+arrange(main[duplicated(main[,2:13])], jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon)
+
+main
+
+main[,2:13] %>% distinct() %>% arrange(jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon)
 ```
 
 
