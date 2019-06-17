@@ -159,7 +159,116 @@ arrange(main[duplicated(main[,2:13])], jobdate, occfam, occfamname, employer, ci
 main
 
 main[,2:13] %>% distinct() %>% arrange(jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon)
+
+duplicates <- main %>% 
+  group_by(jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon) %>% 
+  summarise(count = n()) %>% 
+  filter(count > 1) %>% 
+  arrange(jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon) 
+
+sum(duplicates$count)
+min(duplicates$count)
+max(duplicates$count)
+
+duplicates %>% filter(count > 30)
+
+main_orig[duplicated(main_orig),]
+
+skills_17 <- read.csv(unzip("~/git/stem_edu/data/stem_edu/original/Burning_Glass_Data/Skill/2017/Skills_2017-07.zip"), sep = "\t")
+
+head(skills_17)
+skills_17$BGTJobId <- as.character(skills_17$BGTJobId)
+head(main)
+
+
+
+skills_va_17 <- skills_17 %>% 
+  inner_join(main, by = c("BGTJobId" = "bgtjobid", "JobDate" = "jobdate")) 
+
+sum(dataplumbr::is_blank(x = (skills_va_17$Skill)), na.rm = FALSE)
+sum(dataplumbr::is_blank(x = (skills_va_17$SkillCluster)), na.rm = TRUE)
+sum(dataplumbr::is_blank(x = (skills_va_17$SkillClusterFamily)), na.rm = TRUE)
+
+sum(is.na(skills_va_17$Skill), na.rm = TRUE)
+sum(is.na(skills_va_17$SkillCluster), na.rm = TRUE)
+sum(is.na(skills_va_17$SkillClusterFamily), na.rm = TRUE)
+
+(nrow(skills_va_17) - sum(grepl(x = (skills_va_17$Skill), pattern = "\\bna\\b"), na.rm = TRUE) )/ nrow(skills_va_17)
+(nrow(skills_va_17) - sum(grepl(x = (skills_va_17$SkillCluster), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(skills_va_17)
+(nrow(skills_va_17) - sum(grepl(x = (skills_va_17$SkillClusterFamily), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(skills_va_17)
 ```
+
+
+```{r}
+OJ2 <- OJshape
+
+
+
+OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS")
+sf::st_geometry(OJ2) <- NULL
+
+OJ2
+
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$rawdata_id)), na.rm = FALSE)) / nrow(OJ2)
+(nrow(OJ2) - sum(is.na(OJ2$rawdata_id), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(grepl(x = (OJ2$rawdata_id), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
+length(unique(OJ2$rawdata_id))
+
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$normalizedTitle_onetCode)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(is.na(OJ2$normalizedTitle_onetCode), na.rm = TRUE))/nrow(OJ2)
+(nrow(OJ2) - sum(grepl(x = (OJ2$normalizedTitle_onetCode), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
+length(unique(OJ2$normalizedTitle_onetCode))
+
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$normalizedTitle_onetName)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(is.na(OJ2$normalizedTitle_onetName), na.rm = TRUE))/nrow(OJ2)
+(nrow(OJ2) - sum(grepl(x = (OJ2$normalizedTitle_onetName), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
+length(unique(OJ2$normalizedTitle_onetName))
+
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$datePosted)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(is.na(OJ2$datePosted), na.rm = TRUE))/nrow(OJ2)
+(nrow(OJ2) - sum(grepl(x = (OJ2$datePosted), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
+length(unique(OJ2$datePosted))
+
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$responsibilities)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$experienceRequirements)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$jobDescription)), na.rm = TRUE)) / nrow(OJ2)
+
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$hiringOrg)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(is.na(OJ2$hiringOrg), na.rm = TRUE))/nrow(OJ2)
+(nrow(OJ2) - sum(grepl(x = (OJ2$hiringOrg), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
+length(unique(OJ2$hiringOrg))
+
+length(unique(OJ2$rawdata_id))
+max(nchar(unique(OJ2$rawdata_id)))
+min(nchar(unique(OJ2$rawdata_id)))
+
+coords <- as.data.frame(st_coordinates(OJ2))
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$X)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$X)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$X)), na.rm = TRUE)) / nrow(OJ2)
+
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$Y)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$Y)), na.rm = TRUE)) / nrow(OJ2)
+(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$Y)), na.rm = TRUE)) / nrow(OJ2)
+
+length(unique(coords$X))
+length(unique(coords$Y))
+
+NULL -> st_geometry(OJ2)
+OJ2[duplicated(OJ2[,2:9]),]
+colnames(OJ2)
+OJ2 %>% group_by(normalizedTitle_onetCode, normalizedTitle_onetName, datePosted, hiringOrg) %>% summarise(count = n()) %>% filter(count == 1)
+```
+
+
+```{r}
+OJ2
+open_join_shape_ct
+open_point
+
+BG_join_point %>% group_by(occfamname, Region) %>% summarise(count = n())
+```
+
 
 
 *CAVEAT I'M ONLY WORKING ON MAIN TABLE I ONLY USED A FEW COLUMNS FROM MAIN*
