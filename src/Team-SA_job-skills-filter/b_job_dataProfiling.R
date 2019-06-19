@@ -62,3 +62,35 @@ compcount <- function(x){
  sum(nchar(b_job$occfam) != 2, na.rm = TRUE)
  b_job_prof[b_job_prof$variable == "occfam","validity"] <- 1*b_job_prof[b_job_prof$variable == "occfam","completeness"]
 
+ ##Validity for employer
+ #Not sure what to look for here, beyond that they're all characters?
+#Very long and very short employer names all check out:
+unique(nchar(b_job$employer))
+long_employer <- b_job[which(nchar(b_job$employer)>=50),"employer"]
+unique(long_employer)
+unique(b_job[which(nchar(b_job$employer)<=5),"employer"])
+b_job_prof[b_job_prof$variable == "employer","validity"] <- 1*b_job_prof[b_job_prof$variable == "employer","completeness"]
+
+##Validity for city
+#looking at all the city names, all look ok:
+unique(b_job$city)
+b_job_prof[b_job_prof$variable == "city","validity"] <- 1*b_job_prof[b_job_prof$variable == "city","completeness"]
+
+##Validity for state
+#should just all be Virginia, and it is
+unique(b_job$state)
+b_job_prof[b_job_prof$variable == "state","validity"] <- 1*b_job_prof[b_job_prof$variable == "state","completeness"]
+
+##Validity for county
+#looking at values, all of which look fine
+unique(b_job$county)
+b_job_prof[b_job_prof$variable == "county","validity"] <- 1*b_job_prof[b_job_prof$variable == "county","completeness"]
+
+##Validity for fipsstate
+#should all be 51, VA's fips code, and they are
+unique(b_job$fipsstate)
+b_job_prof[b_job_prof$variable == "fipsstate","validity"] <- 1*b_job_prof[b_job_prof$variable == "fipsstate","completeness"]
+
+######STOPPING HERE FOR THE DAY, SAVING RESULTS TO PICK UP TOMORROW######
+write.csv(b_job_prof, "data/stem_edu/working/Team_SA_job_skills_filter/b_job_alyssa-draft.csv")
+
