@@ -23,9 +23,9 @@ blacksburg_skills<-skills[bgtjobid %chin% blacksburg_job_id]
 #to the data folder rather than having them in something that will sync to github. They're commented
 #out so we won't write these giant files by accident. Delete the pound signs if you want to run them.)
 
-#write.csv(rich_ads, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/rich_jobs.csv")
-#write.csv(blacksburg_ads, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/blacksburg_jobs.csv")
-#write.csv(rich_skills, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/rich_skills.csv")
-#write.csv(blacksburg_skills, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/blacksburg_skills.csv")
+write.csv(rich_ads, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/rich_jobs.csv")
+write.csv(blacksburg_ads, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/blacksburg_jobs.csv")
+write.csv(rich_skills, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/rich_skills.csv")
+write.csv(blacksburg_skills, "~/stem_edu/data/stem_edu/working/Team_SA_job_skills_filter/blacksburg_skills.csv")
 
 
