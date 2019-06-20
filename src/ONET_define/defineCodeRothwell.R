@@ -47,3 +47,47 @@ for(i in 1:nrow(edu_cast)){
 }
 
 edu_occ <- unique(filter(edu_cast, sub_bach >= 50)$soc_code)
+
+###Which occupation codes match both the education and knowledge criteria?
+
+both_occ <- edu_occ[which(edu_occ %in% know_occ)]
+
+###What are the actual job titles and information for these occupations?
+
+colnames(titles) <- c("soc_code","title","description")
+
+stw <- titles[which(titles$soc_code %in% both_occ),]
+head(stw)
+
+#checking up on some of the STW definitions
+#artists: which of their skills are related here?
+knowledge[which(knowledge$soc_code == "27-1013.00"),]
+#education of accountants:
+edu_cast[edu_cast$soc_code == "13-2011.01",]
+
+###Finding how many jobs in Richmond and Blacksburg match this definition
+
+b_job <- fread("data/stem_edu/working/Team_SA_job_skills_filter/blacksburg_jobs.csv")
+r_job <- fread("data/stem_edu/working/Team_SA_job_skills_filter/rich_jobs.csv")
+
+b_job_stw <- b_job[onet %chin% stw$soc_code]
+r_job_stw <- r_job[onet %chin% stw$soc_code]
+
+##some basic information about each
+
+#number of STW positions
+nrow(b_job_stw)
+nrow(r_job_stw)
+
+
+#STW positions as percentage of all positions
+nrow(b_job_stw)/nrow(b_job)
+nrow(r_job_stw)/nrow(r_job)
+
+#number of unique STW occupations
+length(unique(b_job_stw$onet))
+length(unique(r_job_stw$onet))
+
+#STW occupations as percentage of all occupations
+length(unique(b_job_stw$onet))/length(unique(b_job$onet))
+length(unique(r_job_stw$onet))/length(unique(r_job$onet))
