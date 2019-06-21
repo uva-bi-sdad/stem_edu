@@ -114,8 +114,28 @@ bgt_stw_skills %>% group_by(skill) %>% summarise(count = n()) %>% arrange(desc(c
 
 bgt_stw_skill_rank_many <- bgt_stw_skills %>% group_by(skillclusterfamily, skillcluster, skill) %>% summarise(count = n()) %>% filter(count >=100) %>% arrange(desc(count))
 
+###how common are each of the STW occupations across all of Virginia?
+v_job_stw <- bgt_jobs[bgt_jobs$onet %chin% stw$onet,]
+nrow(v_job_stw)/nrow(bgt_jobs)
+v_stw_perc_total <- v_job_stw %>% group_by(onet, onetname) %>% summarise(count = n(),
+                      perc_total = count/nrow(bgt_jobs), perc_stw = count/nrow(v_job_stw))
+stw_perc_total <- left_join(r_job_edu[,c("onet","onetname","total")], v_stw_perc_total[,c("onet","count","perc_total","perc_stw")],
+                            by = "onet")
+colnames(stw_perc_total) <- c("onet","onetname","r_total","v_total","v_perc_all","v_perc_stw")
+stw_perc_total <- left_join(stw_perc_total, b_job_edu[,c("onet","total")], by = "onet")
+colnames(stw_perc_total) <- c("onet","onetname","r_total","v_total","v_perc_all","v_perc_stw","b_total")
+stw_perc_total <- select(stw_perc_total, "onet","onetname","r_total","b_total","v_total","v_perc_all","v_perc_stw")
+stw_perc_total$r_perc_all <- stw_perc_total$r_total/nrow(r_job)
+stw_perc_total$r_perc_stw <- stw_perc_total$r_total/nrow(r_job_stw)
+stw_perc_total$b_perc_all <- stw_perc_total$b_total/nrow(b_job)
+stw_perc_total$b_perc_stw <- stw_perc_total$b_total/nrow(b_job_stw)
 
-#getting a sense of how many positions tend to have these skills
+stw_perc_total[,6:11] <- round(stw_perc_total[,6:11], 4)
+
+stw_perc_total$r_stw_diff <- stw_perc_total$r_perc_stw-stw_perc_total$v_perc_stw
+stw_perc_total$b_stw_diff <- stw_perc_total$b_perc_stw-stw_perc_total$v_perc_stw
+stw_perc_total$rb_stw_diff <- stw_perc_total$r_perc_stw-stw_perc_total$b_perc_stw
+
 
 ###Finding how many jobs in Richmond and Blacksburg match this definition
 
