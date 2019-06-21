@@ -6,7 +6,7 @@ r_job <- fread("data/stem_edu/working/Team_SA_job_skills_filter/rich_jobs.csv")
 str(r_job)
 head(r_job)
 #Select these because they were listed for data profiling
-r_job <- select(r_job, bgtjobid, jobdate, occfam, occfamname, employer, city,state, county, fipsstate, fipscounty, fips, lat, lon, onet, onetname, bgtocc, edu, degree, exp)
+r_job <- select(r_job, bgtjobid, jobdate, occfam, occfamname, employer, city,state, county, fipsstate, fipscounty, fips, lat, lon, onet, onetname, bgtocc, edu, degree, exp, jobhours)
 
 r_job_cat <- r_job %>% inspect_cat()
 r_job_cat$levels$city
@@ -71,7 +71,7 @@ sum(nchar(r_job$occfamname) <= 1, na.rm = TRUE)
 r_job_prof[r_job_prof$variable == "occfamname","validity"] <- 1*r_job_prof[r_job_prof$variable == "occfamname","completeness"]
 
 ###VALIDITY EMPLOYER
-#employer should be char
+#Characters
 str(r_job$employer)
 #looking for outliers in character count of employer
 r_job %>% group_by(nchar(employer)) %>% summarise(count = n())
@@ -127,6 +127,7 @@ str(r_job$fips) # is integers, should be character
 unique(r_job$fips) #should match to unique fipscounty
 
 r_job_prof[r_job_prof$variable == "fips","validity"] <- 1*r_job_prof[r_job_prof$variable == "fips","completeness"]
+
 ###Validity lat
 #should be a number
 str(r_job$lat)
@@ -144,6 +145,40 @@ sum(r_job$lon < -82)
 sum(r_job$lon > -72)
 r_job_prof[r_job_prof$variable == "lon","validity"] <- 1*r_job_prof[r_job_prof$variable == "lon","completeness"]
 
+###ONET
+str(r_job$onet) #character
+r_job %>% group_by(nchar(onet)) %>% summarise(count = n()) #checking for uniform character count
+r_job_prof[r_job_prof$variable == "onet","validity"] <- 1*r_job_prof[r_job_prof$variable == "onet","completeness"]
+
+###ONET name
+str(r_job$onetname) #character
+length(unique(r_job$onetname)) #should be equal to onet variable
+r_job_prof[r_job_prof$variable == "onetname","validity"] <- 1*r_job_prof[r_job_prof$variable == "onetname","completeness"]
+
+###BGTOCC
+str(r_job$bgtocc) #character
+r_job %>% group_by(nchar(bgtocc)) %>% summarise(count = n()) #checking for uniform character count
+r_job_prof[r_job_prof$variable == "bgtocc","validity"] <- 1*r_job_prof[r_job_prof$variable == "bgtocc","completeness"]
+
+###EDU
+str(r_job$edu)#should be num, IS INTEGER
+unique(r_job$edu) #there are only six unique values including
+r_job_prof[r_job_prof$variable == "edu","validity"] <- 1*r_job_prof[r_job_prof$variable == "edu","completeness"]
+
+###DEGREE
+str(r_job$degree)#character
+unique(r_job$degree)
+r_job_prof[r_job_prof$variable == "degree","validity"] <- 1*r_job_prof[r_job_prof$variable == "degree","completeness"]
+
+###EXP
+str(r_job$exp) #num
+unique(r_job$exp) #some of the decimal numbers do not make a ton of sense and may be due to rounding error
+r_job_prof[r_job_prof$variable == "exp","validity"] <- 1*r_job_prof[r_job_prof$variable == "exp","completeness"]
+
+###jobhhours
+str(r_job$jobhours) #character
+unique(r_job$jobhours)
+r_job_prof[r_job_prof$variable == "jobhours","validity"] <- 1*r_job_prof[r_job_prof$variable == "jobhours","completeness"]
 
 #####UNIQUENESS
 
