@@ -98,14 +98,15 @@ main <- main[complete.cases(main)]
 ```
 
 ```{r}
-bgt_cities <- as.data.frame(unique(main[, city]) )
+bgt_cities <- as.data.frame(unique(main$city) )
 colnames(bgt_cities) <- c("counties")
 
 counties <- as.data.frame(c("Accomack", "Albemarle", "Alleghany", "Amelia", "Amherst", "Appomattox", "Arlington", "Augusta", "Bath", "Bedford", "Bland", "Botetourt", "Brunswick", "Buchanan", "Buckingham", "Campbell", "Caroline", "Carroll", "Charles City", "Charlotte","Chesterfield", "Clarke", "Craig", "Culpeper", "Cumberland", "Dickenson", "Dinwiddie", "Essex", "Fairfax", "Fauquier", "Floyd","Fluvanna", "Franklin", "Frederick", "Giles", "Gloucester", "Goochland", "Grayson", "Greene", "Greensville", "Halifax", "Hanover","Henrico", "Henry", "Highland", "Isle of Wight", "James City", "King and Queen", "King George", "King William", "Lancaster", "Lee","Loudoun", "Louisa", "Lunenburg", "Madison", "Mathews", "Mecklenburg", "Middlesex", "Montgomery", "Nelson", "New Kent", "Northampton","Northumberland", "Nottoway", "Orange", "Page", "Patrick", "Pittsylvania", "Powhatan", "Prince Edward", "Prince George","Prince William", "Pulaski", "Rappahannock", "Richmond", "Roanoke", "Rockbridge", "Rockingham", "Russell", "Scott", "Shenandoah","Smyth", "Southampton" , "Spotsylvania" , "Stafford" , "Surry" , "Sussex" , "Tazewell" , "Warren" , "Washington" ,"Westmoreland", "Wise" , "Wythe", "York"))
 colnames(counties) <- "counties"
 counties <- counties %>% mutate("cty" = 1)
 
-cities <- as.data.frame(c("Abingdon", "Accomac", "Adwolf", "Alberta", "Alexandria", "Altavista", "Amherst", "Annandale", "Appalachia", "Appomattox", "Aquia Harbour", "Arlington","Ashland", "Atkins", "Bailey's Crossroads", "Bassett", "Basye-Bryce Mountain", "Bedford", "Belle Haven", "Belle Haven", "Bellwood", "Bensley", "Berryville", "Big Stone Gap", "Blacksburg", "Blackstone", "Bloxom", "Bluefield", "Blue Ridge", "Bon Air", "BoonesMill", "Bowling Green", "Boyce", "Boydton", "Boykins", "Branchville", "Bridgewater", "Bristol", "Broadway", "Brodnax", "Brookneal", "Buchanan", "Buena Vista", "Bull Run", "Burke", "Burkeville", "Cana", "Cape Charles", "Capron", "Castlewood", "Cave Spring", "Cedar Bluff", "Centreville", "Chamberlayne", "Chantilly", "Charlotte Court House", "Charlottesville", "Chase City", "Chatham", "Chatmoss", "Cheriton", "Chesapeake", "Chester", "Chesterfield Court House", "Chilhowie", "Chincoteague", "Christiansburg", "Claremont", "Clarksville", "ClaypoolHill", "Cleveland", "Clifton", "Clifton Forge", "Clinchco", "Clinchport", "Clintwood", "Cloverdale", "Coeburn", "Collinsville", "Colonial Beach", "Colonial Heights", "Columbia", "Courtland", "Covington", "Craigsville", "Crewe", "Crimora", "Crozet", "Culpeper", "Dahlgren", "Dale City", "Daleville", "Damascus", "Danville", "Dayton", "Dendron", "Dillwyn", "Dooms", "Drakes Branch", "Dryden", "Dublin", "Duffield", "Dumbarton", "Dumfries", "Dungannon", "Dunn Loring", "East Highland Park", "Eastville", "Edinburg", "Elkton", "Elliston-Lafayette", "Emory-Meadow View", "Emporia", "Ettrick", "Ewing", "Exmore", "Fairfax", "Fairlawn", "Fairview Beach", "Falls Church", "Falmouth", "Fancy Gap", "Farmville","Ferrum", "Fieldale", "Fincastle", "Fishersville", "Floyd", "Forest", "Fort Belvoir", "Fort Chiswell", "Fort Hunt", "Fort Lee", "Franconia", "Franklin", "Fredericksburg", "Fries", "Front Royal", "Gainesville", "Galax", "Gate City", "GladeSpring", "Glasgow", "Glen Allen", "Glen Lyn", "Gloucester Courthouse", "Gloucester Point", "Gordonsville", "Goshen", "Great Falls", "Greenville", "Gretna", "Grottoes", "Groveton", "Grundy", "Halifax", "Hallwood", "Hamilton", "Hampden Sydney", "Hampton", "Harrisonburg", "Haymarket", "Haysi", "Herndon", "Highland Springs", "Hillsboro", "Hillsville", "Hollins", "Honaker", "Hopewell", "Horse Pasture", "Huntington", "Hurt", "Hybla Valley", "Idylwood", "Independence", "Iron Gate", "Irvington", "Ivor", "Jarratt", "Jefferson", "Jolivue", "Jonesville", "Keller", "Kenbridge", "Keokee", "Keysville", "Kilmarnock", "La Crosse", "Lake Barcroft", "Lake Monticello", "Lake Ridge", "Lakeside", "Laurel", "Laurel Park", "Lawrenceville", "Laymantown", "Lebanon", "Leesburg", "Lexington", "Lincolnia", "Linton Hall", "LochLomond", "Lorton", "Louisa", "Lovettsville", "Low Moor", "Luray", "Lynchburg", "Lyndhurst", "McKenney", "McLean", "Madison", "MadisonHeights", "Manassas", "Manassas Park", "Mantua", "Marion", "Martinsville", "Massanutten", "Matoaca", "Max Meadows", "Mechanicsville","Melfa", "Merrifield", "Merrimac", "Middleburg", "Middletown", "Mineral", "Montclair", "Monterey", "Montrose", "Montross", "Mount Crawford", "Mount Jackson", "Mount Vernon", "Narrows", "Nassawadox", "New Castle", "Newington", "New Market", "Newport News", "Newsoms", "Nickelsville", "Nokesville", "Norfolk", "North Shore", "North Springfield", "Norton", "Oak Level", "Oakton", "Occoquan", "Onancock", "Onley", "Orange", "Painter", "Pamplin City", "Parksley", "Patrick Springs", "Pearisburg", "Pembroke", "Penhook", "Pennington Gap", "Petersburg", "Phenix", "Pimmit Hills", "Pocahontas", "Poquoson", "Port Royal", "Portsmouth", "Pound", "Pulaski", "Purcellville", "Quantico", "Quantico Station", "Radford", "Raven", "Remington", "Reston", "Rich Creek", "Richlands", "Richmond", "Ridgeway", "Roanoke", "Rocky Mount", "Rose Hill CDP (Fairfax County)", "Rose Hill CDP (Lee County)", "Round Hill", "Rural Retreat", "Rushmere", "Rustburg", "St.Charles", "St. Paul", "Salem", "Saltville", "Sandy Level", "Saxis", "Scottsburg", "Scottsville", "Selma", "Seven Corners", "Shawsville", "Shenandoah", "Sherando", "Short Pump", "Smithfield", "South Boston", "South Hill", "Spotsylvania Courthouse", "Springfield","Stanardsville","Stanley", "Stanleytown", "Staunton", "Stephens City", "Stony Creek", "Strasburg", "Stuart", "Stuarts Draft", "Sudley", "Suffolk", "Sugar Grove", "Surry","Tangier", "Tappahannock", "Tazewell", "The Plains", "Timberlake", "Timberville", "Toms Brook", "Triangle", "Troutdale", "Troutville", "Tuckahoe", "Tysons Corner", "Union Hall", "Urbanna", "Vansant", "Verona", "Victoria", "Vienna", "Villa Heights", "Vinton", "Virgilina", "Virginia Beach", "Wachapreague", "Wakefield", "Warrenton", "Warsaw", "Washington", "Waverly", "Waynesboro", "Weber City", "West Gate", "Westlake Corner", "West Point", "West Springfield", "Weyers Cave", "White Stone", "Williamsburg", "Winchester", "Windsor","Wise", "Wolf Trap", "Woodbridge", "Woodlawn", "Woodstock", "Wyndham", "Wytheville", "Yorkshire", "Yorktown"))
+cities <- as.data.frame(c("Abingdon", "Accomac", "Adwolf", "Alberta", "Alexandria", "Altavista", "Amherst", "Annandale", "Appalachia", "Appomattox", "Aquia Harbour", "Arlington","Ashland", "Atkins", "Bailey's Crossroads", "Bassett", "Basye-Bryce Mountain", "Bedford", "Belle Haven", "Belle Haven", "Bellwood", "Bensley", "Berryville", "Big Stone Gap", "Blacksburg", "Blackstone", "Bloxom", "Bluefield", "Blue Ridge", "Bon Air", "BoonesMill", "Bowling Green", "Boyce", "Boydton", "Boykins", "Branchville", "Bridgewater", "Bristol", "Broadway", "Brodnax", "Brookneal", "Buchanan", "Buena Vista", "Bull Run", "Burke", "Burkeville", "Cana", "Cape Charles", "Capron", "Castlewood", "Cave Spring", "Cedar Bluff", "Centreville", "Chamberlayne", "Chantilly", "Charlotte Court House", "Charlottesville", "Chase City", "Chatham", "Chatmoss", "Cheriton", "Chesapeake", "Chester", "Chesterfield Court House", "Chilhowie", "Chincoteague", "Christiansburg", "Claremont", "Clarksville", "ClaypoolHill", "Cleveland", "Clifton", "Clifton Forge", "Clinchco", "Clinchport", "Clintwood", "Cloverdale", "Coeburn", "Collinsville", "Colonial Beach", "Colonial Heights", "Columbia", "Courtland", "Covington", "Craigsville", "Crewe", "Crimora", "Crozet", "Culpeper", "Dahlgren", "Dale City", "Daleville", "Damascus", "Danville", "Dayton", "Dendron", "Dillwyn", "Dooms", "Drakes Branch", "Dryden", "Dublin", "Duffield", "Dumbarton", "Dumfries", "Dungannon", "Dunn Loring", "East Highland Park", "Eastville", "Edinburg", "Elkton", "Elliston-Lafayette", "Emory-Meadow View", "Emporia", "Ettrick", "Ewing", "Exmore", "Fairfax", "Fairlawn", "Fairview Beach", "Falls Church", "Falmouth", "Fancy Gap", "Farmville","Ferrum", "Fieldale", "Fincastle", "Fishersville", "Floyd", "Forest", "Fort Belvoir", "Fort Chiswell", "Fort Hunt", "Fort Lee", "Franconia", "Franklin", "Fredericksburg", "Fries", "Front Royal", "Gainesville", "Galax", "Gate City", "GladeSpring", "Glasgow", "Glen Allen", "Glen Lyn", "Gloucester Courthouse", "Gloucester Point", "Gordonsville", "Goshen", "Great Falls", "Greenville", "Gretna", "Grottoes", "Groveton", "Grundy", "Halifax", "Hallwood", "Hamilton", "Hampden Sydney", "Hampton", "Harrisonburg", "Haymarket", "Haysi", "Herndon", "Highland Springs", "Hillsboro", "Hillsville", "Hollins", "Honaker", "Hopewell", "Horse Pasture", "Huntington", "Hurt", "Hybla Valley", "Idylwood", "Independence", "Iron Gate", "Irvington", "Ivor", "Jarratt", "Jefferson", "Jolivue", "Jonesville", "Keller", "Kenbridge", "Keokee", "Keysville", "Kilmarnock", "La Crosse", "Lake Barcroft", "Lake Monticello", "Lake Ridge", "Lakeside", "Laurel", "Laurel Park", "Lawrenceville", "Laymantown", "Lebanon", "Leesburg", "Lexington", "Lincolnia", "Linton Hall", "LochLomond", "Lorton", "Louisa", "Lovettsville", "Low Moor", "Luray", "Lynchburg", "Lyndhurst", "McKenney", "McLean", "Madison", "MadisonHeights", "Manassas", "Manassas Park", "Mantua", "Marion", "Martinsville", "Massanutten", "Matoaca", "Max Meadows", "Mechanicsville","Melfa", "Merrifield", "Merrimac", "Middleburg", "Middletown", "Mineral", "Montclair", "Monterey", "Montrose", "Montross", "Mount Crawford", "Mount Jackson", "Mount Vernon", "Narrows", "Nassawadox", "New Castle", "Newington", "New Market", "Newport News", "Newsoms", "Nickelsville", "Nokesville", "Norfolk", "North Shore", "North Springfield", "Norton", "Oak Level", "Oakton", "Occoquan", "Onancock", "Onley", "Orange", "Painter", "Pamplin City", "Parksley", "Patrick Springs", "Pearisburg", "Pembroke", "Penhook", "Pennington Gap", "Petersburg", "Phenix", "Pimmit Hills", "Pocahontas", "Poquoson", "Port Royal", "Portsmouth", "Pound", "Pulaski", "Purcellville", "Quantico", "Quantico Station", "Radford", "Raven", "Remington", "Reston", "Rich Creek", "Richlands", "Richmond", "Ridgeway", "Roanoke", "Rocky Mount", "Rose Hill CDP (Fairfax County)", "Rose Hill CDP (Lee County)", "Round Hill", "Rural Retreat", "Rushmere", "Rustburg", "St.Charles", "St. Paul", "Salem", "Saltville", "Sandy Level", "Saxis", "Scottsburg", "Scottsville", "Selma", "Seven Corners", "Shawsville", "Shenandoah", "Sherando", "Short Pump", "Smithfield", "South Boston", "South Hill", "Spotsylvania Courthouse", "Springfield", "Stanardsville","Stanley", "Stanleytown", "Staunton", "Stephens City", "Stony Creek", "Strasburg", "Stuart", "Stuarts Draft", "Sudley", "Suffolk", "Sugar Grove", "Surry","Tangier", "Tappahannock", "Tazewell", "The Plains", "Timberlake", "Timberville", "Toms Brook", "Triangle", "Troutdale", "Troutville", "Tuckahoe", "Tysons Corner", "Union Hall", "Urbanna", "Vansant", "Verona", "Victoria", "Vienna", "Villa Heights", "Vinton", "Virgilina", "Virginia Beach", "Wachapreague", "Wakefield", "Warrenton", "Warsaw", "Washington", "Waverly", "Waynesboro", "Weber City", "West Gate", "Westlake Corner", "West Point", "West Springfield", "Weyers Cave", "White Stone", "Williamsburg", "Winchester", "Windsor","Wise", "Wolf Trap", "Woodbridge", "Woodlawn", "Woodstock", "Wyndham", "Wytheville", "Yorkshire", "Yorktown"))
+
 cities <- cities %>% mutate("city" = "1")
 
 bgt_cities <- bgt_cities %>% left_join(cities)
@@ -176,6 +177,8 @@ main_orig[duplicated(main_orig),]
 
 skills_17 <- read.csv(unzip("~/git/stem_edu/data/stem_edu/original/Burning_Glass_Data/Skill/2017/Skills_2017-07.zip"), sep = "\t")
 
+
+
 head(skills_17)
 skills_17$BGTJobId <- as.character(skills_17$BGTJobId)
 head(main)
@@ -200,11 +203,12 @@ sum(is.na(skills_va_17$SkillClusterFamily), na.rm = TRUE)
 
 
 ```{r}
-OJ2 <- OJshape
 
+#OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS")
 
-
-OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS")
+OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/openjobs_point.RDS") #all dates need to filter to july
+OJ2$datePosted
+OJ2 <- OJ2 %>% filter(str_extract(datePosted, "\\d{4}-\\d{2}") == "2017-07")
 sf::st_geometry(OJ2) <- NULL
 
 OJ2
@@ -255,9 +259,15 @@ length(unique(coords$X))
 length(unique(coords$Y))
 
 NULL -> st_geometry(OJ2)
-OJ2[duplicated(OJ2[,2:9]),]
+OJ2[duplicated(OJ2),]
+sum(duplicated(OJ2))
 colnames(OJ2)
 OJ2 %>% group_by(normalizedTitle_onetCode, normalizedTitle_onetName, datePosted, hiringOrg) %>% summarise(count = n()) %>% filter(count == 1)
+
+unique(OJ2$datePosted)
+checkdupes <- OJ2[,c(2:8)]
+
+OJ2[duplicated(OJ2[,c(2:8, 11)]),]
 ```
 
 
@@ -266,7 +276,38 @@ OJ2
 open_join_shape_ct
 open_point
 
-BG_join_point %>% group_by(occfamname, Region) %>% summarise(count = n())
+
+
+BGT <- BG_join_point %>% group_by(occfam, occfamname, Region) %>% summarise(count = n())
+st_geometry(BGT) <- NULL
+OpenJobs <- readRDS("data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/openjobs_point_aggregated_0717_fortable.RDS")
+
+BGT
+OpenJobs
+
+thing <- BGT %>% left_join(OpenJobs, by = c("occfam", "Region"))
+thing <- thing %>% mutate(OCC = paste(occfam, occfamname)) 
+thing <- thing[,3:6]
+colnames(thing) <- c("Region", "BGT Count", "OJ Count", "OccFam")
+
+thing2 <- dcast.data.table(as.data.table(thing), OccFam ~ Region, value.var=list('BGT Count','OJ Count'))
+
+thing2[is.na(thing2)] <- 0
+
+thing3 <- thing2 %>% transmute(
+  OccFam = OccFam,
+  "Region NA" = `BGT Count_NA` - `OJ Count_NA`, 
+  "Region 1" = `BGT Count_1` - `OJ Count_1`, 
+  "Region 2" = `BGT Count_2` - `OJ Count_2`, 
+  "Region 3" = `BGT Count_3` - `OJ Count_3`, 
+  "Region 5" = `BGT Count_5` - `OJ Count_5`, 
+  "Region 4" = `BGT Count_4` - `OJ Count_4`, 
+  "Region 6" = `BGT Count_6` - `OJ Count_6`, 
+  "Region 7" = `BGT Count_7` - `OJ Count_7`, 
+  "Region 8" = `BGT Count_8` - `OJ Count_8`,
+  "Region 9" = `BGT Count_9` - `OJ Count_9`
+)
+write.csv(thing3, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/vicki_table.csv")
 ```
 
 
