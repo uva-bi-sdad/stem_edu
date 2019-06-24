@@ -51,51 +51,6 @@ ojobs <-  fread('../../data/stem_edu/working/allOpenjobsParsed.csv')
 
 ```
 
-```{r transform_main}
-main <- select(main, "bgtjobid",'jobdate', 'occfam', 'occfamname', 'employer', 'city', 
-               'state', 'county', 'fipsstate', 'fipscounty', 'fips', 'lat', 'lon')
-main <- as.data.table(main)
-overall <- melt(DataExplorer::introduce(main))
-colnames(overall) <- c("Metric", "Value")
-
-missing <- DataExplorer::profile_missing(main)
-colnames(missing) <- c("Column", "# Missing", "% Missing")
-```
-
-```{r transform_OJ}
-OJpoint$occfam <- as.numeric(stringr::str_extract(OJpoint$normalizedTitle_onetCode, "[0-9]{2}"))
-```
-
-
-```{r profiling_extended}
-datalist = list()
-for (i in colnames(main)){
-  evalrow <- tibble::tibble(
-    "Column" = i,
-    "Example" = head(main[[i]], 1),
-    "Class" = class(main[[i]]),
-    "Blanks" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE),
-    "% Blank" = round(100*(sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE)/nrow(main)), 1),
-    "NA" = sum(is.na(x = main[[i]])),
-    "% NA" = round(100*(sum(is.na(x = main[[i]]))/nrow(main)), 1),
-    "na" = sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE),
-    "% na" = round(100*(sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE)/nrow(main)), 1),
-    "Missing" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE) + 
-        sum(is.na(x = main[[i]])) 
-       , 
-    "% Missing" = (sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE) + 
-        sum(is.na(x = main[[i]]))  / 63610), 
-    "Invalid" =  sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE),
-    "% Invalid" =  (sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE) / 63610),
-    "Unique" = length(unique(main[[i]]))
-    )
-  datalist[[i]] <- evalrow
-}
-nrow(main)
-evaluate = do.call(rbind, datalist)
-evaluate
-main <- main[complete.cases(main)]
-```
 
 ```{r}
 bgt_cities <- as.data.frame(unique(main$city) )
@@ -107,84 +62,391 @@ counties <- counties %>% mutate("cty" = 1)
 
 cities <- as.data.frame(c("Abingdon", "Accomac", "Adwolf", "Alberta", "Alexandria", "Altavista", "Amherst", "Annandale", "Appalachia", "Appomattox", "Aquia Harbour", "Arlington","Ashland", "Atkins", "Bailey's Crossroads", "Bassett", "Basye-Bryce Mountain", "Bedford", "Belle Haven", "Belle Haven", "Bellwood", "Bensley", "Berryville", "Big Stone Gap", "Blacksburg", "Blackstone", "Bloxom", "Bluefield", "Blue Ridge", "Bon Air", "BoonesMill", "Bowling Green", "Boyce", "Boydton", "Boykins", "Branchville", "Bridgewater", "Bristol", "Broadway", "Brodnax", "Brookneal", "Buchanan", "Buena Vista", "Bull Run", "Burke", "Burkeville", "Cana", "Cape Charles", "Capron", "Castlewood", "Cave Spring", "Cedar Bluff", "Centreville", "Chamberlayne", "Chantilly", "Charlotte Court House", "Charlottesville", "Chase City", "Chatham", "Chatmoss", "Cheriton", "Chesapeake", "Chester", "Chesterfield Court House", "Chilhowie", "Chincoteague", "Christiansburg", "Claremont", "Clarksville", "ClaypoolHill", "Cleveland", "Clifton", "Clifton Forge", "Clinchco", "Clinchport", "Clintwood", "Cloverdale", "Coeburn", "Collinsville", "Colonial Beach", "Colonial Heights", "Columbia", "Courtland", "Covington", "Craigsville", "Crewe", "Crimora", "Crozet", "Culpeper", "Dahlgren", "Dale City", "Daleville", "Damascus", "Danville", "Dayton", "Dendron", "Dillwyn", "Dooms", "Drakes Branch", "Dryden", "Dublin", "Duffield", "Dumbarton", "Dumfries", "Dungannon", "Dunn Loring", "East Highland Park", "Eastville", "Edinburg", "Elkton", "Elliston-Lafayette", "Emory-Meadow View", "Emporia", "Ettrick", "Ewing", "Exmore", "Fairfax", "Fairlawn", "Fairview Beach", "Falls Church", "Falmouth", "Fancy Gap", "Farmville","Ferrum", "Fieldale", "Fincastle", "Fishersville", "Floyd", "Forest", "Fort Belvoir", "Fort Chiswell", "Fort Hunt", "Fort Lee", "Franconia", "Franklin", "Fredericksburg", "Fries", "Front Royal", "Gainesville", "Galax", "Gate City", "GladeSpring", "Glasgow", "Glen Allen", "Glen Lyn", "Gloucester Courthouse", "Gloucester Point", "Gordonsville", "Goshen", "Great Falls", "Greenville", "Gretna", "Grottoes", "Groveton", "Grundy", "Halifax", "Hallwood", "Hamilton", "Hampden Sydney", "Hampton", "Harrisonburg", "Haymarket", "Haysi", "Herndon", "Highland Springs", "Hillsboro", "Hillsville", "Hollins", "Honaker", "Hopewell", "Horse Pasture", "Huntington", "Hurt", "Hybla Valley", "Idylwood", "Independence", "Iron Gate", "Irvington", "Ivor", "Jarratt", "Jefferson", "Jolivue", "Jonesville", "Keller", "Kenbridge", "Keokee", "Keysville", "Kilmarnock", "La Crosse", "Lake Barcroft", "Lake Monticello", "Lake Ridge", "Lakeside", "Laurel", "Laurel Park", "Lawrenceville", "Laymantown", "Lebanon", "Leesburg", "Lexington", "Lincolnia", "Linton Hall", "LochLomond", "Lorton", "Louisa", "Lovettsville", "Low Moor", "Luray", "Lynchburg", "Lyndhurst", "McKenney", "McLean", "Madison", "MadisonHeights", "Manassas", "Manassas Park", "Mantua", "Marion", "Martinsville", "Massanutten", "Matoaca", "Max Meadows", "Mechanicsville","Melfa", "Merrifield", "Merrimac", "Middleburg", "Middletown", "Mineral", "Montclair", "Monterey", "Montrose", "Montross", "Mount Crawford", "Mount Jackson", "Mount Vernon", "Narrows", "Nassawadox", "New Castle", "Newington", "New Market", "Newport News", "Newsoms", "Nickelsville", "Nokesville", "Norfolk", "North Shore", "North Springfield", "Norton", "Oak Level", "Oakton", "Occoquan", "Onancock", "Onley", "Orange", "Painter", "Pamplin City", "Parksley", "Patrick Springs", "Pearisburg", "Pembroke", "Penhook", "Pennington Gap", "Petersburg", "Phenix", "Pimmit Hills", "Pocahontas", "Poquoson", "Port Royal", "Portsmouth", "Pound", "Pulaski", "Purcellville", "Quantico", "Quantico Station", "Radford", "Raven", "Remington", "Reston", "Rich Creek", "Richlands", "Richmond", "Ridgeway", "Roanoke", "Rocky Mount", "Rose Hill CDP (Fairfax County)", "Rose Hill CDP (Lee County)", "Round Hill", "Rural Retreat", "Rushmere", "Rustburg", "St.Charles", "St. Paul", "Salem", "Saltville", "Sandy Level", "Saxis", "Scottsburg", "Scottsville", "Selma", "Seven Corners", "Shawsville", "Shenandoah", "Sherando", "Short Pump", "Smithfield", "South Boston", "South Hill", "Spotsylvania Courthouse", "Springfield", "Stanardsville","Stanley", "Stanleytown", "Staunton", "Stephens City", "Stony Creek", "Strasburg", "Stuart", "Stuarts Draft", "Sudley", "Suffolk", "Sugar Grove", "Surry","Tangier", "Tappahannock", "Tazewell", "The Plains", "Timberlake", "Timberville", "Toms Brook", "Triangle", "Troutdale", "Troutville", "Tuckahoe", "Tysons Corner", "Union Hall", "Urbanna", "Vansant", "Verona", "Victoria", "Vienna", "Villa Heights", "Vinton", "Virgilina", "Virginia Beach", "Wachapreague", "Wakefield", "Warrenton", "Warsaw", "Washington", "Waverly", "Waynesboro", "Weber City", "West Gate", "Westlake Corner", "West Point", "West Springfield", "Weyers Cave", "White Stone", "Williamsburg", "Winchester", "Windsor","Wise", "Wolf Trap", "Woodbridge", "Woodlawn", "Woodstock", "Wyndham", "Wytheville", "Yorkshire", "Yorktown"))
 
+cities <- c("Abingdon", 
+                          "Accomac", 
+                          "Adwolf", 
+                          "Alberta", 
+                          "Alexandria", 
+                          "Altavista", 
+                          "Amherst", 
+                          "Annandale", 
+                          "Appalachia", 
+                          "Appomattox",
+                          "Aquia Harbour", 
+                          "Arlington",
+                          "Ashland", 
+                          "Atkins", 
+                          "Bailey's Crossroads", 
+                          "Bassett", 
+                          "Basye-Bryce Mountain", 
+                          "Bedford", 
+                          "Belle Haven", 
+                          "Bellwood", 
+                          "Bensley", 
+                          "Berryville", 
+                          "Big Stone Gap", 
+                          "Blacksburg", 
+                          "Blackstone", 
+                          "Bloxom", 
+                          "Bluefield", 
+                          "Blue Ridge", 
+                          "Bon Air", 
+                          "BoonesMill", 
+                          "Bowling Green", 
+                          "Boyce", 
+                          "Boydton", 
+                          "Boykins", 
+                          "Branchville", 
+                          "Bridgewater", 
+                          "Bristol", 
+                          "Broadway", 
+                          "Brodnax", 
+                          "Brookneal", 
+                          "Buchanan", 
+                          "Buena Vista", 
+                          "Bull Run", 
+                          "Burke", 
+                          "Burkeville", 
+                          "Cana", 
+                          "Cape Charles",
+                          "Capron", 
+                          "Castlewood", 
+                          "Cave Spring", 
+                          "Cedar Bluff", 
+                          "Centreville", 
+                          "Chamberlayne", 
+                          "Chantilly", 
+                          "Charlotte Court House", 
+                          "Charlottesville", 
+                          "Chase City", 
+                          "Chatham", 
+                          "Chatmoss", 
+                          "Cheriton", 
+                          "Chesapeake", 
+                          "Chester",
+                          "Chesterfield Court House",
+                          "Chilhowie",
+                          "Chincoteague", 
+                          "Christiansburg", 
+                          "Claremont", 
+                          "Clarksville", 
+                          "ClaypoolHill", 
+                          "Cleveland", 
+                          "Clifton", 
+                          "Clifton Forge", 
+                          "Clinchco", 
+                          "Clinchport", 
+                          "Clintwood", 
+                          "Cloverdale", 
+                          "Coeburn", 
+                          "Collinsville", 
+                          "Colonial Beach", 
+                          "Colonial Heights", 
+                          "Columbia", 
+                          "Courtland",
+                          "Covington", 
+                          "Craigsville", 
+                          "Crewe", 
+                          "Crimora", 
+                          "Crozet", 
+                          "Culpeper", 
+                          "Dahlgren", 
+                          "Dale City", 
+                          "Daleville", 
+                          "Damascus", 
+                          "Danville", 
+                          "Dayton", 
+                          "Dendron", 
+                          "Dillwyn",
+                          "Dooms", 
+                          "Drakes Branch", 
+                          "Dryden", 
+                          "Dublin", 
+                          "Duffield", 
+                          "Dumbarton", 
+                          "Dumfries", 
+                          "Dungannon", 
+                          "Dunn Loring",
+                          "East Highland Park", 
+                          "Eastville", 
+                          "Edinburg", 
+                          "Elkton", 
+                          "Elliston-Lafayette", 
+                          "Emory-Meadow View",
+                          "Emporia", 
+                          "Ettrick", 
+                          "Ewing", 
+                          "Exmore", 
+                          "Fairfax", 
+                          "Fairlawn", 
+                          "Fairview Beach", 
+                          "Falls Church", 
+                          "Falmouth", 
+                          "Fancy Gap", 
+                          "Farmville",
+                          "Ferrum", 
+                          "Fieldale", 
+                          "Fincastle", 
+                          "Fishersville", 
+                          "Floyd", 
+                          "Forest", 
+                          "Fort Belvoir", 
+                          "Fort Chiswell", 
+                          "Fort Hunt", 
+                          "Fort Lee", 
+                          "Franconia", 
+                          "Franklin", 
+                          "Fredericksburg",
+                          "Fries", 
+                          "Front Royal",
+                          "Gainesville", 
+                          "Galax", 
+                          "Gate City", 
+                          "GladeSpring", 
+                          "Glasgow", 
+                          "Glen Allen", 
+                          "Glen Lyn", 
+                          "Gloucester Courthouse", 
+                          "Gloucester Point",
+                          "Gordonsville", 
+                          "Goshen", 
+                          "Great Falls", 
+                          "Greenville",
+                          "Gretna", 
+                          "Grottoes",
+                          "Groveton", 
+                          "Grundy", 
+                          "Halifax", 
+                          "Hallwood", 
+                          "Hamilton", 
+                          "Hampden Sydney", 
+                          "Hampton", 
+                          "Harrisonburg", 
+                          "Haymarket", 
+                          "Haysi", 
+                          "Herndon", 
+                          "Highland Springs", 
+                          "Hillsboro", 
+                          "Hillsville", 
+                          "Hollins", 
+                          "Honaker", 
+                          "Hopewell", 
+                          "Horse Pasture",
+                          "Huntington",
+                          "Hurt", 
+                          "Hybla Valley",
+                          "Idylwood",
+                          "Independence", 
+                          "Iron Gate",
+                          "Irvington", 
+                          "Ivor", 
+                          "Jarratt", 
+                          "Jefferson", 
+                          "Jolivue", 
+                          "Jonesville", 
+                          "Keller",
+                          "Kenbridge",
+                          "Keokee", 
+                          "Keysville",
+                          "Kilmarnock", 
+                          "La Crosse", 
+                          "Lake Barcroft", 
+                          "Lake Monticello", 
+                          "Lake Ridge", 
+                          "Lakeside", 
+                          "Laurel", 
+                          "Laurel Park",
+                          "Lawrenceville",
+                          "Laymantown", 
+                          "Lebanon", 
+                          "Leesburg",
+                          "Lexington",
+                          "Lincolnia",
+                          "Linton Hall",
+                          "LochLomond", 
+                          "Lorton", 
+                          "Louisa", 
+                          "Lovettsville", 
+                          "Low Moor", 
+                          "Luray",
+                          "Lynchburg",
+                          "Lyndhurst", 
+                          "McKenney", 
+                          "McLean", 
+                          "Madison", 
+                          "MadisonHeights",
+                          "Manassas", 
+                          "Manassas Park", 
+                          "Mantua", 
+                          "Marion", 
+                          "Martinsville",
+                          "Massanutten",
+                          "Matoaca", 
+                          "Max Meadows",
+                          "Mechanicsville",
+                          "Melfa", 
+                          "Merrifield",
+                          "Merrimac", 
+                          "Middleburg", 
+                          "Middletown", 
+                          "Mineral", 
+                          "Montclair", 
+                          "Monterey",
+                          "Montrose", 
+                          "Montross", 
+                          "Mount Crawford",
+                          "Mount Jackson",
+                          "Mount Vernon", 
+                          "Narrows",
+                          "Nassawadox",
+                          "New Castle",
+                          "Newington", 
+                          "New Market",
+                          "Newport News", 
+                          "Newsoms", 
+                          "Nickelsville", 
+                          "Nokesville", 
+                          "Norfolk", 
+                          "North Shore", 
+                          "North Springfield", 
+                          "Norton", 
+                          "Oak Level",
+                          "Oakton", 
+                          "Occoquan",
+                          "Onancock",
+                          "Onley", 
+                          "Orange", 
+                          "Painter", 
+                          "Pamplin City",
+                          "Parksley", 
+                          "Patrick Springs", 
+                          "Pearisburg", 
+                          "Pembroke",
+                          "Penhook", 
+                          "Pennington Gap", 
+                          "Petersburg",
+                          "Phenix", 
+                          "Pimmit Hills", 
+                          "Pocahontas", 
+                          "Poquoson", 
+                          "Port Royal", 
+                          "Portsmouth", 
+                          "Pound", 
+                          "Pulaski", 
+                          "Purcellville", 
+                          "Quantico", 
+                          "Quantico Station", 
+                          "Radford", 
+                          "Raven", 
+                          "Remington",
+                          "Reston", 
+                          "Rich Creek", 
+                          "Richlands",
+                          "Richmond",
+                          "Ridgeway",
+                          "Roanoke", 
+                          "Rocky Mount", 
+                          "Rose Hill CDP (Fairfax County)", 
+                          "Rose Hill CDP (Lee County)", 
+                          "Round Hill", 
+                          "Rural Retreat",
+                          "Rushmere", 
+                          "Rustburg", 
+                          "St.Charles", 
+                          "St. Paul", 
+                          "Salem",
+                          "Saltville",
+                          "Sandy Level", 
+                          "Saxis", 
+                          "Scottsburg", 
+                          "Scottsville", 
+                          "Selma", 
+                          "Seven Corners",
+                          "Shawsville",
+                          "Shenandoah", 
+                          "Sherando", 
+                          "Short Pump", 
+                          "Smithfield", 
+                          "South Boston",
+                          "South Hill", 
+                          "Spotsylvania Courthouse", 
+                          "Springfield", 
+                          "Stanardsville",
+                          "Stanley", 
+                          "Stanleytown", 
+                          "Staunton", 
+                          "Stephens City", 
+                          "Stony Creek", 
+                          "Strasburg", 
+                          "Stuart", 
+                          "Stuarts Draft", 
+                          "Sudley", 
+                          "Suffolk", 
+                          "Sugar Grove", 
+                          "Surry",
+                          "Tangier", 
+                          "Tappahannock", 
+                          "Tazewell", 
+                          "The Plains", 
+                          "Timberlake", 
+                          "Timberville", 
+                          "Toms Brook", 
+                          "Triangle", 
+                          "Troutdale", 
+                          "Troutville", 
+                          "Tuckahoe",
+                          "Tysons Corner",
+                          "Union Hall", 
+                          "Urbanna", 
+                          "Vansant", 
+                          "Verona", 
+                          "Victoria",
+                          "Vienna", 
+                          "Villa Heights",
+                          "Vinton",
+                          "Virgilina",
+                          "Virginia Beach", 
+                          "Wachapreague", 
+                          "Wakefield", 
+                          "Warrenton", 
+                          "Warsaw", 
+                          "Washington", 
+                          "Waverly", 
+                          "Waynesboro", 
+                          "Weber City", 
+                          "West Gate", 
+                          "Westlake Corner", 
+                          "West Point", 
+                          "West Springfield", 
+                          "Weyers Cave", 
+                          "White Stone", 
+                          "Williamsburg", 
+                          "Winchester", 
+                          "Windsor",
+                          "Wise", 
+                          "Wolf Trap", 
+                          "Woodbridge", 
+                          "Woodlawn", 
+                          "Woodstock", 
+                          "Wyndham", 
+                          "Wytheville", 
+                          "Yorkshire", 
+                          "Yorktown")
+cities <- as.data.frame(cities)
 cities <- cities %>% mutate("city" = "1")
-
-bgt_cities <- bgt_cities %>% left_join(cities)
-bgt_cities %>% filter(cty)
-
-bgt_cities %>% group_by(city) %>% summarise(count = n()) 
-
-
-bgt_counties <- as.data.frame(unique(main[, county]) )
-colnames(bgt_counties) <- c("counties")
-
-bgt_counties <- bgt_counties %>% left_join(counties)
-
-bgt_counties %>% filter(is.na(cty)) %>% mutate(county_minus = stringr::str_remove(counties, "\\scity|\\sCity")) %>% left_join(cities, by = c("county_minus" = "counties")) %>% filter(is.na(city))
-
-cities %>% filter(grepl(counties, "Manassas") == TRUE)
-
-unique(main[, fips])
-bgt_fips_cty <- as.data.frame((unique(main[, fipscounty])))
-colnames(bgt_fips_cty) <- c("fipscty")
-bgt_fips_cty$fipscty <- as.character(bgt_fips_cty$fipscty)
-bgt_fips_cty <- bgt_fips_cty %>% 
-  mutate(fipscounty_short = ifelse(nchar(fipscty) == 3, fipscty, 
-                             ifelse(nchar(fipscty) == 2, stringr::str_pad(fipscty, width = 3, pad = "0"), 
-                             stringr::str_pad(fipscty, width = 3, pad = "0")))) %>%
-  mutate(fipscounty = paste0("51", fipscounty_short))
-
 
 fipscounties <- as.data.frame(c("51001", "51003","51005","51007","51009","51011","51013","51015","51017","51019","51021","51023","51025","51027","51029","51031","51033", "51035", "51036","51037","51041","51043","51045","51047","51049","51051","51053","51057","51059","51061","51063","51065","51067","51069","51071", "51073","51075","51077","51079","51081","51083","51085","51087","51089","51091","51093","51095","51097","51099","51101","51103","51105", "51107", "51109","51111","51113","51115","51117","51119","51121","51125","51127","51131","51133","51135","51137","51139","51141","51143", "51145","51147","51149","51153","51155","51157","51159","51161", "51163","51165","51167","51169","51171","51173","51175","51177","51179", "51181","51183","51185","51187","51191","51193","51195","51197","51199","51510","51515","51520","51530","51540","51550","51560","51570", "51580", "51590","51595","51600","51610","51620","51630","51640","51650","51660","51670","51678","51680","51683","51685","51690", "51700", "51710","51720","51730","51735","51740","51750","51760","51770","51775","51780","51790","51800","51810","51820","51830","51840"))
 
 colnames(fipscounties) <- c("fipscty")
 fipscounties <- fipscounties %>% mutate(fc = 1 ) 
 
-bgt_fips_cty <- bgt_fips_cty %>% left_join(fipscounties, by = c("fipscounty" = "fipscty"))
-
-main[1:6, c(fips,fipscounty)]
-
-bgt_fips <- as.data.frame(unique(main[, fips]))
-colnames(bgt_fips) <- c("fips")
-bgt_fips
-
-bgt_fips$fips <- as.factor(bgt_fips$fips)
-bgt_fips <- bgt_fips %>% left_join(fipscounties, by = c("fips" = "fipscty"))
-
-bgt_fips %>% filter(is.na(fc))
-bgt_fips_cty %>% filter(is.na(fc))
-###
-
-arrange(main[duplicated(main[,2:13])], jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon)
-
-main
-
-main[,2:13] %>% distinct() %>% arrange(jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon)
-
-duplicates <- main %>% 
-  group_by(jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon) %>% 
-  summarise(count = n()) %>% 
-  filter(count > 1) %>% 
-  arrange(jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon) 
-
-sum(duplicates$count)
-min(duplicates$count)
-max(duplicates$count)
-
-duplicates %>% filter(count > 30)
-
-main_orig[duplicated(main_orig),]
-
-skills_17 <- read.csv(unzip("~/git/stem_edu/data/stem_edu/original/Burning_Glass_Data/Skill/2017/Skills_2017-07.zip"), sep = "\t")
+```
 
 
 
-head(skills_17)
-skills_17$BGTJobId <- as.character(skills_17$BGTJobId)
-head(main)
 
 
-
+```{r}
 skills_va_17 <- skills_17 %>% 
   inner_join(main, by = c("BGTJobId" = "bgtjobid", "JobDate" = "jobdate")) 
 
@@ -201,113 +463,414 @@ sum(is.na(skills_va_17$SkillClusterFamily), na.rm = TRUE)
 (nrow(skills_va_17) - sum(grepl(x = (skills_va_17$SkillClusterFamily), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(skills_va_17)
 ```
 
+```{r}
+ads_main_2017_51 <- readRDS("~/git/stem_edu/data/stem_edu/working/burning_glass/ads_main_2017_51.RDS")
+
+ads_main_201707_51 <- ads_main_2017_51 %>% filter(str_extract(jobdate, "\\d{4}-\\d{2}") == "2017-07")
+main <- select(ads_main_201707_51, "bgtjobid",'jobdate', 'occfam', 'occfamname', 'employer', 'city',  'state', 'county', 'fipsstate', 'fipscounty', 'fips', 'lat', 'lon')
+
+bgtjobid <- tibble("Column" = "BGT Job ID",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$bgtjobid)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$bgtjobid), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$bgtjobid), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$bgtjobid), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$bgtjobid)))
+
+jobdate <- tibble("Column" = "BGT Job Date",
+  "Blanks" = sum(dataplumbr::is_blank(x = as.character(main$jobdate)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$jobdate), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$jobdate), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$jobdate), na.rm = TRUE))) / nrow(main),     "Unique Values" = length(unique(main$jobdate)))
+
+occfam <- tibble("Column" = "BGT Occ Fam",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$occfam)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$occfam), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$occfam), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$occfam), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$occfam)))
+
+
+occfamname <- tibble("Column" = "BGT Occ Fam Name",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$occfamname)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$occfamname), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$occfamname), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$occfamname), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$occfamname)))
+
+employer <- tibble("Column" = "BGT Employer",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$employer)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$employer), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$employer), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$employer), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$employer)))
+
+city <- tibble("Column" = "BGT City",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$city)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$city), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$city), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$city), na.rm = TRUE))) / nrow(main),
+"Unique Values" = length(unique(main$city)))
+
+state <- tibble("Column" = "BGT State",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$state)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$state), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$state), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$state), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$state)))
+
+county <- tibble("Column" = "BGT County",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$county)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$county), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$county), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$county), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$county)))
+
+fipsstate <- tibble("Column" = "BGT Fips State",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$fipsstate)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$fipsstate), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$fipsstate), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$fipsstate), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$fipsstate)))
+
+fipscounty <- tibble("Column" = "BGT Fips County",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$fipscounty)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$fipscounty), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$fipscounty), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$fipscounty), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$fipscounty)))
+
+fips <- tibble("Column" = "BGT Fips",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$fips)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$fips), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$fips), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$fips), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$fips)))
+
+lat <- tibble("Column" = "BGT Lat",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$lat)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$lat), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$lat), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$lat), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$lat)))
+
+lon <- tibble("Column" = "BGT Lon",
+  "Blanks" = sum(dataplumbr::is_blank(x = (main$lon)), na.rm = FALSE),
+       "True NAs" = sum(is.na(main$lon), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (main$lon), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(main) - (sum(is.na(main$lon), na.rm = TRUE))) / nrow(main),
+       "Unique Values" = length(unique(main$lon)))
+
+
+
+bgt_perc_comp <- rbind(bgtjobid, jobdate, occfam, occfamname, employer, city, state, county, fipsstate, fipscounty, fips, lat, lon)
+readr::write_csv(bgt_perc_comp, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_completeness.csv")
+```
+
+```{r}
+#BGT Valididty using Aaron's data
+
+# ID - no duplicate values
+
+bgtjobid_val <- tibble(
+  "Column" = "BGT Job ID",
+  "Definition" = "id is not duplicated",
+  "Total Rows" = nrow(main),
+  "Total Valid" = length(unique(main$bgtjobid)),
+  "Total Invalid" = nrow(main) - length(unique(main$bgtjobid)),
+  "Percent Invalid" = (nrow(main) - length(unique(main$bgtjobid))) / nrow(main), 
+  "Percent Valid" = (1 - (nrow(main) - length(unique(main$bgtjobid))) / nrow(main))) 
+
+july2017dates <- interval(ymd("2017-07-01"), ymd("2017-07-31"))
+
+bgtjobdate_val <- tibble(
+  "Column" = "BGT Job Date",
+  "Definition" = "date is in July 17",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(filter(main, lubridate::ymd(jobdate) %within% july2017dates)),
+  "Total Invalid" = nrow(main) - (nrow(filter(main, lubridate::ymd(jobdate) %within% july2017dates))),
+  "Percent Invalid" = (nrow(main) - (nrow(filter(main, lubridate::ymd(jobdate) %within% july2017dates)))) / nrow(main), 
+  "Percent Valid" = (nrow(filter(main, lubridate::ymd(jobdate) %within% july2017dates))) / nrow(main)) 
+
+occfam_values <- c(11, 13, 15, 17, 19, 21, 23, 25, 27, 29,  31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55)
+
+bgtoccfam_val <- tibble(
+  "Column" = "BGT Occupation Familiy",
+  "Definition" = "occ fam is actual occ fam",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(filter(main, occfam %in% occfam_values)),
+  "Total Invalid" = nrow(main) - nrow(filter(main, occfam %in% occfam_values)),
+  "Percent Invalid" = (nrow(main) - nrow(filter(main, occfam %in% occfam_values))) / nrow(main), 
+  "Percent Valid" = (nrow(filter(main, occfam %in% occfam_values))) / nrow(main)) 
+
+occfamname_values <- c( "Management Occupations", 
+                    "Business and Financial Operations Occupations",
+                    "Computer and Mathematical Occupations",
+                    "Architecture and Engineering Occupations", 
+                    "Life, Physical, and Social Science Occupations",
+                    "Community and Social Service Occupations", 
+                    "Legal Occupations",
+                    "Education, Training, and Library Occupations",
+                    "Arts, Design, Entertainment, Sports, and Media Occupations",
+                    "Healthcare Practitioners and Technical Occupations",
+                    "Healthcare Support Occupations",
+                    "Protective Service Occupations",
+                    "Food Preparation and Serving Related Occupations",
+                    "Building and Grounds Cleaning and Maintenance Occupations",
+                    "Personal Care and Service Occupations",
+                    "Sales and Related Occupations",
+                    "Office and Administrative Support Occupations",
+                    "Farming, Fishing, and Forestry Occupations",
+                    "Construction and Extraction Occupations", 
+                    "Installation, Maintenance, and Repair Occupations",
+                    "Production Occupations",
+                    "Transportation and Material Moving Occupations",
+                    "Military Specific Occupations")
+
+bgtoccfamname_val <- tibble(
+  "Column" = "BGT Occupation Familiy Name",
+  "Definition" = "name is actual occ fam name",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(filter(main, occfamname %in% occfamname_values)),
+  "Total Invalid" = nrow(main) - nrow(filter(main, occfamname %in% occfamname_values)),
+  "Percent Invalid" = (nrow(main) - nrow(filter(main, occfamname %in% occfamname_values))) / nrow(main), 
+  "Percent Valid" = (nrow(filter(main, occfamname %in% occfamname_values))) / nrow(main)) 
+
+bgtcity_val <- tibble(
+  "Column" = "BGT City",
+  "Definition" = "city is actual VA city",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(left_join(main, cities, by = c("city" = "cities"))),
+  "Total Invalid" = nrow(main) - nrow(left_join(main, cities, by = c("city" = "cities"))),
+  "Percent Invalid" = (nrow(main) - nrow(left_join(main, cities, by = c("city" = "cities")))) / nrow(main), 
+  "Percent Valid" = (nrow(left_join(main, cities, by = c("city" = "cities")))) / nrow(main)) 
+
+bgtstate_val <- tibble(
+  "Column" = "BGT State",
+  "Definition" = "state code contains Virginia",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(filter(main, str_trim(state) == "Virginia")),
+  "Total Invalid" = nrow(main) - nrow(filter(main, str_trim(state) == "Virginia")),
+  "Percent Invalid" = (nrow(main) - nrow(filter(main, str_trim(state) == "Virginia"))) / nrow(main), 
+  "Percent Valid" = (nrow(filter(main, str_trim(state) == "Virginia"))) / nrow(main)) 
+
+bgtcounty_val <- tibble(
+  "Column" = "BGT County",
+  "Definition" = "county name is VA county",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(left_join(main, counties, by = c("county" = "counties"))),
+  "Total Invalid" = nrow(main) - nrow(left_join(main, counties, by = c("county" = "counties"))),
+  "Percent Invalid" = (nrow(main) - nrow(left_join(main, counties, by = c("county" = "counties")))) / nrow(main), 
+  "Percent Valid" = (nrow(left_join(main, counties, by = c("county" = "counties")))) / nrow(main)) 
+
+bgtfipsstate_val <- tibble(
+  "Column" = "BGT Fips State",
+  "Definition" = "fips state is '51'",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(filter(main, fipsstate == "51")),
+  "Total Invalid" = nrow(main) - nrow(filter(main, fipsstate == "51")),
+  "Percent Invalid" = (nrow(main) - nrow(filter(main, fipsstate == "51"))) / nrow(main), 
+  "Percent Valid" = (nrow(filter(main, fipsstate == "51"))) / nrow(main))
+
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+fipscounties <- fipscounties %>% mutate(fipscountee = substrRight(as.character(fipscty), 3), 
+                        fipscounty = as.numeric(fipscountee))
+
+bgtfipscounty_val <- tibble(
+  "Column" = "BGT Fips county",
+  "Definition" = "fips state is VA FIPS county",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(left_join(main, fipscounties, by = "fipscounty" )),
+  "Total Invalid" = nrow(main) - nrow(left_join(main, fipscounties, by = "fipscounty" )),
+  "Percent Invalid" = (nrow(main) - nrow(left_join(main, fipscounties, by = "fipscounty" ))) / nrow(main), 
+  "Percent Valid" = (nrow(left_join(main, fipscounties, by = "fipscounty" ))) / nrow(main))
+
+main$fips <- as.factor(main$fips)
+
+bgtfips_val <- tibble(
+  "Column" = "BGT Fips",
+  "Definition" = "fips code is VA fips ",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(left_join(main, fipscounties, by = c("fips" = "fipscty") )),
+  "Total Invalid" = nrow(main) - nrow(left_join(main, fipscounties, by = c("fips" = "fipscty"))),
+  "Percent Invalid" = (nrow(main) - nrow(left_join(main, fipscounties, by = c("fips" = "fipscty"))) ) / nrow(main), 
+  "Percent Valid" = (nrow(left_join(main, fipscounties, by = c("fips" = "fipscty"))) ) / nrow(main))
+
+
+## CHECKING LON AND LAT
+library(USAboundaries)
+virginia <- USAboundaries::us_states(resolution = "low", states = "VA")
+main2 %>% st_set_crs(st_crs(virginia))
+
+main2 <- main %>% 
+  filter(dataplumbr::is_blank(lat) == FALSE) %>% 
+  filter(dataplumbr::is_blank(lon) == FALSE) %>%
+  st_as_sf(coords = c("lon", "lat")) %>%
+  st_set_crs(st_crs(virginia))
+
+
+bgtlatlon_val <- tibble(
+  "Column" = "BGT Lat & Lon",
+  "Definition" = "coords in VA bounds",
+  "Total Rows" = nrow(main),
+  "Total Valid" = nrow(st_join(main2, virginia)),
+  "Total Invalid" = nrow(main) - nrow(st_join(main2, virginia)),
+  "Percent Invalid" = (nrow(main) - nrow(st_join(main2, virginia))) / nrow(main), 
+  "Percent Valid" = (nrow(st_join(main2, virginia))) / nrow(main))
+
+bgt_perc_val <- rbind(bgtjobid_val, bgtjobdate_val, bgtoccfam_val, bgtoccfamname_val, bgtcity_val, bgtstate_val, bgtcounty_val, bgtfipsstate_val, bgtfipscounty_val, bgtfips_val, bgtlatlon_val)
+
+readr::write_csv(bgt_perc_val, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_validity.csv")
+```
+
+
+```{r}
+
+duplication <- tibble("Dataset" = c("BGT", "Open Jobs"), 
+       "N" = nrow(main),
+       
+       "# Non-Dupes" = c(
+         nrow(main[!duplicated(main[,2:13]),]),
+         nrow(OJ2[!duplicated(OJ2[,2:8]),])),
+       
+       "# Dupes" = c(
+         nrow(main[duplicated(main[,2:13]),]),
+         nrow(OJ2[duplicated(OJ2[,2:8]),])),
+       
+        "Percent Unuplicated" = c(
+          ( nrow(main[!duplicated(main[,2:13]),]) ) / nrow(main) ,
+          ( nrow(OJ2[!duplicated(OJ2[,2:8]),])) / nrow(main) ),
+       
+        "Percent Duplicated" = c(
+          ( nrow(main[duplicated(main[,2:13]),]) ) / nrow(main) ,
+          ( nrow(OJ2[duplicated(OJ2[,2:8]),])) / nrow(main) )
+       ) 
+
+readr::write_csv(duplication, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_oj_duplication.csv")
+
+```
+
+
 
 ```{r}
 
 #OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS")
 
 OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/openjobs_point.RDS") #all dates need to filter to july
-OJ2$datePosted
 OJ2 <- OJ2 %>% filter(str_extract(datePosted, "\\d{4}-\\d{2}") == "2017-07")
 sf::st_geometry(OJ2) <- NULL
 
-OJ2
+oj_id <- tibble("Column" = "OJ Job ID",
+  "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$rawdata_id)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$rawdata_id), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$rawdata_id), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(is.na(OJ2$rawdata_id), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$rawdata_id)))
 
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$rawdata_id)), na.rm = FALSE)) / nrow(OJ2)
-(nrow(OJ2) - sum(is.na(OJ2$rawdata_id), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(grepl(x = (OJ2$rawdata_id), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
-length(unique(OJ2$rawdata_id))
+onet <- tibble("Column" = "OJ ONET",
+  "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$normalizedTitle_onetCode)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$normalizedTitle_onetCode), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$normalizedTitle_onetCode), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$normalizedTitle_onetCode), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$normalizedTitle_onetCode)))
 
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$normalizedTitle_onetCode)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(is.na(OJ2$normalizedTitle_onetCode), na.rm = TRUE))/nrow(OJ2)
-(nrow(OJ2) - sum(grepl(x = (OJ2$normalizedTitle_onetCode), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
-length(unique(OJ2$normalizedTitle_onetCode))
+onetname <- tibble("Column" = "OJ ONET Name",
+  "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$normalizedTitle_onetName)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$normalizedTitle_onetName), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$normalizedTitle_onetName), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$normalizedTitle_onetName), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$normalizedTitle_onetName)))
 
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$normalizedTitle_onetName)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(is.na(OJ2$normalizedTitle_onetName), na.rm = TRUE))/nrow(OJ2)
-(nrow(OJ2) - sum(grepl(x = (OJ2$normalizedTitle_onetName), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
-length(unique(OJ2$normalizedTitle_onetName))
+date <- tibble("Column" = "OJ Date",
+    "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$datePosted)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$datePosted), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$datePosted), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$datePosted), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$datePosted)))
 
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$datePosted)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(is.na(OJ2$datePosted), na.rm = TRUE))/nrow(OJ2)
-(nrow(OJ2) - sum(grepl(x = (OJ2$datePosted), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
-length(unique(OJ2$datePosted))
 
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$responsibilities)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$experienceRequirements)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$jobDescription)), na.rm = TRUE)) / nrow(OJ2)
+oj_perc_comp <- rbind(oj_id, onet, onetname, date)
+readr::write_csv(oj_perc_comp, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_oj_completeness.csv")
 
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (OJ2$hiringOrg)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(is.na(OJ2$hiringOrg), na.rm = TRUE))/nrow(OJ2)
-(nrow(OJ2) - sum(grepl(x = (OJ2$hiringOrg), pattern = "\\bna\\b"), na.rm = TRUE)) / nrow(OJ2)
-length(unique(OJ2$hiringOrg))
-
-length(unique(OJ2$rawdata_id))
-max(nchar(unique(OJ2$rawdata_id)))
-min(nchar(unique(OJ2$rawdata_id)))
-
-coords <- as.data.frame(st_coordinates(OJ2))
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$X)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$X)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$X)), na.rm = TRUE)) / nrow(OJ2)
-
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$Y)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$Y)), na.rm = TRUE)) / nrow(OJ2)
-(nrow(OJ2) - sum(dataplumbr::is_blank(x = (coords$Y)), na.rm = TRUE)) / nrow(OJ2)
-
-length(unique(coords$X))
-length(unique(coords$Y))
-
-NULL -> st_geometry(OJ2)
-OJ2[duplicated(OJ2),]
-sum(duplicated(OJ2))
-colnames(OJ2)
-OJ2 %>% group_by(normalizedTitle_onetCode, normalizedTitle_onetName, datePosted, hiringOrg) %>% summarise(count = n()) %>% filter(count == 1)
-
-unique(OJ2$datePosted)
-checkdupes <- OJ2[,c(2:8)]
-
-OJ2[duplicated(OJ2[,c(2:8, 11)]),]
 ```
 
+```{r}
+## Validity
+
+#install.packages("ONETr") "RCurl" "bitops"
+onet_data <- readxl::read_excel("~/git/stem_edu/data/stem_edu/original/ONET_survey/Occupation Data.xlsx")
+
+oj2_date_val <-  tibble(
+  "Column" = "OJ Date Posted",
+  "Definition" = "must be July 2017",
+  "Total Rows" = nrow(OJ2),
+  "Total Valid" = nrow(filter(OJ2, lubridate::ymd(datePosted) %within% july2017dates)),
+  "Total Invalid" = nrow(OJ2) - nrow(filter(OJ2, lubridate::ymd(datePosted) %within% july2017dates)),
+  "Percent Invalid" = (nrow(OJ2) - nrow(filter(OJ2, lubridate::ymd(datePosted) %within% july2017dates)) ) / nrow(OJ2), 
+  "Percent Valid" = (nrow(filter(OJ2, lubridate::ymd(datePosted) %within% july2017dates))) / nrow(OJ2))
+
+oj2_onet_val <-  tibble(
+  "Column" = "OJ ONET code",
+  "Definition" = "must be an onet code",
+  "Total Rows" = nrow(OJ2),
+  "Total Valid" = nrow(filter(OJ2, normalizedTitle_onetCode %in% onet_data$`O*NET-SOC Code`)),
+  "Total Invalid" = nrow(OJ2) - nrow(filter(OJ2, normalizedTitle_onetCode %in% onet_data$`O*NET-SOC Code`)),
+  "Percent Invalid" = (nrow(OJ2) - nrow(filter(OJ2, normalizedTitle_onetCode %in% onet_data$`O*NET-SOC Code`)) ) / nrow(OJ2), 
+  "Percent Valid" = (nrow(filter(OJ2, normalizedTitle_onetCode %in% onet_data$`O*NET-SOC Code`))) / nrow(OJ2))
+
+oj2_onetname_val <-  tibble(
+  "Column" = "OJ ONET Name",
+  "Definition" = "must be an onet code name",
+  "Total Rows" = nrow(OJ2),
+  "Total Valid" = nrow(filter(OJ2, normalizedTitle_onetName %in% onet_data$Title)),
+  "Total Invalid" = nrow(OJ2) - nrow(filter(OJ2, normalizedTitle_onetName %in% onet_data$Title)),
+  "Percent Invalid" = (nrow(OJ2) - nrow(filter(OJ2, normalizedTitle_onetName %in% onet_data$Title)) ) / nrow(OJ2), 
+  "Percent Valid" = (nrow(filter(OJ2, normalizedTitle_onetName %in% onet_data$Title))) / nrow(OJ2))
+
+oj2_latlon_val <-  tibble(
+  "Column" = "OJ Lat & Lon",
+  "Definition" = "must be in VA bounds",
+  "Total Rows" = nrow(OJ2),
+  "Total Valid" = nrow(filter(OJ2, within == TRUE)),
+  "Total Invalid" = nrow(OJ2) - nrow(filter(OJ2, within == TRUE)),
+  "Percent Invalid" = (nrow(OJ2) - nrow(filter(OJ2, within == TRUE)) ) / nrow(OJ2), 
+  "Percent Valid" = (nrow(filter(OJ2, within == TRUE))) / nrow(OJ2))
+
+colnames(OJ2)
+
+oj_perc_val <- rbind(oj2_date_val, oj2_onet_val, oj2_onetname_val, oj2_latlon_val)
+readr::write_csv(oj_perc_val, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_oj_validity.csv")
+```
 
 ```{r}
-OJ2
-open_join_shape_ct
-open_point
+econ_va_counties <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
+main3 <- main2 %>% st_set_crs(st_crs(econ_va_counties)) %>% st_join(econ_va_counties)
 
+OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/openjobs_point.RDS") #all dates need to filter to july
+OJ2 <- OJ2 %>% filter(str_extract(datePosted, "\\d{4}-\\d{2}") == "2017-07")
+OJ2 <- OJ2 %>% st_join(econ_va_counties)
 
+st_geometry(main3) <- NULL
+st_geometry(OJ2) <- NULL
 
-BGT <- BG_join_point %>% group_by(occfam, occfamname, Region) %>% summarise(count = n())
-st_geometry(BGT) <- NULL
-OpenJobs <- readRDS("data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/openjobs_point_aggregated_0717_fortable.RDS")
+main3_agg <- main3 %>% dplyr::group_by(occfam, Region) %>% dplyr::summarise(count = dplyr::n())
+OJ_agg <- OJ2 %>% mutate(occfam = substr(normalizedTitle_onetCode, 0, 2)) %>% dplyr::group_by(occfam, Region) %>% dplyr::summarise(count = dplyr::n())
+OJ_agg$occfam <- as.numeric(OJ_agg$occfam)
 
-BGT
-OpenJobs
+BGT_OJ_agg <- main3_agg %>% left_join(OJ_agg, by = c("occfam", "Region"))
+colnames(BGT_OJ_agg) <- c("occ_fam", "econ_region", "BGT", "OJ")
 
-thing <- BGT %>% left_join(OpenJobs, by = c("occfam", "Region"))
-thing <- thing %>% mutate(OCC = paste(occfam, occfamname)) 
-thing <- thing[,3:6]
-colnames(thing) <- c("Region", "BGT Count", "OJ Count", "OccFam")
+BGT_OJ_agg <- BGT_OJ_agg %>% 
+  mutate(diff = (BGT - OJ), 
+         per_diff = ((BGT - OJ) / ((BGT + OJ)/2)),  
+         perc_diff = 100*per_diff, 
+         diffandpercdiff = paste(per_diff, " / ", perc_diff)) 
+  
 
-thing2 <- dcast.data.table(as.data.table(thing), OccFam ~ Region, value.var=list('BGT Count','OJ Count'))
-
-thing2[is.na(thing2)] <- 0
-
-thing3 <- thing2 %>% transmute(
-  OccFam = OccFam,
-  "Region NA" = `BGT Count_NA` - `OJ Count_NA`, 
-  "Region 1" = `BGT Count_1` - `OJ Count_1`, 
-  "Region 2" = `BGT Count_2` - `OJ Count_2`, 
-  "Region 3" = `BGT Count_3` - `OJ Count_3`, 
-  "Region 5" = `BGT Count_5` - `OJ Count_5`, 
-  "Region 4" = `BGT Count_4` - `OJ Count_4`, 
-  "Region 6" = `BGT Count_6` - `OJ Count_6`, 
-  "Region 7" = `BGT Count_7` - `OJ Count_7`, 
-  "Region 8" = `BGT Count_8` - `OJ Count_8`,
-  "Region 9" = `BGT Count_9` - `OJ Count_9`
-)
-write.csv(thing3, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/vicki_table.csv")
+BGT_OJ_agg_ <- dcast.data.table(as.data.table(BGT_OJ_agg), occ_fam ~ econ_region, value.var=list('perc_diff'))
+readr::write_csv(BGT_OJ_agg_, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_oj_percdiff.csv")
 ```
 
 
