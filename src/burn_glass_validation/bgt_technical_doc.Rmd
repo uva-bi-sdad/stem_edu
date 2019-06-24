@@ -862,6 +862,8 @@ OJ_agg$occfam <- as.numeric(OJ_agg$occfam)
 BGT_OJ_agg <- main3_agg %>% left_join(OJ_agg, by = c("occfam", "Region"))
 colnames(BGT_OJ_agg) <- c("occ_fam", "econ_region", "BGT", "OJ")
 
+BGT_OJ_agg[is.na(BGT_OJ_agg)] <- 0
+
 BGT_OJ_agg <- BGT_OJ_agg %>% 
   mutate(diff = (BGT - OJ), 
          per_diff = ((BGT - OJ) / ((BGT + OJ)/2)),  
