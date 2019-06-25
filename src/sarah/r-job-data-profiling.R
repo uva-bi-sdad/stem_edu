@@ -1,6 +1,7 @@
 library(tidyverse)
 library(data.table)
 library(inspectdf)
+library(dplyr)
 
 r_job <- fread("data/stem_edu/working/Team_SA_job_skills_filter/rich_jobs.csv")
 str(r_job)
@@ -187,3 +188,73 @@ uniquecount <- function(x){
 }
 
 r_job_prof$uniqueness <- apply(r_job, MARGIN = 2, uniquecount)
+
+
+#write.csv(r_job_prof, "~/stem_edu/src/sarah/r_job_prof.csv")
+
+
+###SKILLS
+r_skill <- fread("data/stem_edu/working/Team_SA_job_skills_filter/rich_skills.csv")
+str(r_skill)
+head(r_skill)
+r_skill
+r_skill <- r_skill %>% select(skill, skillcluster, skillclusterfamily)
+
+r_skill <- r_skill%>%
+  mutate(skill = replace(skill, skill == "na", NA))
+r_skill <- r_skill%>%
+  mutate(skillcluster = replace(skillcluster, skillcluster == "na", NA))
+r_skill <- r_skill%>%
+  mutate(skillclusterfamily = replace(skillclusterfamily, skillclusterfamily == "na", NA))
+
+r_skill %>%
+  filter(nchar(skill)==2) #checking that na is removed
+
+###creating table to hold profiling results:
+r_skill_prof <- data.table(variable = colnames(r_skill), completeness = numeric(length = ncol(r_skill)),
+                         validity = numeric(length = ncol(r_skill)), uniqueness = numeric(length = ncol(r_skill)))
+
+
+#####Completeness
+
+compcount <- function(x){
+  (length(x) - sum(is.na(x)))/length(x)
+}
+
+r_skill_prof$completeness <- apply(r_skill, MARGIN = 2, compcount)
+#double checking completeness function
+sum(is.na(r_skill$skill))
+sum(is.na(r_skill$skillcluster))
+sum(is.na(r_skill$skillclusterfamily))
+
+#####UNIQUENESS
+
+uniquecount <- function(x){
+  length(unique(x))
+}
+
+r_skill_prof$uniqueness <- apply(r_skill, MARGIN = 2, uniquecount)
+
+#####VALUE VALIDITY
+#Skill
+str(r_skill$skill) #character
+tail(r_skill %>% group_by(nchar(skill)) %>% summarise(count = n()))
+r_skill_prof[r_skill_prof$variable == "skill","validity"] <- 1*r_skill_prof[r_skill_prof$variable == "skill","completeness"]
+
+#skill cluster
+str(r_skill$skillcluster) #character
+head(r_skill %>% group_by(nchar(skillcluster)) %>% summarise(count = n()))
+tail(r_skill %>% group_by(nchar(skillcluster)) %>% summarise(count = n()))
+r_skill_prof[r_skill_prof$variable == "skillcluster","validity"] <- 1*r_skill_prof[r_skill_prof$variable == "skillcluster","completeness"]
+
+str(r_skill$skillclusterfamily) #character
+head(r_skill %>% group_by(nchar(skillclusterfamily)) %>% summarise(count = n()))
+tail(r_skill %>% group_by(nchar(skillclusterfamily)) %>% summarise(count = n()))
+r_skill_prof[r_skill_prof$variable == "skillclusterfamily","validity"] <- 1*r_skill_prof[r_skill_prof$variable == "skillclusterfamily","completeness"]
+
+#write.csv(r_skill_prof, "~/stem_edu/src/sarah/r_skill_prof.csv")
+
+richmond_prof <- r_job_prof %>%
+  bind_rows(r_skill_prof)
+#write.csv(richmond_prof, "~/stem_edu/src/sarah/richmond_prof.csv")
+
