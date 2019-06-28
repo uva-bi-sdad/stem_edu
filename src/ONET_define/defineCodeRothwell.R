@@ -32,6 +32,30 @@ knowledge <- filter(knowledge, element_name %in%
                         "Mechanical", "Medicine and Dentistry", "Physics",
                         "Production and Processing", "Telecommunications"))
 
+####looking at distributions of knowledge scores for each relevant skillset
+
+ggplot(knowledge, aes(x=data_value))+geom_histogram()+facet_grid(cols = vars(element_name))
+#Rothwell looked at slightly-above-average score on a 1-7 scale
+#(but is average actually at 4?) not at all normally distributed at any level--
+#particularly bad for individual knowledge, but also bad for all technical knowledge
+#and also all knowledge, even when excluding info that ONET says should be suppressed
+
+ggplot(knowledge)+geom_histogram(aes(x=data_value))
+
+ggplot(knowledge[knowledge$recommend_suppress == "N",])+geom_histogram(aes(x=data_value))
+mean(knowledge$data_value, na.rm = TRUE)
+median(knowledge$data_value, na.rm = TRUE)
+
+knowledge %>% group_by(element_name) %>% summarise(mean = mean(data_value)) %>% ggplot(aes(x=mean))+geom_histogram(bins = 10)
+
+k_quantile <- knowledge %>% group_by(element_name) %>% summarise(min = quantile(data_value)[1],
+              q1 = quantile(data_value)[2], mean = quantile(data_value)[3],
+              q3 = quantile(data_value)[4],
+              perc90 = quantile(data_value, probs = .9),
+              perc95 = quantile(data_value, probs = .95),
+              max = quantile(data_value)[5])
+#how many occupations have an STW skill in the 95th percentile?
+
 
 #seeing technical knowledge levels for each occupation
 
@@ -136,6 +160,15 @@ stw_perc_total$r_stw_diff <- stw_perc_total$r_perc_stw-stw_perc_total$v_perc_stw
 stw_perc_total$b_stw_diff <- stw_perc_total$b_perc_stw-stw_perc_total$v_perc_stw
 stw_perc_total$rb_stw_diff <- stw_perc_total$r_perc_stw-stw_perc_total$b_perc_stw
 
+stw_perc_total_many <- stw_perc_total[stw_perc_total$v_perc_stw >= .005,]
+
+stw_perc_total_many <- arrange(stw_perc_total_many, desc(v_perc_stw))
+ggplot(stw_perc_total_many)+geom_point(aes(x=onetname, y=v_perc_stw))+coord_flip()
+
+ggplot(stw_perc_total_many)+geom_point(aes(x=reorder(onetname, v_total), y=v_perc_stw), size = 2)+
+  geom_point(aes(x=reorder(onetname, v_total), y=r_perc_stw), color = "blue", size = 1)+
+  geom_point(aes(x=reorder(onetname, v_total), y= b_perc_stw), color = "red", size = 1)+
+  coord_flip()+ggtitle("Occupations As Percent of STW Workforce")
 
 ###Finding how many jobs in Richmond and Blacksburg match this definition
 
@@ -213,4 +246,21 @@ ggplot(b_job_edu_many, aes(x = reorder(onetname, subBachPercDiff), y = subBachPe
 comb_job_edu_many <- rbind(cbind(r_job_edu_many,place = "richmond"), cbind(b_job_edu_many, place = "blacksburg"))
 
 ggplot(comb_job_edu_many, aes(x = reorder(onetname, subBachPercDiff), y = subBachPercDiff)) + geom_col(aes(group = place, fill = place), position = "dodge") + coord_flip()
+
+#####getting list of all skills associated with an STW
+bgt_job_unique <- bgt_jobs %>% group_by(bgtjobid, onet, onetname) %>% summarise(count = n())
+
+bgt_stw_skills_onet <- left_join(bgt_stw_skills, bgt_jobs[,c("bgtjobid", "onet", "onetname")], by = "bgtjobid")
+bgt_stw_count <- bgt_jobs %>% filter(bgtjobid %in% bgt_stw_id) %>% group_by(onet, onetname) %>% summarise(count = n())
+bgt_stw_skills_onet <- left_join(bgt_stw_skills_onet, bgt_stw_count[,c("onet","count")], by = "onet")
+colnames(bgt_stw_skills_onet) <- c(colnames(bgt_stw_skills_onet)[1:11],"total_positions")
+bgt_stw_skills_onet_unique <- bgt_stw_skills_onet %>% group_by(skill, skillcluster, skillclusterfamily, isspecialized, isbaseline,
+                              issoftware, onet, onetname, total_positions) %>% summarise(positions_with_skill = n())
+bgt_stw_skills_onet_unique$perc_pos_w_skill <- round(bgt_stw_skills_onet_unique$positions_with_skill / bgt_stw_skills_onet_unique$total_positions, 4)*100
+bgt_stw_skills_onet_unique <- select(bgt_stw_skills_onet_unique, "onet","onetname","skill","skillcluster","skillclusterfamily",
+                                     "isspecialized", "isbaseline", "issoftware", "total_positions", "positions_with_skill",
+                                     "perc_pos_w_skill") %>% arrange(desc(total_positions), desc(perc_pos_w_skill))
+write.csv(bgt_stw_skills_onet_unique, "src/ONET_define/v_stw_skills.csv")
+
+#most common STW positions in VA, Blacksburg, Richmond
 
