@@ -1,12 +1,13 @@
 library(tidyverse)
 library(data.table)
 library(inspectdf)
+library(dplyr)
 
 r_job <- fread("data/stem_edu/working/Team_SA_job_skills_filter/rich_jobs.csv")
 str(r_job)
 head(r_job)
 #Select these because they were listed for data profiling
-r_job <- select(r_job, bgtjobid, jobdate, occfam, occfamname, employer, city,state, county, fipsstate, fipscounty, fips, lat, lon, onet, onetname, bgtocc, edu, degree, exp)
+r_job <- select(r_job, bgtjobid, jobdate, occfam, occfamname, employer, city,state, county, fipsstate, fipscounty, fips, lat, lon, onet, onetname, bgtocc, edu, degree, exp, jobhours)
 
 r_job_cat <- r_job %>% inspect_cat()
 r_job_cat$levels$city
@@ -71,7 +72,7 @@ sum(nchar(r_job$occfamname) <= 1, na.rm = TRUE)
 r_job_prof[r_job_prof$variable == "occfamname","validity"] <- 1*r_job_prof[r_job_prof$variable == "occfamname","completeness"]
 
 ###VALIDITY EMPLOYER
-#employer should be char
+#Characters
 str(r_job$employer)
 #looking for outliers in character count of employer
 r_job %>% group_by(nchar(employer)) %>% summarise(count = n())
@@ -127,6 +128,7 @@ str(r_job$fips) # is integers, should be character
 unique(r_job$fips) #should match to unique fipscounty
 
 r_job_prof[r_job_prof$variable == "fips","validity"] <- 1*r_job_prof[r_job_prof$variable == "fips","completeness"]
+
 ###Validity lat
 #should be a number
 str(r_job$lat)
@@ -144,6 +146,40 @@ sum(r_job$lon < -82)
 sum(r_job$lon > -72)
 r_job_prof[r_job_prof$variable == "lon","validity"] <- 1*r_job_prof[r_job_prof$variable == "lon","completeness"]
 
+###ONET
+str(r_job$onet) #character
+r_job %>% group_by(nchar(onet)) %>% summarise(count = n()) #checking for uniform character count
+r_job_prof[r_job_prof$variable == "onet","validity"] <- 1*r_job_prof[r_job_prof$variable == "onet","completeness"]
+
+###ONET name
+str(r_job$onetname) #character
+length(unique(r_job$onetname)) #should be equal to onet variable
+r_job_prof[r_job_prof$variable == "onetname","validity"] <- 1*r_job_prof[r_job_prof$variable == "onetname","completeness"]
+
+###BGTOCC
+str(r_job$bgtocc) #character
+r_job %>% group_by(nchar(bgtocc)) %>% summarise(count = n()) #checking for uniform character count
+r_job_prof[r_job_prof$variable == "bgtocc","validity"] <- 1*r_job_prof[r_job_prof$variable == "bgtocc","completeness"]
+
+###EDU
+str(r_job$edu)#should be num, IS INTEGER
+unique(r_job$edu) #there are only six unique values including
+r_job_prof[r_job_prof$variable == "edu","validity"] <- 1*r_job_prof[r_job_prof$variable == "edu","completeness"]
+
+###DEGREE
+str(r_job$degree)#character
+unique(r_job$degree)
+r_job_prof[r_job_prof$variable == "degree","validity"] <- 1*r_job_prof[r_job_prof$variable == "degree","completeness"]
+
+###EXP
+str(r_job$exp) #num
+unique(r_job$exp) #some of the decimal numbers do not make a ton of sense and may be due to rounding error
+r_job_prof[r_job_prof$variable == "exp","validity"] <- 1*r_job_prof[r_job_prof$variable == "exp","completeness"]
+
+###jobhhours
+str(r_job$jobhours) #character
+unique(r_job$jobhours)
+r_job_prof[r_job_prof$variable == "jobhours","validity"] <- 1*r_job_prof[r_job_prof$variable == "jobhours","completeness"]
 
 #####UNIQUENESS
 
@@ -152,3 +188,73 @@ uniquecount <- function(x){
 }
 
 r_job_prof$uniqueness <- apply(r_job, MARGIN = 2, uniquecount)
+
+
+#write.csv(r_job_prof, "~/stem_edu/src/sarah/r_job_prof.csv")
+
+
+###SKILLS
+r_skill <- fread("data/stem_edu/working/Team_SA_job_skills_filter/rich_skills.csv")
+str(r_skill)
+head(r_skill)
+r_skill
+r_skill <- r_skill %>% select(skill, skillcluster, skillclusterfamily)
+
+r_skill <- r_skill%>%
+  mutate(skill = replace(skill, skill == "na", NA))
+r_skill <- r_skill%>%
+  mutate(skillcluster = replace(skillcluster, skillcluster == "na", NA))
+r_skill <- r_skill%>%
+  mutate(skillclusterfamily = replace(skillclusterfamily, skillclusterfamily == "na", NA))
+
+r_skill %>%
+  filter(nchar(skill)==2) #checking that na is removed
+
+###creating table to hold profiling results:
+r_skill_prof <- data.table(variable = colnames(r_skill), completeness = numeric(length = ncol(r_skill)),
+                         validity = numeric(length = ncol(r_skill)), uniqueness = numeric(length = ncol(r_skill)))
+
+
+#####Completeness
+
+compcount <- function(x){
+  (length(x) - sum(is.na(x)))/length(x)
+}
+
+r_skill_prof$completeness <- apply(r_skill, MARGIN = 2, compcount)
+#double checking completeness function
+sum(is.na(r_skill$skill))
+sum(is.na(r_skill$skillcluster))
+sum(is.na(r_skill$skillclusterfamily))
+
+#####UNIQUENESS
+
+uniquecount <- function(x){
+  length(unique(x))
+}
+
+r_skill_prof$uniqueness <- apply(r_skill, MARGIN = 2, uniquecount)
+
+#####VALUE VALIDITY
+#Skill
+str(r_skill$skill) #character
+tail(r_skill %>% group_by(nchar(skill)) %>% summarise(count = n()))
+r_skill_prof[r_skill_prof$variable == "skill","validity"] <- 1*r_skill_prof[r_skill_prof$variable == "skill","completeness"]
+
+#skill cluster
+str(r_skill$skillcluster) #character
+head(r_skill %>% group_by(nchar(skillcluster)) %>% summarise(count = n()))
+tail(r_skill %>% group_by(nchar(skillcluster)) %>% summarise(count = n()))
+r_skill_prof[r_skill_prof$variable == "skillcluster","validity"] <- 1*r_skill_prof[r_skill_prof$variable == "skillcluster","completeness"]
+
+str(r_skill$skillclusterfamily) #character
+head(r_skill %>% group_by(nchar(skillclusterfamily)) %>% summarise(count = n()))
+tail(r_skill %>% group_by(nchar(skillclusterfamily)) %>% summarise(count = n()))
+r_skill_prof[r_skill_prof$variable == "skillclusterfamily","validity"] <- 1*r_skill_prof[r_skill_prof$variable == "skillclusterfamily","completeness"]
+
+#write.csv(r_skill_prof, "~/stem_edu/src/sarah/r_skill_prof.csv")
+
+richmond_prof <- r_job_prof %>%
+  bind_rows(r_skill_prof)
+#write.csv(richmond_prof, "~/stem_edu/src/sarah/richmond_prof.csv")
+
