@@ -1,4 +1,4 @@
-This is my profiling script STW:
+#This is my profiling script STW:
 
 
 
@@ -6,7 +6,7 @@ This is my profiling script STW:
   # Calvin Isch
   # 2019/06/13
 
-  library(DataExplorer)
+library(DataExplorer)
 library(devtools)
 library(dplyr)
 library(tidyverse)
@@ -297,6 +297,7 @@ subset(peeps2017,!(BGTResId %in% peeps2018$BGTResId))
 
 #+++++++++++++++++++++++++++++++++ READING IN RESUMES +++++++++++++++++++++++++++++++++++#
 
+library(stringr)
 # Read's the zipped file without unzipping them
 job <- fread(paste("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Resume_Data/",currentSeries,"_job_info.csv.gz",sep=""))
 
@@ -307,7 +308,16 @@ bringTogether <- function(fileType) {
     peep<- merge(peep,fread(paste("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Resume_Data/",i,"_",fileType,".csv.gz",sep=""), data.table = TRUE), all=TRUE)
   }
   peep$msa <- sub("^(\\d{5}).*$", "\\1", peep$msa)
-  either_resumes <- peep[peep$msa == "40060" | peep$msa == "13980",]
+  either_resumes <- peep[is.na(str_extract(peep$msa, "40060")) | is.na(str_extract(peep$msa, "13980")),]
+  # peep$rich_blacksburg <- ifelse((is.na(str_extract(peep$msa, "40060"))|is.na(str_extract(peep$msa, "13980"))), TRUE, FALSE)
+  # if (is.na(str_extract(peep$msa, "40060"))) {
+  #   peep$msa <- "40060"
+  # } else if (is.na(str_extract(peep$msa, "13980"))) {
+  #   peep$msa <- "13980"
+  # } else {
+  #   peep$msa <- peep$msa
+  # }
+  either_resumes <- peep[peep$rich_blacksburg,]
   eitherresid <- either_resumes$BGTResId
   peep <- peep[BGTResId %chin% eitherresid]
   for (j in (seq(1:89))) {
@@ -334,6 +344,8 @@ bringTogether <- function(fileType) {
 
 # Get's all of the resume's personal info's together, takes ~5 mins to run
 all_resumes <- bringTogether("personal_info")
+#either_resumes <- all_resumes[is.na(str_extract(all_resumes$msa, "40060")) | is.na(str_extract(all_resumes$msa, "13980")),]
+
 richmond_resumes <- all_resumes[all_resumes$msa == "40060",]
 blacksburg_resumes <- all_resumes[all_resumes$msa == "13980",]
 richresid <- richmond_resumes$BGTResId
