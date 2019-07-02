@@ -140,11 +140,18 @@ for (id in all_jobs) {
 }
 
 groups <- data.table(bgtjobid = all_jobs, cluster = which_groups, onet = onets)
+groups2 <- groups %>%
+  select("cluster","onet")
 plot_histogram(which_groups)
 
+w = table(groups2$cluster,groups2$onet)
+w = t(w)
+w <- as.data.frame.matrix(w)
 
+# Still working on the neat visualization...
+p  <- ggplot(data=w, aes(x=factor(1), stat="bin")) + geom_bar(position="fill")
 # p  <- ggplot(data=mtcars, aes(x=factor(1), stat="bin", fill=cyl)) + geom_bar(position="fill") # Stacked bar chart
 # p <- p + ggtitle("Cylinders by Gears") + xlab("") + ylab("Gears") # Adds titles
 # p <- p + facet_grid(facets=. ~ gear) # Side by side bar chart
-# p <- p + coord_polar(theta="y") # side by side pie chart
-# p
+p <- p + coord_polar(theta="y") # side by side pie chart
+p
