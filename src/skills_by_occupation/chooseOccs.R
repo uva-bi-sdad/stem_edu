@@ -1,7 +1,7 @@
 library(tidyverse)
 library(data.table)
 
-####Finding most common STW positions in Richmond and Blacksburg
+####Finding most common STW positions in both Richmond and Blacksburg
 
 #reading in STW jobs in Richmond/Blacksburg
 
@@ -44,6 +44,39 @@ sum(stw_desc$all_perc)
 
 ###three most common STW positions are critical care nurses (29-1141.03), computer user support specialists
 ###(15-1151.00), and Maintenance and Repair Workers, general (49-9071.00)
+
+###finding the most common STW positions in Richmond and Blacksburg separately, looking only at ads that require
+###a bachelor's degree
+
+
+
+#removing irrelevant and problematic V1 columns
+r_stw <- r_stw[,3:56]
+b_stw <- b_stw[,3:56]
+
+loc2 <- file.path("data/stem_edu/working/burning_glass")
+bgt_skills <- readRDS(file.path(loc2, "ads_skills_2017_51.RDS"))
+
+top5job <- function(adList){
+  assocBelow <- adList %>% filter(edu <= 14 | is.na(edu) == TRUE, jobhours != "parttime")
+  jobDesc <- assocBelow %>% group_by(onet, onetname) %>% summarise(count = n()) %>% arrange(desc(count))
+  top5 <- jobDesc[1:5,]
+  print(top5)
+
+  filter(assocBelow, onetname %in% top5$onetname)
+}
+
+r_top5_main <- top5job(r_stw)
+b_top5_main <- top5job(b_stw)
+
+findSkill <- function(jobList, skillList){
+  skillList$bgtjobid <- as.character(skillList$bgtjobid)
+  jobList$bgtjobid <- as.character(jobList$bgtjobid)
+  filter(skillList, bgtjobid %in% jobList$bgtjobid)
+}
+
+r_top5_skill <- findSkill(r_top5_main, bgt_skills)
+b_top5_skill <- findSkill(b_top5_main, bgt_skills)
 
 ###what are the unique skills required for STW positions?
 
