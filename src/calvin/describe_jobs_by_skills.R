@@ -156,6 +156,13 @@ w
 # There are far too many skill-clusters to do effective k-means. Let's try skill-cluster-family
 
 # =========================== Skill Cluster Family ======================#
+# Say we look at the skills requested for the job-ads of a community, and we
+# wonder how we might group these job-ads together in terms of only their skills.
+# We might want to do this for jobs that are "fuzzy" and perhaps catch-alls so
+# that employers label their position as being something whenver the skills really
+# match a very different position. How might we perform a grouping? In this section
+# I perform a k-means clustering to do the grouping
+
 # Aggregates the skill clusters for each job-id.
 skill_clusters_top_three <- c()
 for (n in seq(1:length(all_jobs))) {
@@ -229,7 +236,22 @@ pie(w12$categories, labels = w12$jobs, xlab="Group 2 ")
 mtext(side=3, text="Group by group, jobs breakdown")
 pie(w13$categories, labels = w13$jobs, xlab="Group 3 ")
 
-colnames(all_jobs_dt) <- all_skill_clusters
+
+n1 <- match(groups$cluster, 1)
+n11 <- c()
+for (i in seq(1:length(groups$cluster))){
+  if (is.na(n1[i])){
+    next
+  }
+  else {
+    n11 <- c(n11,i)
+  }
+}
+for (x in length(n11)) {
+
+}
+
+
 plot_bar(all_jobs_dt)
 
 
