@@ -5,7 +5,8 @@ library(jsonlite)
 library(dataplumbr)
 
 # get fast food search from google api
-goog1 <- fromJSON("https://maps.googleapis.com/maps/api/place/textsearch/json?query=fast+food+in+Caroline+County+Virginia&key=AIzaSyCLmT3kQD4udAyLHlBaqYrBEEeX8XdZo7I")
+url <- paste0("https://maps.googleapis.com/maps/api/place/textsearch/json?query=fast+food+in+Caroline+County+Virginia&key=", Sys.getenv("GOOGLE_API_KEY"))
+goog1 <- fromJSON(url)
 
 # create data.table of needed items
 name <- goog1$results$name
