@@ -35,6 +35,7 @@ for (f in zip_files[1:2]) {
   # read with fread
   print(paste("reading", unzipped_file))
   what2 <- fread(unzipped_file)
+  what2 <- what2[State == "Virginia" ]
 
   # combine with previous files
   if (exists("final_dt")) {
@@ -42,6 +43,7 @@ for (f in zip_files[1:2]) {
   } else {
     final_dt <- what2
   }
+
 
   # delete unzipped file
   print(paste("deleting", unzipped_file))
