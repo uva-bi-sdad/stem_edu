@@ -13,7 +13,50 @@ library(data.table)
 # Attempting the more direct method:
 # DONT UNZIP unzip("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip")
 
-what <- read.table(unz("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip", "Main_2016-01.txt"), fill = TRUE)
+#what <- read.table(unz("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip", "Main_2016-01.txt"), fill = TRUE)
+
+
+# PATH TO FILES
+zip_files_path <- "../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016"
+
+# GET LIST OF ZIPPED FILES ----
+zip_files <- list.files(zip_files_path, full.names = T)
+
+# UNZIP, READ, COMBINE, DELETE UNZIPPED FILE ----
+for (f in zip_files[1:2]) {
+
+  # unzip the file
+  print(paste("unzipping", f))
+  unzip(f, exdir = zip_files_path)
+
+  # new unzipped file path and name
+  unzipped_file <- paste0(tools::file_path_sans_ext(f), ".txt")
+
+  # read with fread
+  print(paste("reading", unzipped_file))
+  what2 <- fread(unzipped_file)
+
+  # combine with previous files
+  if (exists("final_dt")) {
+    final_dt <- rbindlist(list(final_dt, what2))
+  } else {
+    final_dt <- what2
+  }
+
+  # delete unzipped file
+  print(paste("deleting", unzipped_file))
+  unlink(unzipped_file)
+}
+
+
+
+
+# # check formatting of fields
+# what2[BGTJobId=="37994116887"]
+
+
+
+
 what2 <- fread(unz("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip", "Main_2016-01.txt"), fill = TRUE)
 first16 <- what[what$V26 == "Virginia" | what$V26 == "State", ]
 
