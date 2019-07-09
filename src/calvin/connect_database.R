@@ -14,6 +14,7 @@ library(data.table)
 # DONT UNZIP unzip("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip")
 
 what <- read.table(unz("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip", "Main_2016-01.txt"), fill = TRUE)
+what2 <- fread(unz("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip", "Main_2016-01.txt"), fill = TRUE)
 first16 <- what[what$V26 == "Virginia" | what$V26 == "State", ]
 
 for (i in seq(1:8)+1){

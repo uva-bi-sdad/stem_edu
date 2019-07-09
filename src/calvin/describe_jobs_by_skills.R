@@ -4,6 +4,7 @@ library(DataExplorer)
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(tidyverse)
 
 job_skills <- read.csv("../stem_edu//data/stem_edu/working/skills_by_occupation/top3occ/hardskills_top3-stw-position.csv")
 job_skills[job_skills == "na"] <- NA
@@ -237,22 +238,54 @@ mtext(side=3, text="Group by group, jobs breakdown")
 pie(w13$categories, labels = w13$jobs, xlab="Group 3 ")
 
 
-n1 <- match(groups$cluster, 1)
-n11 <- c()
-for (i in seq(1:length(groups$cluster))){
-  if (is.na(n1[i])){
-    next
-  }
-  else {
-    n11 <- c(n11,i)
-  }
+# ====================== WHAT EXPLAINS OVERLAP ======================#
+# Looks for duplicates of bgthobid in groups
+groups %>%
+  count(bgtjobid) %>%
+  filter(n > 1)
+
+# gets the different skills for each of the groups
+getGroupSkills <- function(groupNumber) {
+  group1 <- groups %>%
+    filter(cluster == groupNumber)
+  x <- as.character(group1$bgtjobid)
+  skills1 <- job_skills[c(as.character(job_skills$bgtjobid) %chin% x),]
+  skills1 <- skills1 %>%
+    select(skill,skillcluster,skillclusterfamily,bgtjobid)
+  return(skills1)
 }
-for (x in length(n11)) {
+group1Skills <- getGroupSkills(1)
+group2Skills <- getGroupSkills(2)
+group3Skills <- getGroupSkills(3)
 
+
+
+# Maintenance
+lookAtSkills <- function(clusters, onets) {
+  peopleOfInterest <- groups %>%
+    filter(cluster == clusters & onet == onets)
+  idsOfThem <- as.character(peopleOfInterest$bgtjobid)
+  skillsOfThem <- job_skills[c(as.character(job_skills$bgtjobid) %chin% idsOfThem),]
+  skillsOfThem <- skillsOfThem %>%
+    select(skill,skillcluster,skillclusterfamily,bgtjobid)
+  print(length(unique(skillsOfThem$bgtjobid)))
+  print(length(skillsOfThem$bgtjobid))
+  print(length(skillsOfThem$skillclustt))
+  View(skillsOfThem)
+  plot_bar(skillsOfThem)
 }
+lookAtSkills(1, "Maintenance and Repair Workers, General")
+lookAtSkills(2, "Critical Care Nurses")
+lookAtSkills(2, "Computer User Support Specialists")
 
 
-plot_bar(all_jobs_dt)
+x <- as.character(group1$bgtjobid)
+skills1 <- job_skills[c(as.character(job_skills$bgtjobid) %chin% x),]
+skills1 <- skills1 %>%
+  select(skill,skillcluster,skillclusterfamily,bgtjobid)
+
+plot_bar(groups)
+plot_histogram(groups)
 
 
 all_jobs_dt$bgtjobid <- all_jobs

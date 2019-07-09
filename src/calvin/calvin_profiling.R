@@ -18,7 +18,7 @@ all_vars <-c("bgtjobid","jobdate","occfam","occfamname","employer","city","state
              "county", "fipsstate", "fipscounty","fips","lat","lon","bestfitmsaname",
              "onet","onetname","bgtocc","edu","maxedu","degree","exp", "jobhours")
 profile_vars <- readRDS('../stem_edu/data/stem_edu/working/burning_glass/ads_main_2017_51.RDS')
-skills <- readRDS('../stem_edu/data/stem_edu/working/burning_glass/ads_skills_2017_51.RDS')
+skills2 <- readRDS('../stem_edu/data/stem_edu/working/burning_glass/ads_skills_2017_51.RDS')
 certs <- readRDS('../stem_edu/data/stem_edu/working/burning_glass/ads_certs_2017_51.RDS')
 cip  <- readRDS('../stem_edu/data/stem_edu/working/burning_glass/ads_cip_2017_51.RDS')
 degrees  <- readRDS('../stem_edu/data/stem_edu/working/burning_glass/ads_degrees_2017_51.RDS')
