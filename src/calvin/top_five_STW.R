@@ -85,15 +85,28 @@ va_county <- subset(counties, region == "virginia")
 
 # plots virginia really nice with color coded onets
 ggplot(data = virginia) +
-  geom_polygon(aes(x = long, y = lat, group = group), fill = "skyblue", color = "black") +
+  geom_polygon(aes(x = long, y = lat, group = group), fill = "gray", color = "black") +
   coord_fixed(ratio = 1.3) +
-  geom_point(data=b_main,aes(x=lon,y=lat,color = factor(onetname)), size = 1, alpha = 0.5) # + ylim(37,39) + xlim(-79,-82)
+  geom_point(data=b_main,aes(x=lon,y=lat,color = factor(onetname)), size = 1, alpha = 0.8) + # + ylim(37,39) + xlim(-79,-82)
+  geom_point(data=r_main,aes(x=lon,y=lat,color = factor(onetname)), size = 1, alpha = 0.8)
+
+# Looks at blacksburg
+ggplot(data = virginia) +
+  geom_polygon(aes(x = long, y = lat, group = group), fill = "gray", color = "black") +
+  coord_fixed(xlim = c(-82,-79), ylim = c(36.5,38), ratio = 1.3) +
+  geom_point(data=b_main,aes(x=lon,y=lat,color = factor(onetname)), size = 2, alpha = 0.8) # + ylim(37,39) + xlim(-79,-82)
+
+# How many dots there should be:
+length(unique(c(b_main$lat,b_main$lon)))
 
 # And richmond
 ggplot(data = virginia) +
-  geom_polygon(aes(x = long, y = lat, group = group), fill = "skyblue", color = "black") +
-  coord_fixed(ratio = 1.3) +
-  geom_point(data=r_main,aes(x=lon,y=lat,color = factor(onetname)), size = 3, alpha = 0.8) # + ylim(37,39) + xlim(-79,-82)
+  geom_polygon(aes(x = long, y = lat, group = group), fill = "gray", color = "black") +
+  coord_fixed(xlim = c(-78.5,-76.5), ylim = c(36.75,38.25), ratio = 1.3) +
+  geom_point(data=r_main,aes(x=lon,y=lat,color = factor(onetname)), size = 2, alpha = 0.8) # + ylim(37,39) + xlim(-79,-82)
+
+# How many dots there should be:
+length(unique(c(r_main$lat,r_main$lon)))
 
 # Plots virginia with county lines
 va_base <- ggplot(data = virginia, mapping = aes(x = long, y = lat, group = group)) +
