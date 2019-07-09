@@ -23,7 +23,7 @@ zip_files_path <- "../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/20
 zip_files <- list.files(zip_files_path, full.names = T)
 
 # UNZIP, READ, COMBINE, DELETE UNZIPPED FILE ----
-for (f in zip_files[1:2]) {
+for (f in zip_files) {
 
   # unzip the file
   print(paste("unzipping", f))
@@ -44,20 +44,67 @@ for (f in zip_files[1:2]) {
     final_dt <- what2
   }
 
+  # delete unzipped file
+  print(paste("deleting", unzipped_file))
+  unlink(unzipped_file)
+}
+write.csv(final_dt, file = "job_ads_main_2016-fixed.csv")
+
+
+
+
+
+# DOING SKILLS SAME WAY
+zip_files_path <- "../stem_edu/data/stem_edu/original/Burning_Glass_Data/Skill/2016"
+
+# GET LIST OF ZIPPED FILES ----
+zip_files <- list.files(zip_files_path, full.names = T)
+
+# GETS BGTJobIDs for Virginia
+all_jobs <- final_dt$BGTJobId
+
+# UNZIP, READ, COMBINE, DELETE UNZIPPED FILE ----
+for (f in zip_files) {
+
+  # unzip the file
+  print(paste("unzipping", f))
+  unzip(f, exdir = zip_files_path)
+
+  # new unzipped file path and name
+  unzipped_file <- paste0(tools::file_path_sans_ext(f), ".txt")
+
+  # read with fread
+  print(paste("reading", unzipped_file))
+  what3 <- fread(unzipped_file)
+  what3 <- what3[BGTJobId %chin% all_jobs]
+
+  # combine with previous files
+  if (exists("final_dt2")) {
+    final_dt2 <- rbindlist(list(final_dt2, what3))
+  } else {
+    final_dt2 <- what3
+  }
 
   # delete unzipped file
   print(paste("deleting", unzipped_file))
   unlink(unzipped_file)
 }
+write.csv(final_dt2, file = "job_ads_skills_2016-fixed.csv")
+
+
+# Check what they look like
+main2016 <- read.csv("../stem_edu/job_ads_main_2016-fixed.csv")
+skills2016 <- read.csv("../stem_edu/job_ads_skills_2016-fixed.csv")
+
+# look for duplicates
+print(length(unique(main2016)))
+print(length(unique(skills2016)))
 
 
 
-
+# ============================  OLD DO NOT USE
 # # check formatting of fields
 # what2[BGTJobId=="37994116887"]
-
-
-
 
 what2 <- fread(unz("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Main/2016/Main_2016-01.zip", "Main_2016-01.txt"), fill = TRUE)
 first16 <- what[what$V26 == "Virginia" | what$V26 == "State", ]
