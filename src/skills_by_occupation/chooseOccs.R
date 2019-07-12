@@ -7,7 +7,6 @@ library(data.table)
 
 loc <- file.path("data/stem_edu/working/Team_SA_job_skills_filter")
 b_stw <- fread(file.path(loc, "rothwell_blacksburg_stw_job.csv"))
-
 r_stw <- fread(file.path(loc, "rothwell_richmond_stw_job.csv"))
 
 #combining into one dataframe
