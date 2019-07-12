@@ -105,6 +105,3 @@ ggplot()+
   geom_sf(data = msa, fill = NA) +
   geom_sf(data = edu)
 
-
-
-
