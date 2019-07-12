@@ -25,7 +25,7 @@ job_skills$place <- as.character(job_skills$place)
 
 
 
-# ============== Testing things out =====================#
+# ======================= Testing things out ========================= #
 
 maintenance <- job_skills[job_skills$onetname == "Maintenance and Repair Workers, General", ]
 computers <- job_skills[job_skills$onetname == "Computer User Support Specialists", ]

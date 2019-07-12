@@ -15,8 +15,8 @@ all_files <- list.files(files_path, full.names = T)
 # Writes the files to seperate things
 b_main <- read.csv(all_files[1])
 b_skills <- read.csv(all_files[2])
-r_main <- read.csv(all_files[3])
-r_skills <- read.csv(all_files[4])
+r_main <- read.csv(all_files[4])
+r_skills <- read.csv(all_files[5])
 
 # How many are "na"?
 b_skills_na <- b_skills$skillcluster == "na"
@@ -86,7 +86,7 @@ va_county <- subset(counties, region == "virginia")
 # plots virginia really nice with color coded onets
 ggplot(data = virginia) +
   geom_polygon(aes(x = long, y = lat, group = group), fill = "gray", color = "black") +
-  coord_fixed(ratio = 1.3) +
+  coord_fixed(xlim = c(-84,-75), ylim = c(36,40),ratio = 1.3) +
   geom_point(data=b_main,aes(x=lon,y=lat,color = factor(onetname)), size = 1, alpha = 0.8) + # + ylim(37,39) + xlim(-79,-82)
   geom_point(data=r_main,aes(x=lon,y=lat,color = factor(onetname)), size = 1, alpha = 0.8)
 
