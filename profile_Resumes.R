@@ -317,3 +317,74 @@ strLengthValidation(1,100,46174,r_certs$certificationposition)
 strLengthValidation(1,100,3478,b_certs$certificationposition)
 howManyChars(r_certs$certificationposition,"#")
 howManyChars(b_certs$certificationposition,"#")
+
+# Checks the raw number of people with top degree below "16"
+uB <- unique(b_edu$BGTResID)
+# Number with max below "16"
+m <- 0
+# The maximum value for those
+good <- c()
+# Number of NAs
+nas <- 0
+# Checks to see if the ones excluded have a hashtag
+hasHash <- 0
+# Checks those values
+hashCheck <- c()
+# others
+other <- c()
+for (i in uB){
+  l <- max(b_edu[b_edu$BGTResID == i, ]$degreeLevel)
+  l <- is.na(b_edu[b_edu$BGTResID == i, ]$degreeLevel)
+  if (FALSE %in% l) {
+    maxi <- max(na.omit(b_edu[b_edu$BGTResID == i, ]$degreeLevel))
+    if (maxi < "16") {
+      m <- m + 1
+      good <- append(good,maxi)
+    } else if (grepl("#", b_edu[b_edu$BGTResID == i, ]$degreeLevel)) {
+      hasHash <- hasHash + 1
+      hashCheck <- append(hashCheck,maxi)
+    } else {
+      other<- append(other,maxi)
+    }
+  }
+  else {
+    nas <- nas + 1
+  }
+}
+
+# Looks at the people with highschool institutions and na for degree and returns the number w/
+blacksburgNas <- b_edu[is.na(b_edu$degreeLevel),]
+bHighSchool <- blacksburgNas[grepl("igh",blacksburgNas$Instituition),]
+uB <- unique(bHighSchool$BGTResID)
+m <- 0
+nas <- 0
+for (i in uB){
+  l <- is.na(b_edu[b_edu$BGTResID == i, ]$degreeLevel)
+  if (FALSE %in% l) {
+    maxi <- max(na.omit(b_edu[b_edu$BGTResID == i, ]$degreeLevel))
+    if (maxi < "16") {
+      m <- m + 1
+    } else {
+      next
+    }
+  } else {
+    nas <- nas + 1
+  }
+}
+# All still have na but some have other schools (338746) 281991
+
+
+
+
+
+# b_edu$degreeLevel:
+# 17,515 total
+# 5,853 are na
+  # 890 of these NAs have a highschool listing (could have multiple)
+# 897 have #
+# 2795 raw are below 16
+# 1562 are below 16 as a max
+
+# what level of inference is okay?
+
+
