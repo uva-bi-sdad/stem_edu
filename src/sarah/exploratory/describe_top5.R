@@ -1,27 +1,27 @@
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
+library(tidyr)
+library(data.table)
 
 #Read in top5 data
-b_tot <- read.csv("data/stem_edu/working/skills_by_occupation/top5_rb_separate/b_top5-stw-jobskill.csv")
-  b_tot$variable = "Blacksburg"
-  b_onet <- unique(b_tot$onet)
-r_tot <- read.csv("data/stem_edu/working/skills_by_occupation/top5_rb_separate/r_top5-stw-jobskill.csv")
+b_tot <- read.csv("data/stem_edu/working/burning_glass_ad_combine_16_17/blacksburg_top5_stw_jobs_all_skills.csv")
+b_tot$variable = "Blacksburg"
+r_tot <- read.csv("data/stem_edu/working/burning_glass_ad_combine_16_17/richmond_top5_stw_jobs_all_skills.csv")
   r_tot$variable = "Richmond"
-  r_onet <- unique(r_tot$onet)
 
 #BLACKSBURG Overall####
 
 # number of unique skills, clusters, families associated with each job
 count_b <- b_tot %>%
-  select(bgtjobid, skill, skillcluster, skillclusterfamily, onet, variable) %>%
-  group_by(bgtjobid, onet, variable) %>%
+  select(bgtjobid, skill, skillcluster, skillclusterfamily, onet, onetname, variable) %>%
+  group_by(bgtjobid, onet, onetname, variable) %>%
   summarize(num_s=n_distinct(skill), num_sc = n_distinct(skillcluster), num_scf=n_distinct(skillclusterfamily))
 
 #number of skills, cluster, family frequency
-freq_s_b <- count_b %>% group_by(num_s, variable) %>% summarise(count = n(), per =((count)/(length(unique(b_tot$bgtjobid))))*100)
+freq_s_b <- count_b %>% group_by(num_s, variable) %>% summarise(count = n(), per =(count/(length(unique(b_tot$bgtjobid))))*100)
 
-freq_sc_b <- count_b %>% group_by(num_sc, variable) %>% summarise(count = n(), per=((count)/(length(unique(b_tot$bgtjobid))))*100)
+freq_sc_b <- count_b %>% group_by(num_sc, variable) %>% summarise(count = n(), per=(count/(length(unique(b_tot$bgtjobid))))*100)
 
 freq_scf_b <- count_b %>% group_by(num_scf, variable) %>% summarise(count = n(), per=((count)/(length(unique(b_tot$bgtjobid))))*100)
 
@@ -30,8 +30,8 @@ freq_scf_b <- count_b %>% group_by(num_scf, variable) %>% summarise(count = n(),
 
 # number of unique skills, clusters, families associated with each job
 count_r <- r_tot %>%
-  select(bgtjobid, skill, skillcluster, skillclusterfamily, onet, variable) %>%
-  group_by(bgtjobid, onet, variable) %>%
+  select(bgtjobid, skill, skillcluster, skillclusterfamily, onet, onetname, variable) %>%
+  group_by(bgtjobid, onet, onetname, variable) %>%
   summarize(num_s =n_distinct(skill), num_sc = n_distinct(skillcluster), num_scf=n_distinct(skillclusterfamily))
 
 #number of skills, cluster, family frequency
@@ -327,90 +327,103 @@ test$count= 1
 
 #BOXPLOTS############
 
-library(tidyr)
+box_b <-  b_tot %>%
+    select(bgtjobid, skill, skillcluster, skillclusterfamily, onet, onetname, variable) %>%
+    group_by(bgtjobid, onet, onetname, variable) %>%
+    summarize(skill=n_distinct(skill), skill_cluster = n_distinct(skillcluster), skill_cluster_family=n_distinct(skillclusterfamily))
+box_b<- gather(box_b, "skill_cat", "count", 5:7)
 
-#boxplot Blacksbur All
-box_b <- gather(count_b, "num_skill_cat", "count", 4:6)
+box_r <-  r_tot %>%
+  select(bgtjobid, skill, skillcluster, skillclusterfamily, onet, onetname, variable) %>%
+  group_by(bgtjobid, onet, onetname, variable) %>%
+  summarize(skill=n_distinct(skill), skill_cluster = n_distinct(skillcluster), skill_cluster_family=n_distinct(skillclusterfamily))
+box_r<- gather(box_r, "skill_cat", "count", 5:7)
 
-qplot( x=num_skill_cat, y=count, data=box_b , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Blacksburg Job Ads")
+box_t <- rbind(box_b, box_r)
 
-#boxplot Richmond All
-box_r <- gather(count_r, "num_skill_cat", "count", 4:6)
+#Blacksburg and Richmond Comparison
+ggplot(box_t, aes(x=skill_cat,y=count, fill= variable, color=variable, alpha= .1)) +
+  geom_boxplot(outlier.shape=NA, color="black", alpha=0)+
+  geom_point(position = position_jitterdodge())+
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Blacksburg and Richmond Job Ads")
 
-qplot( x=num_skill_cat, y=count, data=box_r , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Richmond Job Ads")
-
-#boxplot Blacksburg Maintenance
-box_b_maint <- gather(count_b_maint, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_b_maint , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Blacksburg Maintenance Job Ads")
-
-#boxplot Blacksburg Nurse
-box_b_nurs <- gather(count_b_nurs, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_b_nurs , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Blacksburg Critical Care Nurse Job Ads")
-
-#boxplot Blacksburg Machinists
-box_b_mach <- gather(count_b_mach, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_b_mach , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Blacksburg Machinists Job Ads")
-
-#boxplot Blacksburg Computer
-box_b_comp <- gather(count_b_comp, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_b_comp , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Blacksburg Computer User Support Specialists Job Ads")
-
-#boxplot Blacksburg Automotive Specialty Technicians
-box_b_auto <- gather(count_b_auto, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_b_auto , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Blacksburg Automotive Specialty Technicians Job Ads")
-
-#RICHMOND
-#boxplot Richmond Maintenance
-box_r_maint <- gather(count_r_maint, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_r_maint , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Richmond Maintenance Job Ads")
-
-#boxplot Richmond Nurse
-box_r_nurs <- gather(count_r_nurs, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_r_nurs , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Richmond Critical Care Nurse Job Ads")
-
-#boxplot Richmond Computer
-box_r_comp <- gather(count_r_comp, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_r_comp , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Richmond Computer User Support Specialists Job Ads")
-
-#boxplot Richmond Automotive Specialty Technicians
-box_r_auto <- gather(count_r_auto, "num_skill_cat", "count", 4:6)
-
-qplot( x=num_skill_cat, y=count, data=box_r_auto , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Richmond Automotive Specialty Technicians Job Ads")
+ggplot(box_r, aes(x=skill_cat,y=count, fill= variable, color=onetname, alpha= .1)) +
+  geom_boxplot(outlier.shape=NA, color="black", alpha=0)+
+  geom_point(position = position_jitterdodge())+
+  ggtitle("Count of Skills Requested in Richmond Job Ads")
 
 
-#boxplot Richmond Web Developers Specialty Technicians
-box_r_web <- gather(count_r_web, "num_skill_cat", "count", 4:6)
+#Top Five Blacksburg
+ggplot(box_b, aes(x=skill_cat, y=count, fill=onetname, color=onetname, alpha =.1))+
+  geom_boxplot(outlier.shape=NA, color="black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Job Ads for Top Five Occupations in Blacksburg")
 
-qplot( x=num_skill_cat, y=count, data=box_r_web , geom=c("boxplot","jitter") , fill=num_skill_cat)+
-  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Richmond Web Developers Job Ads")
+#Top Five Richmond
+ggplot(box_r, aes(x=skill_cat, y=count, fill=onetname, color=onetname, alpha =.1))+
+  geom_boxplot(outlier.shape=NA, color="black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families Requested in Job Ads for Top Five Occupations in Richmond")
 
-#Averages######
+#Maintenance Comparison
+box_maint <- box_t %>% filter(onet == "49-9071.00")
 
-avg <-count_b
-avg$s_per_scf = (avg$num_s)/(avg$num_scf)
-summary(avg$s_per_scf)
+ggplot(box_maint, aes(x=skill_cat, y=count, fill=variable, color=variable, alpha =.1))+
+  geom_boxplot(outlier.shape = NA, color = "black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families \nRequested in Job Ads for Maintenance and Repair Workers \nin Blacksburg and Richmond")
+
+#Nurse Comparison
+box_nurs <-box_t %>% filter(onet =="29-1141.03")
+
+ggplot(box_nurs, aes(x=skill_cat, y=count, fill=variable, color=variable, alpha =.1))+
+  geom_boxplot(outlier.shape = NA, color = "black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families \nRequested in Job Ads for Critical Care Nurses \nin Blacksburg and Richmond")
+
+#Auto Comparison
+box_auto <- box_t %>% filter(onet =="49-3023.02")
+
+ggplot(box_auto, aes(x=skill_cat, y=count, fill=variable, color=variable, alpha =.1))+
+  geom_boxplot(outlier.shape = NA, color = "black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families \nRequested in Job Ads for Automotive Specialty Technicians \nin Blacksburg and Richmond")
+
+#Comp Comparison
+box_comp <-box_t %>% filter(onet == "15-1151.00")
+
+ggplot(box_comp, aes(x=skill_cat, y=count, fill=variable, color=variable, alpha =.1))+
+  geom_boxplot(outlier.shape = NA, color = "black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families \nRequested in Job Ads for Computer User Support Specialists \nin Blacksburg and Richmond")
+
+#Blacksburg Machinists
+box_b_mach <- box_b %>% filter(onet == "51-4041.00")
+
+ggplot(box_b_mach, aes(x=skill_cat, y=count, fill=variable, color=variable, alpha =.1))+
+  geom_boxplot(outlier.shape = NA, color = "black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families \nRequested in Job Ads for Machinists \nin Blacksburg")
+
+#Richmond Web Developers Specialty Technicians
+box_r_web <- box_r %>% filter(onet == "15-1134.00")
+
+ggplot(box_r_web, aes(x=skill_cat, y=count, fill=variable, color=variable, alpha =.1))+
+  geom_boxplot(outlier.shape = NA, color = "black", alpha = 0)+
+  geom_point(position = position_jitterdodge(jitter.height= .4)) +
+  ggtitle("Count of Skills, Skill Clusters, and Skill Cluster Families \nRequested in Job Ads for Web Developers \nin Richmond")
 
 
-dat <- data.frame(skills = avg$num_s, families = avg$num_scf, job = avg$bgtjobid)
+
+count_b2 <- b_tot %>%
+  select(bgtjobid, skill, skillcluster, skillclusterfamily, onet, onetname, variable) %>%
+  group_by(bgtjobid, onet, onetname, variable) %>%
+  summarize(num_s=n_distinct(skill), num_sc = n_distinct(skillcluster), num_scf=n_distinct(skillclusterfamily))
+
+
+
+#Plot Counts against eachother######
+dat <- data.frame(skills = count_b2$num_s, families = count_b2$num_scf, job = count_b2$bgtjobid)
 ggplot(data = dat, aes(x = skills, y = families))+
   geom_point()+
   geom_jitter() +
@@ -430,8 +443,6 @@ ggplot(data = dat3, aes(x = clusters, y = families))+
 
 
 #RICHMOND
-
-
 dat4 <- data.frame(skills = count_r$num_s, families = count_r$num_scf, job = count_r$bgtjobid)
 ggplot(data = dat4, aes(x = skills, y = families))+
   geom_point()+
