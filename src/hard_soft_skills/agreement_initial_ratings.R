@@ -25,3 +25,7 @@ additionalCluster <- skillcluster[cautiousCluster,"skillcluster"]
 ####need a second look, get feedback on those, then pull out the skills from those + any original clusters
 ####that wanted a second look. (It might be a lot! We'll see! Hopefully it will be more reasonable than
 ####TEN THOUSAND categorizations.)
+
+
+loc <- file.path("")
+skill_cal <- fread()
