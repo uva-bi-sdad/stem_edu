@@ -7,8 +7,8 @@ library(dplyr)
 library(tidyverse)
 library(data.table)
 
-edu <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/blacksburg_edu.txt")
-main <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/blacksburg_personal.txt")
+edu <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/richmond_edu.txt")
+main <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/richmond_personal.txt")
 
 ####################
 
@@ -305,6 +305,4 @@ main$bachelors <- maxLevel
 
 main$bachelors[main$bachelors== -Inf] <- NA
 
-write.csv(main, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_b")
-
-
+write.csv(main, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_r")
