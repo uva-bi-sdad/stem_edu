@@ -12,6 +12,11 @@ job_skill <- fread(file.path(loc, "combine_16_17_job_ad_skill.csv"))
 job_main <- job_main[,2:54]
 job_skill <- job_skill[,2:10]
 
+#cleaning up -999 as NA in "edu" in main job file
+job_main %>% group_by(edu) %>% summarise(count = n())
+job_main[job_main$edu == -999, "edu"] <- NA
+job_main %>% group_by(edu) %>% summarise(count = n())
+
 ###load in list of STW occupations
 loc <- file.path("src/ONET_define")
 stw_occs <- fread(file.path(loc, "Rothwell_STW_list.csv"))
@@ -19,6 +24,9 @@ stw_occs <- fread(file.path(loc, "Rothwell_STW_list.csv"))
 ###get down to just STW jobs
 stw_job_main <- job_main[onet %in% stw_occs$onet]
 stw_job_main$bgtjobid <- as.character(stw_job_main$bgtjobid)
+#how many of these jobs do not require a bachelor's degree or above?
+stw_job_main %>% group_by(edu) %>% summarise(count = n())
+nrow(filter(stw_job_main, edu <= 14 | is.na(edu) == TRUE))
 
 ##splitting to Richmond and Blacksburg
 r_stw_job_main <- filter(stw_job_main, msaname == "Richmond, VA")
@@ -40,11 +48,14 @@ top5job <- function(adList){
 r_top5_main <- top5job(r_stw_job_main)
 b_top5_main <- top5job(b_stw_job_main)
 
-##determining which hard skills go with jobs in these places
+##determining which skills go with jobs in these places
 
-#this is temporary hard skill list--REPLACE ONCE WE HAVE FINISHED FORMALLY CREATING HARD SKILL LIST
-loc3 <- file.path("data/stem_edu/working/skills_by_occupation")
-hard_skills <- fread(file.path(loc3, "workingHardSkills.csv"))
+loc3 <- file.path("data/stem_edu/working/hard_soft_skills")
+hard_soft_skills <- fread(file.path(loc3, "hard-soft-skills_clean.csv"))
+hard_skills <- hard_soft_skills[hard_soft == "hard"]
+
+
+
 
 findSkill <- function(jobList, skillList, hardSkillList){
   skillList$bgtjobid <- as.character(skillList$bgtjobid)
@@ -60,6 +71,36 @@ findSkill <- function(jobList, skillList, hardSkillList){
 
 r_top5_skill <- findSkill(r_top5_main, job_skill, hard_skills)
 b_top5_skill <- findSkill(b_top5_main, job_skill, hard_skills)
+
+
+####old code with temporary skill hard skill classifications--outdated, use code above
+
+#loc3 <- file.path("data/stem_edu/working/skills_by_occupation")
+#hard_skills <- fread(file.path(loc3, "workingHardSkills.csv"))
+
+#findSkill <- function(jobList, skillList, hardSkillList){
+#  skillList$bgtjobid <- as.character(skillList$bgtjobid)
+#  jobList$bgtjobid <- as.character(jobList$bgtjobid)
+
+#  skillFilter <- filter(skillList, bgtjobid %in% jobList$bgtjobid, skill %in% hardSkillList$skill)
+#  skillFilter$bgtjobid <- as.character(skillFilter$bgtjobid)
+
+#  skillFilter <- left_join(skillFilter, jobList[,c("bgtjobid", "onet", "onetname")], by = "bgtjobid")
+
+#  skillFilter
+#}
+
+#r_top5_skill <- findSkill(r_top5_main, job_skill, hard_skills)
+#b_top5_skill <- findSkill(b_top5_main, job_skill, hard_skills)
+
+
+##writing out skills and job ads
+loc4 <- file.path("data/stem_edu/working/skills_by_occupation/top5_rb_separate")
+write.csv(r_top5_main, file.path(loc4, "r_top5-stw-jobmain.csv"))
+write.csv(b_top5_main, file.path(loc4, "b_top5-stw-jobmain.csv"))
+write.csv(r_top5_skill, file.path(loc4, "r_top5-stw-jobskill-hard.csv"))
+write.csv(b_top5_skill, file.path(loc4, "b_top5-stw-jobskill-hard.csv"))
+
 
 ###Basic information about skills and skill clusters required for these occupations
 
@@ -135,14 +176,6 @@ nrow(r_web_skill)
 r_all_top_skills <- rbind(r_nurse_skill, r_comp_skill, r_aut_skill, r_web_skill) %>% group_by(skillclusterfamily, skillcluster, skill) %>%
   summarise(occTypes = n(), adCount = sum(count)) %>% arrange(desc(adCount))
 
-
-##writing out skills and job ads
-loc4 <- file.path("data/stem_edu/working/skills_by_occupation/top5_rb_separate")
-write.csv(r_top5_main, file.path(loc4, "r_top5-stw-jobmain.csv"))
-write.csv(b_top5_main, file.path(loc4, "b_top5-stw-jobmain.csv"))
-write.csv(r_top5_skill, file.path(loc4, "r_top5-stw-jobskill.csv"))
-write.csv(b_top5_skill, file.path(loc4, "b_top5-stw-jobskill.csv"))
-
 ###creating a 'weighted' metric for each skill--how critical is it to the job ads that it appears in?
 weightScore <- function(skillfile){
   jobskillcount <- skillfile %>% group_by(bgtjobid) %>% summarise(skillcount = n())
@@ -169,10 +202,10 @@ skillfile_nurse_dedupe[skillfile_nurse_dedupe$skill == "Neonatal Intensive Care"
 skillfile_nurse_dedupe[skillfile_nurse_dedupe$skill == "Critical Care Nursing","skill"] <- "Critical Care"
 
 r_output_nurse_dedupe <- weightScore(skillfile_nurse_dedupe)
-r_nurse_plot <- ggplot(output_nurse_dedupe, aes(x=count, y=weightSum)) + geom_point() +
+r_nurse_plot <- ggplot(r_output_nurse_dedupe, aes(x=count, y=weightSum)) + geom_point() +
   geom_smooth(method = "lm")+geom_text(aes(label = skill), size = 2, hjust=1) + ggtitle("Richmond Critical Care Nurse Skills")
-r_median_nurse_plot <- ggplot(output_nurse_dedupe, aes(x=log(medianSkillCount), y=log(count))) + geom_point() +
-  geom_text(aes(label = skill), size = 2, hjust=1) + ggtitle("Richmond Critical Care Nurses")
+r_median_nurse_plot <- ggplot(r_output_nurse_dedupe, aes(x=log(medianSkillCount), y=log(count))) + geom_point() +
+  geom_text(aes(label = skill), size = 3, hjust=1) + ggtitle("Richmond Critical Care Nurses")
 
 r_nurse_skill_dist <- skillDist(r_top5_skill[r_top5_skill$onetname == "Critical Care Nurses",])
 
