@@ -100,7 +100,9 @@ for (i in 1:length(edu$BGTResID)) {
   } else if (grepl("GED", edu$major[i], ignore.case = TRUE)){
     isHigh <- c(isHigh, 1)
     next
-  }else {
+  } else if (edu$degreeLevel[i] <= 12 & edu$degreeLevel[i]>0){
+    isHigh <- c(isHigh, 1)
+  } else {
     isHigh <- c(isHigh,0)
   }
 }
@@ -125,7 +127,9 @@ edu$vccs <- isVCCS
 
 isPartial <-c()
 for (i in 1:length(edu$BGTResID)) {
-  if (grepl("some college", edu$inst_low[i])) {
+  if (edu$degreeLevel[i] <= 14 & edu$degreeLevel[i] > 12){
+    isPartial <- c(isPartial, 1)
+  } else if (grepl("some college", edu$inst_low[i])) {
     isPartial <- c(isPartial,1)
     next
   } else if (grepl("college courses", edu$inst_low[i])) {
@@ -270,14 +274,17 @@ edu$university <- isUniversity
 
 isBachelors <-c()
 for (i in 1:length(edu$BGTResID)) {
-  if ((edu$partial[i] == 1 | edu$other[i] == 1 |edu$high[i] == 1 | edu$vccs[i] == 1 | isAssociates == 1) & (edu$university[i]== 0)) {
-    isBachelors <- c(isBachelors, 0)
-    next
-  } else if (edu$degreeLevel[i] > 14) {
+  if (edu$degreeLevel[i] > 14) {
     isBachelors <- c(isBachelors, 1)
     next
+  } else if (edu$degreeLevel[i] <= 14 & max(edu$degreeLevel[i]) > 0) {
+    isBachelors <- c(isBachelors, 0)
+    next
+  } else if ((edu$partial[i] == 1 | edu$other[i] == 1 |edu$high[i] == 1 | edu$vccs[i] == 1 | edu$associates[i] == 1) & (edu$university[i]== 0)) {
+    isBachelors <- c(isBachelors, 0)
+    next
   } else {
-    isBachelors <-c(isBachelors, NA)
+    isBachelors <- c(isBachelors, NA)
   }
 }
 
@@ -305,6 +312,41 @@ main$bachelors <- maxLevel
 
 main$bachelors[main$bachelors== -Inf] <- NA
 
-write.csv(main, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_b")
+#write.csv(main, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_b")
+
+############################## graphs weekly
 
 
+after <- edu %>% group_by(bachelors) %>% summarise(count= n())
+after$bachelors[after$bachelors == 1] <- "bach"
+after$bachelors[after$bachelors == 0] <- "nobach"
+
+
+
+edu$degreeLevel[edu$degreeLevel == ""] <- "NA"
+
+b_bach <- length(which(edu$degreeLevel > 14))
+b_nobach <- length(which(edu$degreeLevel <= 14 & edu$degreeLevel > 0))
+b_na <- length(which(edu$degreeLevel == "NA"))
+
+before <- data.frame("bachelors" = c("bach", "nobach", "NA"), "count"= c(b_bach, b_nobach, b_na))
+
+before$bachelors <- as.character(before$bachelors)
+
+after$bachelors[is.na(after$bachelors) == TRUE] <- "unknown"
+before$bachelors[before$bachelors == "NA"] <- "unknown"
+
+after$variable = "after"
+before$variable = "before"
+weekly <-rbind(after, before)
+
+ggplot(weekly, aes(x=reorder(variable, desc(variable)), y=count)) +
+  geom_bar(aes(fill = bachelors), position = "dodge", stat="identity") +
+  ggtitle("Before and After Bachelors Classification") +
+  scale_fill_manual(values=c("#E69F00", "#56B4E9", "#999999"))
+
+
+####################
+test <- main %>% filter(is.na(bachelors) == TRUE)
+
+test2 <- edu %>% filter(BGTResID %in% test$BGTResId)
