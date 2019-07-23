@@ -2,24 +2,28 @@ library(data.table)
 library(tidyverse)
 library(ggrepel)
 
-ad_loc <- "data/stem_edu/working/burning_glass_ad_combine_16_17"
-res_loc <- "data/stem_edu/working/resume_with_bachelors"
+loc <- "data/stem_edu/final/dspg19_analysis"
 
-############GOING INTO THIS, WE WILL NEED###########
+#######################################################
+################## LOADING DATA FILES #################
+#### please customize for your analysis by putting ####
+####### the right MSA name in the 4 file paths. #######
+#######################################################
+
 #ad main file (already filtered to specific MSA)
-ad_main_base <- fread(file.path(ad_loc, "richmond_top5_stw_jobs_main.csv"), drop = "V1")
+ad_main_base <- fread(file.path(loc, "richmond_top5_stw_jobs_main.csv"), drop = "V1")
 
 #ad skill file (already filtered to specific MSA)
-ad_skill_base <- fread(file.path(ad_loc, "richmond_top5_stw_jobs_all_skills.csv"), drop = "V1")
+ad_skill_base <- fread(file.path(loc, "richmond_top5_stw_jobs_all_skills.csv"), drop = "V1")
 
 #resume main file (already filtered to specific MSA, with bachelor's/not-bachelor's flag)
-res_main_base <- fread(file.path(res_loc, "resume_with_bachelors_r_main.csv"), drop = "V1")
+res_main_base <- fread(file.path(loc, "resume_with_bachelors_r_main.csv"), drop = "V1")
 res_main_base <- select(res_main_base, colnames(res_main_base)[colnames(res_main_base) != "V1"])
 colnames(res_main_base) <- c("bgtresid", "statename", "cityname", "msa", "zipcode", "gender", "noofschooldegrees",
                              "noofcertifications", "noofjobs", "bachelor")
 
 #resume skill file (already filtered to specific MSA, with bachelor's/not-bachelor's flag)
-res_skill_base <- fread(file.path(res_loc, "resume_with_bachelors_r_skill.csv"), drop = "V1")
+res_skill_base <- fread(file.path(loc, "resume_with_bachelors_r_skill.csv"), drop = "V1")
 res_skill_base <- select(res_skill_base, colnames(res_skill_base)[colnames(res_skill_base) != "V1"])
 colnames(res_skill_base) <- c("bgtresid", "skillid", "skill", "skillcluster", "skillclusterfamily",
                         "isbaseline", "issoftware", "isspecialized", "bachelor")
@@ -32,16 +36,20 @@ dupe_list <- as.data.frame(rbind(c("Critical Care", "Critical Care Nursing"),
                                  c("Surgery", "Surgical Services"),
                                  c("Environmental Laws and Regulations", "Environmental Regulations"),
                                  c("PC Installation", "Computer Installation and Setup"),
-                                 c("Preventive Maintenance", "Predictive / Preventative Maintenance")),
-                                c("ADLs Assistance", "Activities of Daily Living (ADLS)"),
+                                 c("Preventive Maintenance", "Predictive / Preventative Maintenance"),
+                                  c("ADLs Assistance", "Activities of Daily Living (ADLS)"),
                                 c("Hipaa Compliance", "Health Insurance Portability and Accountability Act (HIPAA)"),
                                 c("Bathing", "Patient Bathing"),
                                 c("Statistical Analysis", "Statistics"),
-                                c("Word Processing", "Microsoft Word"),
                                 c("Spreadsheets", "Microsoft Excel"),
-                                  stringsAsFactors =FALSE)
+                                c("Word Processing", "Microsoft Word")),
+                                stringsAsFactors = FALSE)
 
-####### PREPPING SKILLS FILES ##########
+
+#######################################################
+################ PREPPING AD SKILL FILE ###############
+############## no customization needed ################
+#######################################################
 
 ###Filtering to only ads of interest (occupation name, requires bachelor +/does not require bachelor/all)
 ###ADJUST THIS CODE TO MEET YOUR PARTICULAR ANALYSIS
@@ -68,9 +76,7 @@ skill_clean <- function(dupe_list, skill_file){
 
 ad_skill <- skill_clean(dupe_list, ad_skill)
 
-###Summary of skills for job
-##ADJUST THRESHOLD FOR INCLUSION AS NEEDED--DEFAULT IS SET TO 3% (only looking at skills that show up
-##in 3% of ads for the job).
+###Summary of skills for job (only including skills that appear in at least 3% of job ads)
 ad_skill_sum <- ad_skill %>% group_by(skillclusterfamily, skillcluster, skill, hard_soft) %>% summarise(count = n(),
                      perc = round(n()/length(unique(ad_skill$bgtjobid)), 3)) %>% arrange(desc(perc))
 
@@ -84,24 +90,33 @@ ad_contingency <- as.data.frame.matrix(table(ad_eval[,c("bgtjobid", "skill")]))
 colnames(ad_contingency) <- make.names(colnames(ad_contingency))
 ad_contingency[ad_contingency > 1] <- 1
 
-####### PREPPING RESUME FILES ##########
+#######################################################
+################ PREPPING RESUME SKILL FILE ###########
+##### please customize the education level of the #####
+########## candidates you are intereseted in ##########
+#######################################################
 
 ###Filtering only to candidates of interest (has bachelor+/does not have bachelor+/all)
-##TO BE FILLED IN ONCE WE HAVE FINAL RESUME DATA
 
-res_main_int <- filter(res_main_base, bachelor %in% c(0, 1) | is.na(bachelor) == TRUE)
+res_main_int <- filter(res_main_base, bachelor == 0)
 
 ###Clean resume skills (rename near-duplicates)
 
 res_skill_int <- skill_clean(dupe_list, res_skill_base)
 
-###Finding the resume skills that are included in at least 30% of job ads, and getting the unique
-###resume IDs. ADJUST THIS THRESHHOLD FOR INCLUSION AS NEEDED.
+###Finding the "critical resume skills that are included in at least 30% of job ads, and getting the unique
+###resume IDs.
 
 skill_for_candidate <- filter(ad_skill_sum, perc >= .3, hard_soft == "hard")
 
+################################################
+####### MANUAL DATA CHECK NEEDED HERE ##########
+################################################
+
 ##Look through that skill list--is there anything that is a common skill, but not specific to/sufficient for the job?
-##Put in the list below.
+##Put in the exclude_c_skill list below. Note down the final essential skills for this part of the analysis.
+
+View(skill_for_candidate)
 
 exclude_c_skill <- c("Building Effective Relationships", "Teaching", "Customer Service", "Customer Contact", "Bilingual",
                      "English", "Scheduling", "Multilingual", "Research", "Microsoft Windows", "Microsoft Office",
@@ -111,7 +126,8 @@ skill_for_candidate <- filter(skill_for_candidate, ! skill %in% exclude_c_skill)
 
 res_id_include <- unique(filter(res_skill_base, skill %in% skill_for_candidate$skill)$bgtresid)
 
-###Finding the potential candidates, who have at least one of the hard skills included in (some threshhold) of jobs above
+###Finding the potential candidates, who have at least one of the hard skills
+###included in (some threshhold) of jobs above
 
 res_main <- filter(res_main_int, bgtresid %in% res_id_include)
 
@@ -124,36 +140,50 @@ res_skill <- filter(res_skill_base, bgtresid %in% res_id_include, skill %in% ski
 res_skill_sum <- res_skill %>% group_by(skillclusterfamily, skillcluster, skill) %>% summarise(count = n(),
                                          perc = round(n()/nrow(ad_main), 3)) %>% arrange(desc(perc))
 
-###Making contingency table
+#######################################################
+################ MAKING CONTINGENCY TABLES ############
+##### your input will be needed to make sure the ######
+#################### tables match #####################
+#######################################################
 
 res_contingency <- as.data.frame.matrix(table(res_skill[,c("bgtresid", "skill")]))
 colnames(res_contingency) <- make.names(colnames(res_contingency))
 res_contingency[res_contingency > 1] <- 1
 
-###Are there any skills in the ad contingency table that are NOT in the resume contingency table? If so,
-###note what they are and then put in a column in the right place with just zeroes.
-#how many are missing? (if 0, skip to MISMATCH MEASURE)
+################################################
+####### MANUAL DATA CHECK NEEDED HERE ##########
+################################################
+
+###Are there any skills in the ad contingency table that are NOT in the resume contingency table?
+###If the following line returns "0," there are not, and you can continue to the measuring
+###mismatch section:
 sum(!colnames(ad_contingency) %in% colnames(res_contingency))
 
-#what are they?
+#if there ARE skills missing, what are they?
 colnames(ad_contingency)[which(!colnames(ad_contingency) %in% colnames(res_contingency))]
-##prepping empty columns, putting them in ad contingency, and reordering
-#if more than one missing column:
+
+###IF THERE IS ONLY ONE MISSING COLUMN, DO THIS:
+#replace COLNAME_GOES_HERE with the name that the previous line returned
+res_contingency$COLNAME_GOES_HERE <- 0
+res_contingency <- select(res_contingency, colnames(ad_contingency))
+
+
+###IF THERE ARE MULTIPLE MISSING COLUMNS, JUST RUN THROUGH THIS:
 missing <- as.matrix(ad_contingency[1:nrow(res_contingency),which(!colnames(ad_contingency) %in% colnames(res_contingency))])
 missing[missing > 0] <- 0
 res_contingency<- cbind(res_contingency, missing)
-
-#if just one missing column, sorry, you gotta do it by hand:
-res_contingency$COLNAME_GOES_HERE <- 0
-
-#either way, start again here
 res_contingency <- select(res_contingency, colnames(ad_contingency))
 
-#checking to make sure it worked:
+##Check to make sure that it worked: this should return a 0
 sum(!colnames(ad_contingency) %in% colnames(res_contingency))
+##This should return a one:
 sum(colnames(ad_contingency) == colnames(res_contingency))/length(ad_contingency)
 
-######### MISMATCH MEASURE ############
+#######################################################
+################ MISMATCH MATRIX AND SCORE ############
+##### no manual input needed, but you should note #####
+############# down the value of mis_score #############
+#######################################################
 
 ###make mismatch matrix. this might take a while.
 
@@ -164,9 +194,10 @@ mismatch_matrix <- function(ad_skill, res_skill){
 
 mis_matrix <- mismatch_matrix(ad_contingency, res_contingency)
 
-###find mismatch scores
+###find mismatch scores. NOTE DOWN THE VALUE OF mis_score
 
 mis_score <- sum(apply(mis_matrix, MARGIN = 1, mean))/nrow(ad_contingency)
+mis_score
 
 #descriptives for each resume
 
@@ -177,49 +208,35 @@ res_desc$median <- apply(mis_matrix, MARGIN = 1, median)
 res_desc$max <- apply(mis_matrix, MARGIN = 1, max)
 res_desc$matchcount <- apply(mis_matrix, MARGIN = 1, function(x){sum(x>0)})
 
-###make process-histogram to decide who is a plausible candidate
+#######################################################
+#################### MAKING HISTOGRAMS ################
+### please edit the titles to reflect your analysis ###
+############### and save the histograms ###############
+#######################################################
 
-min(mis_matrix)
-sum(mis_matrix == 0)
+###histograms to look at distribution of matches:
 
-hist(mis_matrix, main = "All match scores, candidates have a skill that shows up in 20% of MRWG ads")
+hist(mis_matrix, main = "All match scores for possible candidates")
 hist(res_desc$mean, main = "Average match score for possible candidates")
 
-
-######Idea of "plausible candidates" less useful now that "possible candidate" has been narrowed so far down. Commenting
-######this section out.
-
-###Use mismatch matrix to get down to plausible candidates--at least one match where they can do
-###half the job? having some match to at least half of the jobs?
-
-#plausible <- as.character(res_desc[res_desc$max >= .75,]$bgtresid)
-#plausible <- as.character(res_desc[res_desc$matchcount >= nrow(ad_contingency)*.5,]$bgtresid)
-#mis_matrix_plausible <- mis_matrix[rownames(mis_matrix) %in% plausible,]
-
-###generate final histogram
-
-#hist(mis_matrix_plausible, main = "All match scores for plausible critical care nursing candidates, Richmond")
-#hist(res_desc[res_desc$bgtresid %in% plausible,"mean"], main = "Average match scores for plausible critical care nursing candidates, Richmond")
-
-
-######### SKILL SUPPLY ############
-
-###just plausible candidates:
-
-res_plausible <- res_skill[res_skill$bgtresid %in% plausible,]
+#######################################################
+################### SKILL SUPPLY CHARTS ###############
+### please edit the titles to reflect your analysis ###
+################# and save the charts #################
+#######################################################
 
 ###Summary table of skills for plausible candidates and ads
 
-top_skill_plausible <- res_plausible %>% group_by(skillclusterfamily, skillcluster, skill) %>%
+top_skill <- res_skill %>% group_by(skillclusterfamily, skillcluster, skill) %>%
   summarise(count = n()) %>% arrange(desc(count))
 
-supply_skill <- unique(c(top_skill_plausible[1:10, ]$skill, skill_for_eval[1:10, ]$skill))
+supply_skill <- unique(c(top_skill[1:10, ]$skill, skill_for_eval[1:10, ]$skill))
 
 skill_table <- data.frame(skill = supply_skill, res_count = NA, ad_count = NA)
 colnames(skill_table) <- c("skill", "res_count", "ad_count")
-skill_table$res_count <- sapply(skill_table$skill, function(x){length(unique(res_plausible[res_plausible$skill == x,]$bgtresid))})
+skill_table$res_count <- sapply(skill_table$skill, function(x){length(unique(res_skill[res_skill$skill == x,]$bgtresid))})
 skill_table$ad_count <- sapply(skill_table$skill, function(x){length(unique(ad_skill[ad_skill$skill == x,]$bgtjobid))})
-skill_table$res_perc <- skill_table$res_count/length(plausible)
+skill_table$res_perc <- skill_table$res_count/length(unique(res_skill$bgtresid))
 skill_table$ad_perc <- skill_table$ad_count/length(unique(ad_skill$bgtjobid))
 
 #Relative skill demand chart
@@ -227,7 +244,7 @@ skill_table$ad_perc <- skill_table$ad_count/length(unique(ad_skill$bgtjobid))
 rel_demand <- ggplot(data = skill_table) + geom_point(aes(x = ad_perc, y = res_perc - ad_perc)) +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = .2) +
   geom_text_repel(aes(x = ad_perc, y = res_perc - ad_perc, label = skill)) +
-  ylab("Over and under supply") + xlab("Demand")+ labs(title = "Critical Care Nurses in Richmond: Relative Skills", subtitle = "Percentages of skills in job ads and resumes")+theme_bw()
+  ylab("Over and under supply") + xlab("Demand")+ labs(title = "OCCUPATION in MSA: Relative Skills", subtitle = "Percentages of skills in job ads and resumes")+theme_bw()
 
 rel_demand
 
@@ -236,8 +253,7 @@ rel_demand
 abs_demand <- ggplot(data = skill_table) + geom_point(aes(x = ad_count, y = res_count - ad_count)) +
   geom_hline(yintercept = 0, alpha = .5, linetype = "dashed") +
   geom_text_repel(aes(x = ad_count, y = res_count - ad_count, label = skill)) +
-  ylab("Over and under supply") + xlab("Demand")+ labs(title = "Critical Care Nurses in Richmond: Absolute Skills", subtitle = "Counts of skills in job ads and resumes")+
+  ylab("Over and under supply") + xlab("Demand")+ labs(title = "OCCUPATION in MSA: Absolute Skills", subtitle = "Counts of skills in job ads and resumes")+
   theme_bw()
 
 abs_demand
-
