@@ -11,19 +11,19 @@ loc <- "data/stem_edu/final/dspg19_analysis"
 #######################################################
 
 #ad main file (already filtered to specific MSA)
-ad_main_base <- fread(file.path(loc, "richmond_top5_stw_jobs_main.csv"), drop = "V1")
+ad_main_base <- fread(file.path(loc, "blacksburg_top5_stw_jobs_main.csv"), drop = "V1")
 
 #ad skill file (already filtered to specific MSA)
-ad_skill_base <- fread(file.path(loc, "richmond_top5_stw_jobs_all_skills.csv"), drop = "V1")
+ad_skill_base <- fread(file.path(loc, "blacksburg_top5_stw_jobs_all_skills.csv"), drop = "V1")
 
 #resume main file (already filtered to specific MSA, with bachelor's/not-bachelor's flag)
-res_main_base <- fread(file.path(loc, "resume_with_bachelors_r_main.csv"), drop = "V1")
+res_main_base <- fread(file.path(loc, "resume_with_bachelors_b_main.csv"), drop = "V1")
 res_main_base <- select(res_main_base, colnames(res_main_base)[colnames(res_main_base) != "V1"])
 colnames(res_main_base) <- c("bgtresid", "statename", "cityname", "msa", "zipcode", "gender", "noofschooldegrees",
                              "noofcertifications", "noofjobs", "bachelor")
 
 #resume skill file (already filtered to specific MSA, with bachelor's/not-bachelor's flag)
-res_skill_base <- fread(file.path(loc, "resume_with_bachelors_r_skill.csv"), drop = "V1")
+res_skill_base <- fread(file.path(loc, "resume_with_bachelors_b_skill.csv"), drop = "V1")
 res_skill_base <- select(res_skill_base, colnames(res_skill_base)[colnames(res_skill_base) != "V1"])
 colnames(res_skill_base) <- c("bgtresid", "skillid", "skill", "skillcluster", "skillclusterfamily",
                         "isbaseline", "issoftware", "isspecialized", "bachelor")
@@ -48,13 +48,13 @@ dupe_list <- as.data.frame(rbind(c("Critical Care", "Critical Care Nursing"),
 
 #######################################################
 ################ PREPPING AD SKILL FILE ###############
-############## no customization needed ################
+###### customize to choose specific ONET code #########
 #######################################################
 
 ###Filtering to only ads of interest (occupation name, requires bachelor +/does not require bachelor/all)
 ###ADJUST THIS CODE TO MEET YOUR PARTICULAR ANALYSIS
 
-ad_main <- filter(ad_main_base, onetname == "Computer User Support Specialists", edu <= 14 | is.na(edu) == TRUE)
+ad_main <- filter(ad_main_base, onetname == "Maintenance and Repair Workers, General", edu <= 14 | is.na(edu) == TRUE)
 
 ###Filtering to only skills of interest (hard/soft/all)
 
@@ -98,13 +98,13 @@ ad_contingency[ad_contingency > 1] <- 1
 
 ###Filtering only to candidates of interest (has bachelor+/does not have bachelor+/all)
 
-res_main_int <- filter(res_main_base, bachelor == 0)
+res_main_int <- filter(res_main_base, bachelor %in% c(0,1) | is.na(bachelor == TRUE))
 
 ###Clean resume skills (rename near-duplicates)
 
-res_skill_int <- skill_clean(dupe_list, res_skill_base)
+res_skill_base_clean <- skill_clean(dupe_list, res_skill_base)
 
-###Finding the "critical resume skills that are included in at least 30% of job ads, and getting the unique
+###Finding the "critical" resume skills that are included in at least 30% of job ads, and getting the unique
 ###resume IDs.
 
 skill_for_candidate <- filter(ad_skill_sum, perc >= .3, hard_soft == "hard")
@@ -124,7 +124,7 @@ exclude_c_skill <- c("Building Effective Relationships", "Teaching", "Customer S
 
 skill_for_candidate <- filter(skill_for_candidate, ! skill %in% exclude_c_skill)
 
-res_id_include <- unique(filter(res_skill_base, skill %in% skill_for_candidate$skill)$bgtresid)
+res_id_include <- unique(filter(res_skill_base_clean, skill %in% skill_for_candidate$skill)$bgtresid)
 
 ###Finding the potential candidates, who have at least one of the hard skills
 ###included in (some threshhold) of jobs above
@@ -133,12 +133,12 @@ res_main <- filter(res_main_int, bgtresid %in% res_id_include)
 
 ###Finding all the skills related to potential candidates, which we are actually tracking for the match measure
 
-res_skill <- filter(res_skill_base, bgtresid %in% res_id_include, skill %in% skill_for_eval$skill)
+res_skill <- filter(res_skill_base_clean, bgtresid %in% res_main$bgtresid, skill %in% skill_for_eval$skill)
 
 ###Summary of match skills of potential candidates
 
 res_skill_sum <- res_skill %>% group_by(skillclusterfamily, skillcluster, skill) %>% summarise(count = n(),
-                                         perc = round(n()/nrow(ad_main), 3)) %>% arrange(desc(perc))
+                                         perc = round(n()/length(unique(res_skill$bgtresid)), 3)) %>% arrange(desc(perc))
 
 #######################################################
 ################ MAKING CONTINGENCY TABLES ############
@@ -216,8 +216,8 @@ res_desc$matchcount <- apply(mis_matrix, MARGIN = 1, function(x){sum(x>0)})
 
 ###histograms to look at distribution of matches:
 
-hist(mis_matrix, main = "All match scores for possible candidates")
-hist(res_desc$mean, main = "Average match score for possible candidates")
+hist(mis_matrix, main = "All match scores for MRWG, Blacksburg, all edu")
+hist(res_desc$mean, main = "Average match score for MRWG, Richmond, all edu")
 
 #######################################################
 ################### SKILL SUPPLY CHARTS ###############
@@ -244,7 +244,7 @@ skill_table$ad_perc <- skill_table$ad_count/length(unique(ad_skill$bgtjobid))
 rel_demand <- ggplot(data = skill_table) + geom_point(aes(x = ad_perc, y = res_perc - ad_perc)) +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = .2) +
   geom_text_repel(aes(x = ad_perc, y = res_perc - ad_perc, label = skill)) +
-  ylab("Over and under supply") + xlab("Demand")+ labs(title = "OCCUPATION in MSA: Relative Skills", subtitle = "Percentages of skills in job ads and resumes")+theme_bw()
+  ylab("Over and under supply") + xlab("Demand")+ labs(title = "MRWG in Blacksburg, all educational attainment: Relative Skills", subtitle = "Percentages of skills in job ads and resumes")+theme_bw()
 
 rel_demand
 
@@ -253,7 +253,17 @@ rel_demand
 abs_demand <- ggplot(data = skill_table) + geom_point(aes(x = ad_count, y = res_count - ad_count)) +
   geom_hline(yintercept = 0, alpha = .5, linetype = "dashed") +
   geom_text_repel(aes(x = ad_count, y = res_count - ad_count, label = skill)) +
-  ylab("Over and under supply") + xlab("Demand")+ labs(title = "OCCUPATION in MSA: Absolute Skills", subtitle = "Counts of skills in job ads and resumes")+
+  ylab("Over and under supply") + xlab("Demand")+ labs(title = "MRWG in Blacksburg, all educational attainment: Absolute Skills", subtitle = "Counts of skills in job ads and resumes")+
   theme_bw()
 
 abs_demand
+
+#####IF YOU WANT TO WRITE OUT AND SAVE FILES, you can use the following--just make sure that you
+#####rename the file appropriately for your analysis
+
+writeloc <- "data/stem_edu/working/dspg_19_analysis_files"
+write.csv(skill_table, file.path(writeloc, "OCCUPATION_EDU_MSA_absskill.csv"))
+write.csv(res_desc, file.path(writeloc, "OCCUPATION_EDU_MSA_fit_by_resume.csv"))
+write.csv(mis_matrix, file.path(writeloc, "OCCUPATION_EDU_MSA_mismatch_matrix.csv"))
+write.csv(ad_skill_sum, file.path(writeloc, "OCCUPATION_EDU_MSA_skills_in_ads.csv"))
+write.csv(res_skill_sum, file.path(writeloc, "OCCUPATION_EDU_MSA_skills_in_resumes.csv"))
