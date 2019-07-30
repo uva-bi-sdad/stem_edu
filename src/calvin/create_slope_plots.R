@@ -3,6 +3,8 @@
 # 2019-07-30
 library(data.table)
 library(dplyr)
+library(ggplot2)
+library(geom_text)
 
 # Tables to read in
 jobAds1 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/blacksburg_top5_stw_jobs_all_skills.csv")
@@ -81,33 +83,115 @@ all_skills2$Proportions <- all_skills2$Frequency / length(unique(nursesRes)) * 1
 
 # Puts the resumes and job ads together
 all_skills1 <- all_skills1[order(as.character(all_skills1$Skill)),]
+all_skills1$JobRes <- "Job_Ads"
 all_skills2 <- all_skills2[order(as.character(all_skills2$Skill)),]
+all_skills2$JobRes <- "Resumes"
 
-all_skills <- all_skills1
-all_skills$resFreq <- all_skills2$Frequency
-all_skills$resProp <- all_skills2$Proportions
-colnames(all_skills) <- c("Skill", "jobFreq", "Hard/Soft", "jobProp","resFreq","resProp")
-
+all_skills <- rbindlist(list(all_skills1,all_skills2))
 
 # Example code for how to create a slope plot
-licenseBreakdown <- rbindlist(list(a,b))
 
-licensesNice <- data.frame( Year = as.factor(licenseBreakdown$year),
-                            licenses = as.factor(licenseBreakdown$V1),
-                            Percent = as.numeric(round(licenseBreakdown$percent * 100,2)))
+# Put the table in usable format
+skills_nice <- data.frame(  Skill = as.factor(all_skills$Skill),
+                            Frequency = as.numeric(all_skills$Frequency),
+                            HardSoft = as.factor(all_skills$`Hard/Soft`),
+                            Proportions = as.numeric(round(all_skills$Proportions,2)),
+                            JobRes = as.factor(all_skills$JobRes))
 
-ggplot(data = licensesNice, aes(x = Year, y = Percent, group = licenses)) +
-  geom_line(aes(color = licenses, alpha = 1), size = 2) +
-  geom_point(aes(color = licenses, alpha = 1), size = 4) +
+# Things for the barchart
+all_skills3 <- all_skills2
+all_skills3$Proportions <- -all_skills2$Proportions
+all_skills4 <- rbindlist(list(all_skills1,all_skills3))
+skills_nice2 <- data.frame(  Skill = as.factor(all_skills4$Skill),
+                            Frequency = as.numeric(all_skills4$Frequency),
+                            HardSoft = as.factor(all_skills4$`Hard/Soft`),
+                            Proportions = as.numeric(round(all_skills4$Proportions,2)),
+                            JobRes = as.factor(all_skills4$JobRes))
+
+# Makes the bar chart
+ggplot(skills_nice2, aes(x=Skill, y=Proportions, fill=JobRes)) +
+  geom_bar(stat="identity", position="identity") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.border     = element_blank()) +
+  theme(axis.title.y     = element_blank()) +
+  theme(panel.grid.major.y = element_blank()) +
+  theme(panel.grid.minor.y = element_blank()) +
+  theme(axis.title.x     = element_blank()) +
+  theme(panel.grid.minor.x = element_blank()) +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(
+    title = "Skills requested in Job Ads vs Skills Listed on Resumes",
+    caption = "based on data collected from Burning Glass for the years 2016-17"
+  )
+
+
+
+# Plot it
+ggplot(data = skills_nice, aes(x = JobRes, y = Proportions, group = Skill)) +
+  geom_line(aes(color = HardSoft), size = 2) +
+  geom_point(aes(color = HardSoft), size = 4) +
   #  Labelling as desired
   scale_x_discrete(position = "top") +
   theme_bw() +
+  # Things I'm changing
+  #theme(legend.position = "none") +
   theme(panel.border = element_blank()) +
   theme(panel.grid.major.x = element_blank()) +
   theme(panel.grid.major.y = element_blank()) +
   theme(panel.grid.minor.y = element_blank()) +
   theme(axis.ticks       = element_blank()) +
   labs(
-    title = "Change in Open Source License Proportion, 2012-2018",
-    caption = "based on a query of the top 5 OSS licenses on Github"
+    title = "Skills requested in Job Ads vs Skills Listed on Resumes",
+    caption = "based on data collected from Burning Glass"
   )
+
+# PERHAPS AN ALTERNATIVE TO MAKE IT PRETTIER
+MySpecial <- list(
+  # move the x axis labels up top
+  scale_x_discrete(position = "top"),
+  theme_bw(),
+  # Format tweaks
+  # Remove the legend
+  theme(legend.position = "none"),
+  # Remove the panel border
+  theme(panel.border     = element_blank()),
+  # Remove just about everything from the y axis
+  theme(axis.title.y     = element_blank()),
+  theme(axis.text.y      = element_blank()),
+  theme(panel.grid.major.y = element_blank()),
+  theme(panel.grid.minor.y = element_blank()),
+  # Remove a few things from the x axis and increase font size
+  theme(axis.title.x     = element_blank()),
+  theme(panel.grid.major.x = element_blank()),
+  theme(axis.text.x.top      = element_text(size=12)),
+  # Remove x & y tick marks
+  theme(axis.ticks       = element_blank()),
+  # Format title & subtitle
+  theme(plot.title       = element_text(size=14, face = "bold", hjust = 0.5)),
+  theme(plot.subtitle    = element_text(hjust = 0.5))
+)
+
+ggplot(data = skills_nice, aes(x = JobRes, y = Proportions, group = Skill)) +
+  geom_line(aes(color = HardSoft, alpha = 1), size = 1) +
+  geom_point(aes(color = HardSoft, alpha = 1), size = 3) +
+  geom_text_repel(data = skills_nice %>% filter(JobRes == "Job_Ads"),
+                  aes(label = paste0(Skill, " : ", Proportions, "%")) ,
+                  hjust = "left",
+                  fontface = "bold",
+                  size = 4,
+                  nudge_x = -.45,
+                  direction = "y") +
+  geom_text_repel(data = skills_nice %>% filter(JobRes == "Resumes"),
+                  aes(label = paste0(Skill, " : ", Proportions, "%")) ,
+                  hjust = "right",
+                  fontface = "bold",
+                  size = 4,
+                  nudge_x = .5,
+                  direction = "y") +
+  MySpecial +
+  labs(
+    title = "Skills requested in Job Ads vs Skills Listed on Resumes",
+    caption = "based on data collected from Burning Glass"
+  )
+
