@@ -7,19 +7,22 @@ library(ggplot2)
 library(geom_text)
 
 # Tables to read in
-jobAds1 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/blacksburg_top5_stw_jobs_all_skills.csv")
-jobAds2 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/richmond_top5_stw_jobs_all_skills.csv")
-resumes1 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/resume_with_bachelors_b_skill.csv")
-resumes2 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/resume_with_bachelors_r_skill.csv")
+hmm <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/FINAL_BLACKSBURG_NURSE_RESUME.csv")
+
+jobAds1 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/FINAL_BLACKSBURG_NURSE_AD.csv")
+jobAds2 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/FINAL_RICHMOND_NURSE_AD.csv")
+resumes1 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/FINAL_BLACKSBURG_NURSE_RESUME.csv")
+resumes2 <- fread("../stem_edu/data/stem_edu/final/dspg19_analysis/FINAL_RICHMOND_NURSE_RESUME.csv")
 
 bothJobAds <- rbindlist(list(jobAds1,jobAds2))
 bothResumes <- rbindlist(list(resumes1,resumes2))
 
 
 # select only the nurses
-nurses <- bothJobAds[bothJobAds$onet == "29-1141.03",]
-nurses <- nurses %>%
-  select(hard_soft,skill,bgtjobid)
+# nurses <- bothJobAds[bothJobAds$onet == "29-1141.03",]
+nurses <- bothJobAds %>%
+   select(hard_soft,skill,bgtjobid)
+
 nurse_hard <- nurses[nurses$hard_soft == "hard"] %>%
   select(hard_soft,skill)
 nurse_soft <- nurses[nurses$hard_soft == "soft"] %>%
@@ -44,11 +47,11 @@ colnames(all_skills1) <- c("Skill","Frequency","Hard/Soft")
 all_skills1$Proportions <- all_skills1$Frequency / length(unique(nurses$bgtjobid)) * 100
 
 # Get's the resumes that might matter
-nursesRes <- bothResumes[bothResumes$skillName == "Critical Care" | bothResumes$skillName == "Advanced Cardiac Life Support (ACLS)" | bothResumes$skillName == "Patient Care" | bothResumes$skillName == "Neonatal Intensive Care Unit (NICU)" | bothResumes$skillName == "Life Support",]$BGTResId
-nursesRes_all <- bothResumes[as.character(bothResumes$BGTResId) %chin% as.character(nursesRes),]
-colnames(nursesRes_all) <- c("V1", "V2", "BGTResId", "skillId", "skillName","SkillClusterName", "SkillClusterFamilyName", "IsBaseline","IsSoftware","IsSpecialized" ,"bachelor")
-nursesRes_all <- nursesRes_all %>%
-  select(skillName,bachelor)
+#nursesRes <- bothResumes[bothResumes$skillName == "Critical Care" | bothResumes$skillName == "Advanced Cardiac Life Support (ACLS)" | bothResumes$skillName == "Patient Care" | bothResumes$skillName == "Neonatal Intensive Care Unit (NICU)" ,]$BGTResId
+#nursesRes_all <- bothResumes[as.character(bothResumes$BGTResId) %chin% as.character(nursesRes),]
+#colnames(nursesRes_all) <- c("V1", "V2", "BGTResId", "skillId", "skillName","SkillClusterName", "SkillClusterFamilyName", "IsBaseline","IsSoftware","IsSpecialized" ,"bachelor")
+nursesRes_all <- bothResumes %>%
+  select(skill,bgtresid)
 
 # Looks at the same skills
 nursesRes_hard <- nursesRes_all[nursesRes_all$skillName == "Critical Care"
@@ -108,12 +111,16 @@ skills_nice2 <- data.frame(  Skill = as.factor(all_skills4$Skill),
                             Proportions = as.numeric(round(all_skills4$Proportions,2)),
                             JobRes = as.factor(all_skills4$JobRes))
 
+skills_nice2_soft <- skills_nice2[skills_nice2$HardSoft == "soft",]
+skills_nice2_hard <- skills_nice2[skills_nice2$HardSoft == "hard",]
+
 # Makes the bar chart
-ggplot(skills_nice2, aes(x=Skill, y=Proportions, fill=JobRes)) +
+ggplot(skills_nice2_hard, aes(x=Skill, y=Proportions, fill=JobRes)) +
   geom_bar(stat="identity", position="identity") +
   scale_fill_manual(values = c("orange","blue")) +
   coord_flip() +
   theme_bw() +
+  scale_y_continuous(limits=c(-90, 90)) +
   theme(panel.border     = element_blank()) +
   theme(axis.title.y     = element_blank()) +
   theme(panel.grid.major.y = element_blank()) +
@@ -122,10 +129,27 @@ ggplot(skills_nice2, aes(x=Skill, y=Proportions, fill=JobRes)) +
   theme(panel.grid.minor.x = element_blank()) +
   theme(panel.grid.major.x = element_blank()) +
   labs(
-    title = "Skills requested in Job Ads vs Skills Listed on Resumes",
-    caption = "based on data collected from Burning Glass for the years 2016-17"
+    title = "Skills requested in Job Ads vs Skills Listed on Resumes"
+    #caption = "based on data collected from Burning Glass for the years 2016-17"
   )
 
+ggplot(skills_nice2_soft, aes(x=Skill, y=Proportions, fill=JobRes)) +
+  geom_bar(stat="identity", position="identity") +
+  scale_fill_manual(values = c("red","green")) +
+  coord_flip() +
+  theme_bw() +
+  scale_y_continuous(limits=c(-90, 90)) +
+  theme(panel.border     = element_blank()) +
+  theme(axis.title.y     = element_blank()) +
+  theme(panel.grid.major.y = element_blank()) +
+  theme(panel.grid.minor.y = element_blank()) +
+  theme(axis.title.x     = element_blank()) +
+  theme(panel.grid.minor.x = element_blank()) +
+  theme(panel.grid.major.x = element_blank()) +
+  labs(
+    #title = "Skills requested in Job Ads vs Skills Listed on Resumes",
+    caption = "based on data collected from Burning Glass for the years 2016-17"
+  )
 
 
 # Plot it
