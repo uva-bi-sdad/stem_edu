@@ -111,6 +111,7 @@ skills_nice2 <- data.frame(  Skill = as.factor(all_skills4$Skill),
 # Makes the bar chart
 ggplot(skills_nice2, aes(x=Skill, y=Proportions, fill=JobRes)) +
   geom_bar(stat="identity", position="identity") +
+  scale_fill_manual(values = c("orange","blue")) +
   coord_flip() +
   theme_bw() +
   theme(panel.border     = element_blank()) +
@@ -133,6 +134,7 @@ ggplot(data = skills_nice, aes(x = JobRes, y = Proportions, group = Skill)) +
   geom_point(aes(color = HardSoft), size = 4) +
   #  Labelling as desired
   scale_x_discrete(position = "top") +
+  scale_color_manual(values = c("orange","blue")) +
   theme_bw() +
   # Things I'm changing
   #theme(legend.position = "none") +
