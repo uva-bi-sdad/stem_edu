@@ -116,13 +116,15 @@ msa_hs <- st_join(x=msa, y=hs)
 
 
 
-
+library(ggrepel)
 
 #plot of Virginia, MSAs, education within MSAs
 ggplot()+
-  geom_sf(data=st_va)+
+  geom_sf(data=st_va, fill=NA)+
   geom_sf(data = msa, fill = NA) +
-  geom_sf(data = edu)
+  geom_sf(data = edu)+
+  theme(panel.grid.major = element_line(colour = "transparent"))
+
 
 #lists of programs
 vccs_list <- vccs_list %>%
@@ -133,3 +135,19 @@ stw_subbach_combine_list <- stw_subbach_combine_list %>%
   filter(institution %in% edu$object)
 subbach_combine_list <- subbach_combine_list %>%
   filter(institution %in% edu$object)
+
+
+
+cipnurs <- "51.3801"
+
+nurs_schools <- subbach_combine_list %>% filter(cipCode == cipnurs)
+#this is just all of the vccs schools
+
+edu_nurs <- edu %>% filter(object %in% nurs_schools$institution)
+
+
+ggplot()+
+  geom_sf(data=st_va, fill=NA)+
+  geom_sf(data = msa, fill = NA) +
+  geom_sf(data = edu_nurs)+
+  theme(panel.grid.major = element_line(colour = "transparent"))

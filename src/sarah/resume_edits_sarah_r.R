@@ -3,9 +3,9 @@ library(dplyr)
 library(tidyverse)
 library(data.table)
 
-edu <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/blacksburg_edu.txt")
-main <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/blacksburg_personal.txt")
-skill <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/blacksburg_skills.txt")
+edu <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/richmond_edu.txt")
+main <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/richmond_personal.txt")
+skill <- fread("../stem_edu/data/stem_edu/working/MSA_Resumes/richmond_skills.txt")
 
 #This function determines bachelors designation by degreeLevel variable
 ids <- main$BGTResId
@@ -371,17 +371,8 @@ main$bachelor[main$bachelor == ""] <- NA
 
 after <- main %>% group_by(bachelor) %>% summarise(count = n())
 
-#write.csv(main, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_b_main.csv")
+#write.csv(main, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_r_main.csv")
 
 skill$bachelor = main$bachelor[match(skill$BGTResId, main$BGTResId)]
 
-#write.csv(skill, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_b_skill.csv")
-
-after$variable = "after"
-before$variable = "before"
-chart<- rbind(after, before)
-ggplot(chart, aes(x=reorder(variable, desc(variable)), y=count)) +
-  geom_bar(aes(fill = bachelor), position = "dodge", stat="identity") +
-  ggtitle("Before and After Bachelors Classification") +
-  xlab("")+
-  ylab("count")
+#write.csv(skill, "data/stem_edu/working/resume_with_bachelors/resume_with_bachelors_r_skill.csv")
