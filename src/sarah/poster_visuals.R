@@ -29,11 +29,10 @@ box_r_res$variable <- as.factor(box_r_res$variable)
 
 box_r <- rbind(box_r_res, box_r_ads)
 
-ggplot(box_r, aes(x=variable, y=skill, color= variable,alpha= .1)) +
-  geom_boxplot(outlier.shape=NA, color="black", alpha=0)+
-  geom_point(position = position_jitterdodge(jitter.height = 0.4, jitter.width = 1.5))+
+ggplot(box_r, aes(x=variable, y=skill, fill= variable, color=variable)) +
+  geom_point(color= "black", fill= "#A9D5A5", alpha= .1, stroke = 1, shape = 21,  position = position_jitterdodge(jitter.height = 0.4, jitter.width = 1.5)) +
+  geom_boxplot(outlier.shape=NA, color="black", alpha=0) +
   labs(title="Number of Skills Provided on \nResumes and Job Ads in Richmond", x= "", y="Number of Skills")+
-  scale_color_manual(values=c("#1B3766", "#F17E1D"))+
   theme_classic()+
   theme(legend.position = "none", plot.title = element_text( size=20, face="bold", hjust=0.5),  axis.title.y = element_text(size = 20), axis.text.x = element_text(size= 20), axis.text.y = element_text(size= 16))+
   scale_y_continuous(breaks= seq(0, 130, 10))+
@@ -69,14 +68,14 @@ box_b_ads$variable <- as.factor(box_b_ads$variable)
 box_b_res$variable <- as.factor(box_b_res$variable)
 
 box_b <- rbind(box_b_res, box_b_ads)
-
-ggplot(box_b, aes(x=variable, y=skill, color= variable,alpha= .1)) +
+ggplot(box_b, aes(x=variable, y=skill, fill= variable, alpha= .1)) +
+  geom_point(color= "#6DD4DB", position = position_jitterdodge(jitter.height = 0.4, jitter.width = 1.5))+
   geom_boxplot(outlier.shape=NA, color="black", alpha=0)+
-  geom_point(position = position_jitterdodge(jitter.height = 0.4, jitter.width = 1.5))+
   labs(title="Number of Skills Provided on \nResumes and Job Ads in Blacksburg", x= "", y="Number of Skills")+
-  scale_color_manual(values=c("#1B3766", "#F17E1D"))+
+  #scale_color_manual(values=c("#6DD4DB"))+
   theme_classic()+
   theme(legend.position = "none", plot.title = element_text( size=20, face="bold", hjust=0.5),  axis.title.y = element_text(size = 20), axis.text.x = element_text(size= 20), axis.text.y = element_text(size= 16))+
   scale_y_continuous(breaks= seq(0, 130, 10))+
   expand_limits(y = 130)
+
 
