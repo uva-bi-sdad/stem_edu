@@ -25,6 +25,9 @@ for (currentSeries in seq(2:454)+1){
   print(paste("We now have a total of ", length(va_Resumes$BGTResId)," resumes in Virginia.",sep = ""))
 }
 
+# Remove the West Virginia peeps:
+va_Resumes <- va_Resumes[!(va_Resumes$StateName == "West Virginia"), ]
+
 # You should change this to whatever you want to name it
 write.csv(va_Resumes,"resume_personal_info_va.csv")
 
