@@ -198,7 +198,7 @@ length(unique(b_job_stw$onet))/length(unique(b_job$onet))
 length(unique(r_job_stw$onet))/length(unique(r_job$onet))
 
 ####writing out Rothwell definitions
-#write.csv(stw, "src/ONET_define/Rothwell_STW_list.csv")
+write.csv(stw, "src/ONET_define/Rothwell_STW_list.csv")
 
 ###writing out Blacksburg/Richmond Rothwell job ads
 #write.csv(r_job_stw, "data/stem_edu/working/Team_SA_job_skills_filter/rothwell_richmond_stw_job.csv")
@@ -261,6 +261,3 @@ bgt_stw_skills_onet_unique <- select(bgt_stw_skills_onet_unique, "onet","onetnam
                                      "isspecialized", "isbaseline", "issoftware", "total_positions", "positions_with_skill",
                                      "perc_pos_w_skill") %>% arrange(desc(total_positions), desc(perc_pos_w_skill))
 write.csv(bgt_stw_skills_onet_unique, "src/ONET_define/v_stw_skills.csv")
-
-#most common STW positions in VA, Blacksburg, Richmond
-

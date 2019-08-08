@@ -106,7 +106,7 @@ skillcluster_2_soft <- filter(skillcluster_2, mostcautious == FALSE)
 skillcluster_2_hard <- filter(skillcluster_2, mostcautious == TRUE)
 
 
-skillcluster_soft_1 <- select(skillcluster_grouped_soft, skillclusterfamily,
+skillcluster_soft_1 <- select(original_skillcluster_grouped_soft, skillclusterfamily,
                               skillcluster, skill_count, ad_count)
 skillcluster_soft_2 <- select(skillcluster_2_soft, skillclusterfamily,
                               skillcluster, skills, ads)
@@ -114,7 +114,7 @@ colnames(skillcluster_soft_2) <- c("skillclusterfamily", "skillcluster",
                                    "skill_count", "ad_count")
 skillcluster_soft <- rbind(skillcluster_soft_1, skillcluster_soft_2)
 
-skillcluster_hard_1 <- select(skillcluster_grouped_hard, skillclusterfamily,
+skillcluster_hard_1 <- select(original_skillcluster_grouped_hard, skillclusterfamily,
                               skillcluster, skill_count, ad_count)
 skillcluster_hard_2 <- select(skillcluster_2_hard, skillclusterfamily,
                               skillcluster, skills, ads)
@@ -133,7 +133,7 @@ write.csv(stw_skill_classify, file.path(loc, "skill_for_validation.csv"))
 
 loc <- file.path("data/stem_edu/working/hard_soft_skills/for_validation")
 s_v <- fread(file.path(loc, "skill_classified_vicki.csv"))
-s_a <- fread(file.path(loc, "skill_classified_vicki.csv"))
+s_a <- fread(file.path(loc, "skill_classified_alyssa.csv"))
 s_s <- fread(file.path(loc, "skill_classified_sarah.csv"))
 s_c <- fread(file.path(loc, "skill_classified_calvin.csv"))
 s_s2 <- fread(file.path(loc, "skill_classified_sam.csv"))
