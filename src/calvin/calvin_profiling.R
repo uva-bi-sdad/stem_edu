@@ -1,7 +1,4 @@
 #This is my profiling script STW:
-
-
-
   # Playing with the BGT data
   # Calvin Isch
   # 2019/06/13
@@ -247,7 +244,6 @@ count(richskills,skillclusterfamily)
 library(R.utils)
 library(lubridate)
 
-# I've already unzipped 449-452
 
 currentSeries = "420"
 gzip(paste("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Resume_Data/",currentSeries,"_job_info.csv",sep=""))
@@ -295,6 +291,12 @@ subset(peeps2017,!(BGTResId %in% peeps2018$BGTResId))
 
 
 
+
+
+
+
+# IGNORE THIS-- while this was the code originally used to read in the resume file
+# it has been optimized and move to another file reading_in_resumes.R
 #+++++++++++++++++++++++++++++++++ READING IN RESUMES +++++++++++++++++++++++++++++++++++#
 
 library(stringr)
