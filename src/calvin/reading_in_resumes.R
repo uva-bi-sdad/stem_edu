@@ -1,4 +1,5 @@
 #+++++++++++++++++++++++++++++++++ READING IN RESUMES +++++++++++++++++++++++++++++++++++#
+# Calvin Isch
 # The original code for this is in calvin_profiling.R at the bottom.
 # I moved it over so it isn't a complete mess.
 # Just run in the order of the lines to get all of the resumes from Virginia.
@@ -34,8 +35,12 @@ write.csv(va_Resumes,"resume_personal_info_va.csv")
 
 # Next select only the resume IDs for the VA people
 allIds <- va_Resumes$BGTResId
+# Clear it from memory so R is less likely to crash
+remove(va_Resumes)
+
 
 # Function to read in the other file types
+# You need to change the variable BGTResId for education_info and skill_info to BGTResID
 getOtherInfo <- function(fileTypes){
 
   currentSeries <- 1
@@ -56,12 +61,16 @@ getOtherInfo <- function(fileTypes){
 # Then get the other four file types
 va_skills <- getOtherInfo("skill_info")
 write.csv(va_skills,"resume_skill_info_va.csv")
+remove(va_skills)
 
-va_skills <- getOtherInfo("education_info")
-write.csv(va_skills,"resume_education_info_va.csv")
+va_education <- getOtherInfo("education_info")
+write.csv(va_education,"resume_education_info_va.csv")
+remove(va_education)
 
-va_skills <- getOtherInfo("certification_info")
-write.csv(va_skills,"resume_certification_info_va.csv")
+va_certifications <- getOtherInfo("certification_info")
+write.csv(va_certifications,"resume_certification_info_va.csv")
+remove(va_certifications)
 
-va_skills <- getOtherInfo("job_info")
-write.csv(va_skills,"resume_job_info_va.csv")
+va_jobs <- getOtherInfo("job_info")
+write.csv(va_jobs,"resume_job_info_va.csv")
+remove(va_jobs)
