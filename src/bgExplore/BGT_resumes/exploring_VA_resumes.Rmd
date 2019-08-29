@@ -1,0 +1,67 @@
+---
+title: "Exploring VA Resumes"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+library(dplyr)
+```
+
+```{r load data}
+cert <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_certification_info_va.csv")
+edu <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_education_info_va.csv")
+job <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_job_info_va.csv")
+main <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_personal_info_va.csv")
+skill <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_skill_info_va.csv")
+```
+
+for my own use: 
+
+```{r size, echo=FALSE}
+tibble(
+  "Set" = c("Personal", "Jobs", "Education", "Certifications", "Skills"),
+  "# Obs" = prettyNum(c(nrow(main), nrow(job), nrow(edu), nrow(cert), nrow(skill)), big.mark=",",trim = TRUE),
+  "Ratio" = round((c(nrow(main), nrow(job), nrow(edu), nrow(cert), nrow(skill)))/nrow(main), 1),
+  "# Vars" = c(ncol(main), ncol(job), ncol(edu), ncol(cert), ncol(skill))
+)
+
+tibble(colnames(job), class(colnames(job)))
+
+job$jobISOStartDate[1]
+dates <- lubridate::ymd(job$jobISOStartDate)
+dates <- dates[!is.na(dates)] 
+min(dates) #1957
+max(dates) #2018
+
+```
+
+```{r scratch paper}
+head(skill)
+```
+
+
+#### Data Review
+##### BGT Job-Ad Data
+
+Burning Glass Technology offers six principal domains within its Virginia resume data across the years 1957-2018.
+
+* Personal - the base table of the resume, contains 10 columns of candidate descriptors including location and gender.
+* Jobs - a related table of a candidate's job history including ONET code, job location, company sector, and dates.
+* Education - a related table indicating level of study and, where possible, the school and field of study details.
+* Certifications - a related table of certifications amd licenses associated with candidate.
+* Skill - a related table indicating skills associated with job postings (3 fields for skill names, 3 for skill descriptors)
+    Domain     |   Type  | Columns  | Rows (M) | Notes
+---------------|---------|----------|----------| ----
+Main           | base    | 10       | 0.5      | 
+Jobs           | related | 10       | 3.9      |
+Education      | related | 13       | 0.9      |
+Certifications | related | 5        | 0.5      |
+Skill          | related | 9        | 16.4     |
+
+
+
+
+
+
