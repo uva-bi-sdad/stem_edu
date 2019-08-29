@@ -465,7 +465,6 @@ sum(is.na(skills_va_17$SkillClusterFamily), na.rm = TRUE)
 
 ```{r}
 ads_main_2017_51 <- readRDS("~/git/stem_edu/data/stem_edu/working/burning_glass/ads_main_2017_51.RDS")
-
 ads_main_201707_51 <- ads_main_2017_51 %>% filter(str_extract(jobdate, "\\d{4}-\\d{2}") == "2017-07")
 main <- select(ads_main_201707_51, "bgtjobid",'jobdate', 'occfam', 'occfamname', 'employer', 'city',  'state', 'county', 'fipsstate', 'fipscounty', 'fips', 'lat', 'lon')
 
@@ -702,7 +701,6 @@ bgtfips_val <- tibble(
 ## CHECKING LON AND LAT
 library(USAboundaries)
 virginia <- USAboundaries::us_states(resolution = "low", states = "VA")
-main2 %>% st_set_crs(st_crs(virginia))
 
 main2 <- main %>% 
   filter(dataplumbr::is_blank(lat) == FALSE) %>% 
@@ -729,7 +727,7 @@ readr::write_csv(bgt_perc_val, "~/git/stem_edu/data/stem_edu/working/BGexploreva
 ```{r}
 
 duplication <- tibble("Dataset" = c("BGT", "Open Jobs"), 
-       "N" = nrow(main),
+       "N" = c(nrow(main), nrow(OJ2)),
        
        "# Non-Dupes" = c(
          nrow(main[!duplicated(main[,2:13]),]),
@@ -741,14 +739,31 @@ duplication <- tibble("Dataset" = c("BGT", "Open Jobs"),
        
         "Percent Unuplicated" = c(
           ( nrow(main[!duplicated(main[,2:13]),]) ) / nrow(main) ,
-          ( nrow(OJ2[!duplicated(OJ2[,2:8]),])) / nrow(main) ),
+          ( nrow(OJ2[!duplicated(OJ2[,2:8]),])) / nrow(OJ2) ),
        
         "Percent Duplicated" = c(
           ( nrow(main[duplicated(main[,2:13]),]) ) / nrow(main) ,
-          ( nrow(OJ2[duplicated(OJ2[,2:8]),])) / nrow(main) )
+          ( nrow(OJ2[duplicated(OJ2[,2:8]),])) / nrow(OJ2) )
        ) 
 
 readr::write_csv(duplication, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_oj_duplication.csv")
+duplication
+
+ojdupecheck <- OJ5[duplicated(OJ2[,2:8]),] %>% arrange(normalizedTitle_onetCode, 
+                                        normalizedTitle_onetName,
+                                        datePosted,
+                                        responsibilities,
+                                        experienceRequirements,
+                                        jobDescription,
+                                        hiringOrg)  %>% 
+  select(hiringOrg, normalizedTitle_onetCode, normalizedTitle_onetName,
+         datePosted, responsibilities, experienceRequirements,
+         jobDescription)
+
+ojdupecheck %>% group_by(hiringOrg) %>% summarise(n = n()) %>% arrange(desc(n))
+ojdupecheck %>% group_by(normalizedTitle_onetCode) %>% summarise(n = n()) %>% arrange(desc(n))
+ojdupecheck %>% group_by(jobDescription) %>% summarise(n = n()) %>% arrange(desc(n))
+ojdupecheck %>% filter(nchar(normalizedTitle_onetCode) == 0) %>% group_by(jobDescription) %>% summarise(n = n()) %>% arrange(desc(n))
 
 ```
 
@@ -761,6 +776,7 @@ readr::write_csv(duplication, "~/git/stem_edu/data/stem_edu/working/BGexploreval
 OJ2 <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/openjobs_point.RDS") #all dates need to filter to july
 OJ2 <- OJ2 %>% filter(str_extract(datePosted, "\\d{4}-\\d{2}") == "2017-07")
 sf::st_geometry(OJ2) <- NULL
+colnames(OJ2)
 
 oj_id <- tibble("Column" = "OJ Job ID",
   "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$rawdata_id)), na.rm = FALSE),
@@ -790,8 +806,43 @@ date <- tibble("Column" = "OJ Date",
   "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$datePosted), na.rm = TRUE))) / nrow(OJ2),
        "Unique Values" = length(unique(OJ2$datePosted)))
 
+experience <- tibble("Column" = "OJ Experience Requirements",
+    "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$experienceRequirements)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$experienceRequirements), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$experienceRequirements), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$experienceRequirements), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$experienceRequirements)))
 
-oj_perc_comp <- rbind(oj_id, onet, onetname, date)
+description <- tibble("Column" = "OJ Job Description",
+    "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$jobDescription)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$jobDescription), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$jobDescription), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$jobDescription), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$jobDescription)))
+
+hiringorg <- tibble("Column" = "OJ Hiring Org",
+    "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$hiringOrg)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$hiringOrg), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$hiringOrg), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$hiringOrg), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$hiringOrg)))
+
+ojlat <- tibble("Column" = "OJ Lat",
+    "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$INTPTLAT)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$INTPTLAT), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$INTPTLAT), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$INTPTLAT), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$INTPTLAT)))
+
+ojlon <- tibble("Column" = "OJ Lon",
+    "Blanks" = sum(dataplumbr::is_blank(x = (OJ2$INTPTLON)), na.rm = FALSE),
+       "True NAs" = sum(is.na(OJ2$INTPTLON), na.rm = TRUE),
+       "Written NAs" = sum(grepl(x = (OJ2$INTPTLON), pattern = "\\bna\\b"), na.rm = TRUE),
+  "Percent Complete" = (nrow(OJ2) - (sum(dataplumbr::is_blank(OJ2$INTPTLON), na.rm = TRUE))) / nrow(OJ2),
+       "Unique Values" = length(unique(OJ2$INTPTLON)))
+
+
+oj_perc_comp <- rbind(oj_id, onet, onetname, date, experience, description, hiringorg, ojlat, ojlon)
 readr::write_csv(oj_perc_comp, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_oj_completeness.csv")
 
 ```
@@ -864,14 +915,31 @@ colnames(BGT_OJ_agg) <- c("occ_fam", "econ_region", "BGT", "OJ")
 
 BGT_OJ_agg[is.na(BGT_OJ_agg)] <- 0
 
-BGT_OJ_agg <- BGT_OJ_agg %>% 
+BGT_OJ_agg_2 <- BGT_OJ_agg 
+
+BGT_OJ_agg_test  
+
+BGT_OJ_agg %>% 
   mutate(diff = (BGT - OJ), 
          per_diff = ((BGT - OJ) / ((BGT + OJ)/2)),  
-         perc_diff = 100*per_diff, 
-         diffandpercdiff = paste(per_diff, " / ", perc_diff)) 
-  
+         perc_diff = 100*per_diff) 
 
-BGT_OJ_agg_ <- dcast.data.table(as.data.table(BGT_OJ_agg), occ_fam ~ econ_region, value.var=list('perc_diff'))
+thing <- BGT_OJ_agg %>% 
+  mutate(diff = (count.x - count.y), 
+         per_diff = ((count.x - count.y) / (count.x)),  
+         perc_diff = 100*per_diff) 
+
+
+BGT_OJ_agg %>% 
+  mutate(diff = (count.y - count.x), 
+         per_diff = ((count.y - count.x) / (count.x ),  
+         perc_diff = 100*per_diff) 
+
+  
+dcast.data.table(as.data.table(thing), occfam ~ Region, value.var = list('perc_diff'))
+BGT_OJ_agg_ <- dcast.data.table(as.data.table(thing), occ_fam ~ econ_region, value.var=list('perc_diff')) 
+BGT_OJ_agg_[is.na(BGT_OJ_agg_)] <- 0
+
 readr::write_csv(BGT_OJ_agg_, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_oj_percdiff.csv")
 ```
 
