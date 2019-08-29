@@ -15,7 +15,6 @@ paths <- paths %>%
                 path2 = stringr::str_c(path, "/"),
                 table = Var2) %>%
   dplyr::select(path,path2, table)
-
 testthat::expect_equal(nrow(paths), 54)
 
 ## CREATE FILE NAMES
@@ -38,8 +37,18 @@ zip_skill <- unlist(zip_split$Skill)
 zip_skills <- split(zip_skill, rep(1:9,each=12))
 
 # Connect to database
-con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "dnair1", pass = "dnair1")
+con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = "dtn2ep", pass = "dtn2ep")
 
+# Data Structure
+datatypes <- c(bgtjobid = "character(30)",
+  jobdate = "date",
+  skill = "text",
+  skillcluster = "text",
+  skillclusterfamily = "text",
+  isspecialized = "integer",
+  isbaseline = "integer",
+  issoftware = "integer",
+  salary = "integer")
 
 ### ZIP SKILLS 2007
  datalist = list()
@@ -53,7 +62,8 @@ con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = 
    x$f <- nrow(data)
    datalist[f] <- x
    print(paste("Writing", f))
-   dbWriteTable(con, "ads_skills_2007" , data, row.names = F, append = TRUE)
+   dbWriteTable(con, "ads_skills_2007" , data, row.names = F, append = TRUE,
+                field.types = datatypes)
  }
  y = do.call(rbind, datalist)
  sum(y[,1])
@@ -71,7 +81,8 @@ con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = 
    x$f <- nrow(data)
    datalist[f] <- x
    print(paste("Writing", f))
-   dbWriteTable(con, "ads_skills_2010" , data, row.names = F, append = TRUE)
+   dbWriteTable(con, "ads_skills_2010" , data, row.names = F, append = TRUE,
+                field.types = datatypes)
  }
  y = do.call(rbind, datalist)
  sum(y[,1])
@@ -89,7 +100,8 @@ con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = 
    x$f <- nrow(data)
    datalist[f] <- x
    print(paste("Writing", f))
-   dbWriteTable(con, "ads_skills_2011" , data, row.names = F, append = TRUE)
+   dbWriteTable(con, "ads_skills_2011" , data, row.names = F, append = TRUE,
+                field.types = datatypes)
  }
  y = do.call(rbind, datalist)
  sum(y[,1])
@@ -107,7 +119,8 @@ con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = 
    x$f <- nrow(data)
    datalist[f] <- x
    print(paste("Writing", f))
-   dbWriteTable(con, "ads_skills_2012" , data, row.names = F, append = TRUE)
+   dbWriteTable(con, "ads_skills_2012" , data, row.names = F, append = TRUE,
+                field.types = datatypes)
  }
  y = do.call(rbind, datalist)
  sum(y[,1])
@@ -125,7 +138,8 @@ con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = 
    x$f <- nrow(data)
    datalist[f] <- x
    print(paste("Writing", f))
-   dbWriteTable(con, "ads_skills_2013" , data, row.names = F, append = TRUE)
+   dbWriteTable(con, "ads_skills_2013" , data, row.names = F, append = TRUE,
+                field.types = datatypes)
  }
  y = do.call(rbind, datalist)
  sum(y[,1])
@@ -143,7 +157,8 @@ con <- con_db(dbname = "burning_glass", host = "127.0.0.1", port = 5433, user = 
    x$f <- nrow(data)
    datalist[f] <- x
    print(paste("Writing", f))
-   dbWriteTable(con, "ads_skills_2014" , data, row.names = F, append = TRUE)
+   dbWriteTable(con, "ads_skills_2014" , data, row.names = F, append = TRUE,
+                field.types = datatypes)
  }
  y = do.call(rbind, datalist)
  sum(y[,1])
@@ -161,7 +176,8 @@ for (f in zip_skills$`7`) {
   x$f <- nrow(data)
   datalist[f] <- x
   print(paste("Writing", f))
-  dbWriteTable(con, "ads_skills_2015" , data, row.names = F, append = TRUE)
+  dbWriteTable(con, "ads_skills_2015" , data, row.names = F, append = TRUE,
+               field.types = datatypes)
 }
 y = do.call(rbind, datalist)
 sum(y[,1])
@@ -179,27 +195,38 @@ for (f in zip_skills$`8`) {
   x$f <- nrow(data)
   datalist[f] <- x
   print(paste("Writing", f))
-  dbWriteTable(con, "ads_skills_2016" , data, row.names = F, append = TRUE)
+  dbWriteTable(con, "ads_skills_2016" , data, row.names = F, append = TRUE,
+               field.types = datatypes)
 }
 y = do.call(rbind, datalist)
 sum(y[,1])
 saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2016skillsize.RDS")
 
 ### ZIP SKILLS 2017
-datalist = list()
+# datalist = list()
+#
+# for (f in zip_skills$`9`) {
+#   print(paste("Reading", f))
+#   data <- fread(cmd = paste("zcat", f))
+#   colnames(data) <- tolower(colnames(data))
+#   print(sum(nrow(data)))
+#   x <- list()
+#   x$f <- nrow(data)
+#   datalist[f] <- x
+#   print(paste("Writing", f))
+#   dbWriteTable(con, "ads_skills_2017" , data, row.names = F, append = TRUE,
+#                field.types = c(bgtjobid = "character(30)",
+#                                jobdate = "date",
+#                                skill = "text",
+#                                skillcluster = "text",
+#                                skillclusterfamily = "text",
+#                                isspecialized = "integer",
+#                                isbaseline = "integer",
+#                                issoftware = "integer",
+#                                salary = "integer"))
+# }
+# y = do.call(rbind, datalist)
+# sum(y[,1])
+# saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2017skillsize.RDS")
 
-for (f in zip_skills$`9`) {
-  print(paste("Reading", f))
-  data <- fread(cmd = paste("zcat", f))
-  colnames(data) <- tolower(colnames(data))
-  print(sum(nrow(data)))
-  x <- list()
-  x$f <- nrow(data)
-  datalist[f] <- x
-  print(paste("Writing", f))
-  dbWriteTable(con, "ads_skills_2017" , data, row.names = F, append = TRUE)
-}
-y = do.call(rbind, datalist)
-sum(y[,1])
-saveRDS(y, file = "data/stem_edu/working/BGexplorevalidate/2017skillsize.RDS")
 

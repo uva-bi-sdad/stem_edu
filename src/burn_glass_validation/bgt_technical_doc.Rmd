@@ -1,0 +1,658 @@
+---
+title: "BGT technical document"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, results = "asis")
+
+library(DataExplorer)
+library(dplyr)
+library(magrittr)
+library(data.table)
+library(ggplot2)
+library(sdalr)
+library(DBI)
+library(leaflet)
+library(sf)
+library(lubridate)
+
+
+```
+
+<style>
+  .col2 {
+    columns: 2 200px;         /* number of columns and width in pixels*/
+    -webkit-columns: 2 200px; /* chrome, safari */
+    -moz-columns: 2 200px;    /* firefox */
+  }
+  .col3 {
+    columns: 3 100px;
+    -webkit-columns: 3 100px;
+    -moz-columns: 3 100px;
+  }
+</style>
+
+```{r load_data}
+main <- readRDS('~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BGT_main_0717.RDS')
+
+BGpoint <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_point.RDS")
+BGshape <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_shape_ct.RDS")
+
+OJpoint <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/OJ_point.RDS")
+OJshape <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_join_shape_ct.RDS")
+
+COC <- readxl::read_excel("~/git/stem_edu/data/stem_edu/original/COC_STW.xls")
+
+ojobs <-  fread('../../data/stem_edu/working/allOpenjobsParsed.csv')
+
+```
+
+```{r transform_main}
+main <- select(main, "bgtjobid",'jobdate', 'occfam', 'occfamname', 'employer', 'city', 
+               'state', 'county', 'fipsstate', 'fipscounty', 'fips', 'lat', 'lon')
+main <- as.data.table(main)
+overall <- melt(DataExplorer::introduce(main))
+colnames(overall) <- c("Metric", "Value")
+
+missing <- DataExplorer::profile_missing(main)
+colnames(missing) <- c("Column", "# Missing", "% Missing")
+```
+
+```{r transform_OJ}
+OJpoint$occfam <- as.numeric(stringr::str_extract(OJpoint$normalizedTitle_onetCode, "[0-9]{2}"))
+```
+
+
+```{r profiling_extended}
+datalist = list()
+for (i in colnames(main)){
+  evalrow <- tibble::tibble(
+    "Column" = i,
+    "Example" = head(main[[i]], 1),
+    "Class" = class(main[[i]]),
+    "Blanks" = sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE),
+    "% Blank" = round(100*(sum(dataplumbr::is_blank(x = (main[[i]])), na.rm = TRUE)/nrow(main)), 1),
+    "NA" = sum(is.na(x = main[[i]])),
+    "% NA" = round(100*(sum(is.na(x = main[[i]]))/nrow(main)), 1),
+    "na" = sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE),
+    "% na" = round(100*(sum(grepl(x = (main[[i]]), pattern = "\\bna\\b"), na.rm = TRUE)/nrow(main)), 1),
+    "Unique" = length(unique(main[[i]]))
+    )
+  datalist[[i]] <- evalrow
+}
+
+evaluate = do.call(rbind, datalist)
+
+main <- main[complete.cases(main)]
+```
+
+
+*CAVEAT I'M ONLY WORKING ON MAIN TABLE I ONLY USED A FEW COLUMNS FROM MAIN*
+
+## Table of Contents
+
+1. Introduction
+2. Burning Glass Technology (BGT)
+	+ Background
+	+ Review of Academic Literature
+	+ Data Review
+		- BGT Job-Ad Data
+		- Data Profiling
+		- Exploratory Data Analysis
+3. Virginia Open Jobs Data
+	+ Background
+	+ Data Analysis	
+		- Data Profiling
+		- Exploratory Data Analysis
+4. BGT Job-ad Data Validation
+	+ Validation Results in the Literature
+	+ Comparison with Virginia Open Data/Open Jobs Data
+	+ Conclusions
+5. Recommendations
+
+------
+
+## Introduction
+
+This technical document evaluates the feasibility of using the real-time labor market information (LMI) collected by Burning Glass Technology to supplement survey and administrative data collected by federal and state governments. In contrast to designed and administrative data which have varying lag times between collection and dissemination and are often aggregated over broad occupation categories, the real-time job ads collected by Burning Glass Technology are made available within a day of the job-ad being posted and provide information at a granular level that links skill set requirements to specific occupations within broad occupation categories. In this document, the data are evaluated for use in identifying the skills sets necessary for a job in the skilled technical workforce and how these skill sets and employer demands vary within a state and across the country.
+
+This document reviews the use of the BGT job-ads in academic research highlighting issues with the data and any validation results. It provides the results of profiling and exploratory data analyses, for both the BGT job-ads data and the Virginia Open Data/Open Jobs Data which is used to validate the BGT job-ads data. The document concludes with recommendations regarding fitness-for-use.
+
+
+## Burning Glass Technology
+
+#### Company Background
+
+Burning Glass Technologies is a Boston-headquartered labor market analytics firm founded in 1999, that uses artificial intelligence to collect and host a massive repository of workforce and employment data. Burning Glass collects these data primarily for commercial purposes and secondarily for research purposes. The company markets both the data as a product as well as their consulting expertise on labor market questions to customers across a variety of industries, education institutions, local and regional governments, recruiting and staffing agencies, and corporate firms. 
+
+The company makes use of text-parsing and predictive matching methods to extract and aggregate LMI data, currently from over 40,000 sources (the number of websites has changed over the years). Data has been extracted since 2007 with the exception of 2008 and 2009. Job boards, corporate websites, and other places where job ads are posted are scanned daily and algorithms are used to identify and remove duplicate postings (close to 80% of all postings collected are marked as duplicates.)  From the job-ad, the BGT software extracts the title, occupation, employer, and location, and uses natural-language technology to identify specific occupations, skills, and qualifications from the job description. Both the algorithms used to identify duplicates and scrape websites are proprietary as well as the addresses of the website that are scraped. 
+
+#### Review of Academic Literature
+Thirty-three articles that used the BGT data in their research were reviewed. The focus of the review is on technical issues regarding the fitness-for-use of the data that would become apparent after researchers profiled and validated the data, rather than the conclusions of the research. This review was done to alert us to issues other researchers had encountered in using the BGT data for research and how they addressed them. 
+
+Data profiling starts with a determination of both the quality of the data and its fitness-for-use in the research project; it evaluates data quality measures like duplicate observations, missing values, values outside the range of the variable, etc. (see the section on Data Profiling for more detail). In the 33 articles that were reviewed, there was no rigorous attempt to access the quality of the data. The articles described in the table below were all accesssed on May 20, 2018.
+
+With regard to data validation, 9 of the 33 articles conducted some type of validation of the BGT job-ads data. The validation  
+
+
+Article 1  | BGT Dataset | Validation Dataset| Validation Results
+-----------|-------------|-------------------|-------------------
+Liu, Yukun and Wu, Xi, Labor Market Competitor Network and the Transmission of Shocks (October 1, 2018). Paris December 2018 Finance Meeting EUROFIDAI - AFFI. https://ssrn.com/abstract=3175958  | Job-ad data (2007, 2010-2016), restricted to posting that had employer name | Compustat | Matched BGT employer names and Compustat names and aggregated by industry (17) using the two-digit NAICS level; BGT sample represents 65% of Compustat; most underrepresented is Mining & Logging (43.3%) and most over-represented is Retail Trade (79.5)
+Berkes, Enrico, Mohen, Paul and Taska, Bledi (May 31, 2018) The consequences of Initial Skill Mismatch for College Graduates: Evidence from Online Job Postings | Job-ad data (2010-2016) | JOLT | 
+
+
+
+
+Favorite articles:
+
+  * Deming, David, and Lisa B. Kahn. "Skill Requirements across Firms and Labor Markets: Evidence from Job Postings for Professionals." Journal of Labor Economics 36, no. S1 (2018): S337-S369.
+  * Liu, Yukun. "Vacancy Postings, Skill Requirements, and the Cross-Sectional Return Predictability."
+  * Jeffrey Clemens, Lisa B. Kahn, and Jonathan Meer.  “Dropouts Need Not Apply: The Minimum Wage and Skill Upgrading.” (Sept 2018) 
+  * Paul Mohnen, Enrico Berkes, and Bledi Taska “Can Skill Mismatch Explain Geographic and Time Variation in the Returns to College Majors? Evidence from Online Job Postings” (2017) Northwestern University
+  * Papageorgiou, Theodore. "Worker sorting and agglomeration economies." McGill University (2017) 
+  * Wardrip, Keith, Stuart T. Andreason, and Mels De Zeeuw. "Uneven Opportunity: Exploring Employers' Educational. Preferences for Middle-Skills Jobs." Special Report of the Federal Reserve Banks of Philadelphia, and Atlanta (2017). 
+  * Fuller, Joseph B., Jennifer Burrowes, Manjari Raman, Dan Restuccia, and Alexis Young. "Bridge the Gap: Rebuilding America's Middle Skills." Report, U.S. Competitiveness Project, Harvard Business School, November 2014
+  * Hershbein, Brad and Lisa B. Kahn (2018) Do Recessions Accelerate Routine-Biased Technological Change? Evidence from Vacancy Postings. American Economic Review 108(7): 1737-1772. **cited all the time
+  * Templin, Thomas, and Lesley Hirsch. 2013. “Do Online Job Ads Predict Hiring?” New York: New York City Labor Market Information Services. ** validation example
+
+#### Data Review
+
+##### BGT Job-Ad Data
+
+Burning Glass Technology offers six principal domains within its job-ad data across the following years: 2007, 2010, 2011, 2012, 2013, 2014, 2015, 2016, and 2017.  
+
+* Main - the base table of the job ad, contains 54 columns of job descriptors such as the job ad identifier, its title, industry classifications, educational requirements, etc.
+* Certifications - a related table of certifications associated with job postings (1 field for certification name)
+* CIP - a related table of CIP codes (Classification of Instructional Programs - indicates field of study via 1 field for CIP code)
+* Degree - a related table indicating level of study (1 field for degree level)
+* Major - a related table indicating field of study using plain-text description (1 field for major)
+* Skill - a related table indicating skills associated with job postings (3 fields for skill names, 3 for skill descriptors)
+
+    Domain     |   Type  | Columns  | Rows (M) | Notes
+---------------|---------|----------|----------| ----
+Main           | base    | 54       |          | 
+Certifications | related | 4        | 180      |
+CIP            | related | 4        | 6        |
+Degree         | related | 4        |          |
+Major          | related | 4        | 180      |
+Skill          | related | 9        | 1,500    |
+
+For the purposes of the validation, we focus on those variables that are common to both the Burning Glass data as well as the comparison set: Virginia's Open Jobs data. We selected a subset representing the overlapping information from the job ads, broadly representing the date, the industry, the hiring organization, and the location. The fields selected from Burning Glass's job posting data were: 
+
+* bgtjobid - job identifier 
+* jobdate - the date the job was posted
+* occfam - the major occupation family code of the job posting
+* occfamname - the industry corresponding with the major occupation code 
+* employer - the name of the hiring company
+* city - the city where the job is located
+* state - the state where the job is located
+* county - the county where the job is located
+* fipsstate - the fipsstate code where the job is located
+* fipscounty - the fipscounty code where the job is located
+* fips - the whole fips code where the job is located
+* lat - the latitude where the job is located
+* lon - the longitude where the job is located
+
+For more information about the full list of variables associated with the data, please consult the attached data dictionary. 
+
+##### BGT Job-Ad Data Inventory
+		
+At the data inventory stage, potential data sources (identified in the data discovery stage) are further screened to determine if they would support the research questions. Specifically, the screening process involves assessing data sources on six factors including purpose, method, description, timeliness, selectivity, and accessibility. 
+
+* Purpose: Burning Glass collects this data primarily for commercial purposes and secondarily for research purposes. The company markets both the data as a product as well as their consulting expertise on labor market questions to customers across a variety of industries, such as higher education, local and regional government, recruiting and staffing agencies, and other corporate firms. 
+* Method: Burning Glass scrapes over 40,000 websites to collect data from online job postings. The data is cleaned and deduplicated to present a national view of the labor market landscape across time. 
+* Description: The data is centered around individual positions, with one-to-many related tables for requirements for skills, certification, and education. While the data includes various types of data, the bulk of this data is text-based. 
+* Timeliness: The data is collected in real-time and covers 2007 and 2010-2017. [How soon after collection is data available?]
+* Selectivity: The data is intended to represent the universe of all US jobs posted online over the years mentioned above. 
+* Accessibility: The data is accessible via file-transfer protocol, but a data-sharing agreement may fetter its accessibility outside of the lab staff.
+
+The structure of this data includes 8 discrete columns and 5 continuous ones. 
+
+```{r overall_table}
+kable(overall)
+```
+
+
+##### Data Profiling
+
+This section profiles the Burning Glass data, reviews its  quality, and seeks to determine its useability on the following metrics. 
+
+* Completeness.
+* Value validity.
+* Consistency.
+* Uniqueness.
+* Duplication.
+
+Here, we focus on the postings themselves which represent the central table of the data. 
+
+Of note, `r 100*(overall[7,2]/overall[1,2])` % of the data are complete cases. 
+
+The table below breaks down the postings dataset by column using a superficial check for blanks. Of note, this shows that only two columns have blanks: the FIPS county and FIPS value columns are both missing 452 observations. It is important to note, however, this table qualifies missing values as blanks or `r NA ` only. We would like also to capture invalid values in addition to the missing ones. This last table captures blanks, NA, and 'na' text values (Burning Glass entered). Here we see that more missing values are captured for the County column and new invalid values are captured for the Occupation Family code, Occupation Family Name, Employer, and City columns.
+
+```{r evaluate_table}
+kable(evaluate, row.names = FALSE)
+```
+
+
+```{r bgtdupeid}
+### Uniqueness of Unique ID
+
+#IDs that appear more than once
+dupejobids <- main %>% dplyr::group_by(bgtjobid) %>% dplyr::summarise(count = dplyr::n()) %>% dplyr::filter(count > 1)
+
+#Multi-appearance ID by date
+dupecount <- main[bgtjobid %in% dupejobids$bgtjobid, c("bgtjobid", "jobdate")] %>% group_by(bgtjobid, jobdate) %>% summarise(count = n())
+
+nonuniqueIDs <- nrow(dupejobids) - nrow(dupecount)
+```
+
+We also perform a check for consistency, uniqueness, and duplication, and find that `r nonuniqueIDs ` have multiple dates associated with them. We can be reasonably confident the data is consistent and unique.  
+
+*OTHER CONSISTENCY CHECKS??*
+
+
+##### Exploratory Data Analysis
+
+These histograms show the top value distribution for each column in the dataset (except the identifier column). For any variables with more than 50 possible values, only the top 20 values are shown below for clarity. 
+
+<div class="col2">
+![Figure 1. BGT Jobs in Virginia during July 2017 by County.](county.png)
+
+
+![Figure 2. BGT Jobs in Virginia during July 2017 by Employer](employer.png)
+</div>
+The employer is not well populated, at 20% of the values appearing at 'na.' As seen below, the 'na' values are the most common value by far, followed by Anthem Blue Cross and Booz Allen Hamilton Inc. Fairfax County is the county with the greatest number of jobs. Richmond and Arlington follow with less than half. 
+
+
+<div class="col2">
+![Figure 3. BGT Jobs in Virginia during July 2017 by Date](jobdate.png)
+
+
+![Figure 4. BGT Jobs in Virginia during July 2017 by Occupation Family](occfamname.png) 
+</div>
+
+Throughout the month, there does appear to be a few spikes in jobs, the highest of which taking place on July 4, 2017. The next 3 days have comparable job numbers: July 25, July 21, and July 14. Throughout the month, there does appear to be a few spikes in jobs, the highest of which taking place on July 4, 2017. The next 3 days have comparable job numbers: July 25, July 21, and July 14. 
+
+
+
+<div class="col2">
+![Figure 5. BGT Jobs in Virginia during July 2017 by Lat](lat.png)
+
+
+![Figure 6. BGT Jobs in Virginia during July 2017 by :pm](lon.png)
+</div>
+
+It may be interesting to note that the top three coordinates given in the last two plots for the Latitude and Longitude columns, (37.5776, -77.5347), (38.8863, -77.0977), and (38.8882, -77.4552), respectively represent Richmond, Arlington (Clarendon), and Chantilly respectively. 
+
+```{r jobdate hist, eval=FALSE}
+remove(i)
+frequencies <- list()
+plotfreq <- list()
+for (i in colnames(main[,c(2,4,5,6,8, 12, 13)])) {
+  #print(i)
+  #print(length(unique(main[[i]])))
+  frequencies[[i]] <- as.data.table(table(main[[i]]))
+  #print(nrow(frequencies[[i]]))
+  
+  ifelse(nrow(frequencies[[i]]) > 50, 
+         yes = plotfreq[[i]] <- head(arrange(frequencies[[i]], desc(N)), 20),
+         no = plotfreq[[i]] <- frequencies[[i]])
+  
+  #print(plotfreq[[i]])
+    }
+remove(i)
+for (i in seq_along(plotfreq)) {
+  plot <-  ggplot(plotfreq[[i]], aes(V1, N)) +
+    geom_bar(stat = "identity", fill ="paleturquoise4", width=.7) +
+    ggtitle(paste(Hmisc::capitalize(names(plotfreq[i])), ": Top Value Distribution")) + 
+    xlab(Hmisc::capitalize(names(plotfreq[i]))) + ylab("N") +
+    theme(plot.background = element_rect(fill = "white"), axis.text.x = element_text(angle = 90, hjust = 1)) +
+    coord_flip()
+
+  print(plot)
+  #png(filename=paste0(names(plotfreq[i]), ".png"))
+  #plot(plot)
+  #dev.off()
+}    
+
+```
+
+
+# Open Jobs Data Framework
+
+## Data Inventory
+
+**Purpose**: In 2016, the Commonwealth Center for Advanced Research and Statistics ( CCARS ) initiated a pilot project to create an open “real-time” data set of advertised job postings in Virginia. This data set is the initial outcome of the pilot. Work on this project is reported to be ongoing and is being conducted by the Discovery Analytics Center at Virginia Tech. The intended use of this data is to “to create applications or visualizations that can help connect Virginians to job opportunities, offer insights into the needs of employers by occupation, skills, or education requirements, or create predictive models to help Virginia determine its future needs for talent!”
+
+**Method**: The Discovery Analytics Center collected, cleaned, “enriched”, and de-duplicated data from three sources: 
+
+*	A daily feed of jobs from the National Labor Exchange made available by the DirectEmployers Association
+*	A snapshot of jobs in the Virginia Workforce Connection from mid-February 2016 made available by the Virginia Employment Commission
+*	A feed of schema tagged jobs available through an open API built by Devis for the Veterans Job Bank. 
+
+Their major steps to combine this data into a single set are listed below: 
+
+*	Mapped job postings from all three sources to the job-posting schema standard
+*	Enriched job postings with average wage data from the Georgetown University’s Center for Education and the Workforce and job title normalization assistance from Glassdoor
+*	De-duplicated the data using an algorithm to identify identical job postings
+
+**Description**: The data contains 846,613 job postings from various regions in Virginia from 2010 – 2017 (2010 – 2013 sparsely populated). The variables available are listed below in a table along with how many observations in that column are missing.
+
+**Timeliness**: The Data offers few observations from 2010 to 2013, but from June 2014 and onwards data seems to be collected either on a monthly or daily interval. For some months, most of the job postings all have the “datePosted” variable equal to the same day. We will explore this trend later on in EDA, but overall it seems that data for job postings is collected daily. 
+Selectivity: The population of interest are online job postings in Virginia. Open Data does offer some caveats to this population: “This data set does not cover all job openings in Virginia advertised online. Not all sources of data used to create this set are “real-time.” Currently, data supplied from the Virginia Workforce Connection is a snapshot of data from a point in time. Efforts are underway to explore access to these jobs in “real-time.” Additionally, the schema tagged jobs pulled into this data set are limited to those jobs tagged with a “Veteran Hiring Commitment”.”  
+
+**Accessibility**:  The data is freely available to the public at this link: http://opendata.cs.vt.edu/dataset/openjobs-jobpostings. The datasets are is JSON format. 
+
+## Data Profiling 
+
+**Missingness**
+
+Below is a table containing the missingness and number of values missing for all the variables in openjobs:
+```{r oj_na}
+#na_tab <- apply(ojobs, 2, function(x) {sum(is.na(x)) + sum(x == "",na.rm = T)+sum(x == " ",na.rm = T)})
+#na_tab <- cbind(as.data.frame(na_tab), as.data.frame(na_tab)$na_tab / nrow(ojobs))
+#colnames(na_tab) <- c("# of Missing or NA or Empty", "Percent Missing or NA or Empty")
+#saveRDS(na_tab, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/OJ_natab.RDS")
+na_tab <- readRDS("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/OJ_natab.RDS")
+na_tab$`Percent Missing or NA or Empty` <- round(100*(na_tab$`Percent Missing or NA or Empty`), 1)
+kable(na_tab) 
+```
+
+It seems that most of the fields that would be free text are the ones that are missing the most information. 
+
+**Date Posted exploration**
+
+As mentioned previously, there is an interesting distribution of job postings across time: 
+
+```{r oj_datedist}
+# How many rows have values that don't make sense?
+tab <- data.frame(table(ojobs$datePosted))
+barplot(height = tab$Freq, names.arg = tab$Var1)
+#note that 3/17/2016, 09/09/2016, and 4/22/2016 have unusually high counts
+#let's look at the distribution for those months
+```
+
+Each bar in this plot represents a date, and the height of the bar represents how many jobs were posted on that date. This is concerning because we see there are a few dates with a suspicious amount of jobs posted. As it's hard to see what exactly is going on at this level, I have broken down the suspicious bars into their respective months to see if they're really all posted on a single day.
+
+```{r oj_joboutliersd}
+par(mfrow = c(1,3))
+march <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-03-01'),]
+march <- march[as_date(march$datePosted) < as_date('2016-03-31'),]
+m_tab <- data.frame(table(march$datePosted))
+barplot(height = m_tab$Freq, names.arg = m_tab$Var1, main = "Jobs posted March 2016")
+april <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-04-01'),]
+april <- april[as_date(april$datePosted) < as_date('2016-04-30'),]
+a_tab <- data.frame(table(april$datePosted))
+barplot(height = a_tab$Freq, names.arg = a_tab$Var1,main = "Jobs posted April 2016")
+sep <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-09-01'),]
+sep <- sep[as_date(sep$datePosted) < as_date('2016-09-30'),]
+s_tab <- data.frame(table(sep$datePosted))
+barplot(height = s_tab$Freq, names.arg = s_tab$Var1,main = "Jobs posted September 2016")
+par(mfrow = c(1,1))
+```
+
+Sure enough, in these three months there is a day where most of the jobs are posted. My best guess for this is that there was some error in data collection that caused all of the jobs in a month to be posted on the same day, but there is no way to know for sure without contacting the original source.
+
+
+##  Open Job Economic region job aggregates for July 2017
+```{r oj_loadingmorepointdata ,warning=FALSE,include=FALSE}
+library(data.table)
+library(dplyr)
+library(stringr)
+library(sf)
+library(ggmap)
+library(lubridate)
+BG_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_point.RDS')
+OJ_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS')
+
+econ_va_counties <- readRDS("../../data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
+```
+
+```{r weirdgraphicscall, echo=FALSE, fig.cap="OpenJobs Job Count Aggregates by Economic Region July 2017", out.width = '100%'}
+#include_graphics("../burn_glass_validation/Images/oj_map.JPG")
+```
+
+The below image was meant to be rendered in HTML to be interactive, but the table represents the same information. 
+
+
+
+```{r st_joining_unnecessary,warning = FALSE}
+# aggregate jobs per county
+#join_cty_ct <- joined_within %>% group_by(fipscounty) %>% summarise(count = n())
+OJ_job <- OJpoint %>% group_by(GOorg) %>% summarise(count = n())
+BG_job <- BGpoint %>% group_by(GOorg) %>% summarise(count = n())
+
+#clean up
+st_geometry(OJ_job) <- NULL
+st_geometry(BG_job) <- NULL
+BG_job <- BG_job[complete.cases(BG_job$GOorg),]
+jobtable <- left_join(OJ_job,BG_job, by='GOorg')
+colnames(jobtable) <- c("GOorg", "Open Jobs Count", "Burning Glass Count") 
+kable(jobtable)
+```
+
+\newpage
+
+
+**Length of unique identifiers**
+
+each openjobs identifier is made of 32 characters. If we multiply that by the number of observations, then that 
+*should* be the number of characters in the column. Let's count the number of characters in the column to double check:
+```{r,echo = TRUE,include =TRUE}
+len <- length(unique(ojobs$rawdata_id))
+32*len
+32*len == (sum(as.numeric(lapply(ojobs$rawdata_id, nchar))))
+```
+We find that our unique identifiers are indeed unique.
+
+**Duplicates**
+
+By dropping the unique identifier from the data, we can search for duplicates. A duplicate here is a row that is identical to another row in all columns
+other than identifier
+```{r, echo = TRUE}
+data_dup <- ojobs[,-1]
+data_dup <- data_dup[duplicated(data_dup)]
+nrow(data_dup)
+# we see that there are 13555 duplicates overall
+cleaned_data <- ojobs %>% distinct(jobLocation_geo_latitude, jobLocation_geo_longitude, 
+                                   normalizedTitle_onetCode,normalizedTitle_onetName, 
+                                   datePosted, responsibilities, experienceRequirements,
+                                  jobDescription, hiringOrg, .keep_all = TRUE)
+#check to see the right amount of rows removed
+nrow(ojobs) - nrow(cleaned_data)
+```
+There are 13,555 duplicate rows in the data, which is fairly small. These duplicates could be postings for multiple openings of the same position, so we decide not to remove these.
+
+
+## Spatial plot of Job Postings 
+```{r,warning=FALSE, eval=FALSE}
+#### Please don't use this API key for future use. 
+## If you want to use ggmap in the future, register a Google API here: 
+# https://cloud.google.com/maps-platform/
+
+#ggmap background
+api <- 'AIzaSyCqJUvDKU5BNB14AdIJFTvd8GTtNtW8MMg'
+register_google(api)
+va_map <- get_map(source = 'google', location = 'Virginia', crop = FALSE, zoom = 7)
+va_map <- ggmap(va_map)
+va_map + geom_point(data= ojobs, aes(x=jobLocation_geo_longitude, y= jobLocation_geo_latitude),alpha = 0.05, color = 'red')  
+```
+
+
+
+#### Validation
+
+4. BGT Job-ad Data Validation
+	+ Validation Results in the Literature
+	+ Comparison with Virginia Open Data/Open Jobs Data
+	+ Conclusions
+
+FILTERING FOR VIRGINIA JULY 2017
+
+Using the percent difference formula, as follows: 
+
+\[\frac{|V1-V2|}{\frac{V1+V2}{2}\ }*100\]
+
+
+The size of the two datasets differ by approximately `r round(100*(abs(nrow(BGpoint) - nrow(OJpoint))/((nrow(BGpoint) + nrow(OJpoint))/2)), 1) ` %. 
+
+
+Set  |BGT Total Jobs   |VA OJ Total Jobs  |Difference                            |Percent Difference
+-----|-----------------| -----------------|--------------------------------------|--------------------
+**N**|`r nrow(BGpoint)`|`r  nrow(OJpoint)`|`r abs(nrow(BGpoint) - nrow(OJpoint))`|`r  round(100*(abs(nrow(BGpoint) - nrow(OJpoint))/((nrow(BGpoint) + nrow(OJpoint))/2)), 1)`
+
+##### Compare by Occupation Family
+
+```{r val_occfam}
+BG1 <- BGpoint %>%
+  group_by(occfam, occfamname) %>%
+  summarise(count = n()) %>%
+  filter(occfam != 'na')
+
+OJ1 <- OJpoint %>%
+  filter(as.Date(datePosted) >= "2017-07-01" ) %>%
+  group_by(occfam) %>%
+  summarise(count = n()) %>%
+  filter(occfam != 99)
+
+st_geometry(BG1) <- NULL
+st_geometry(OJ1) <- NULL
+
+BG1$occfam <- as.numeric(BG1$occfam)
+
+tablebyoccfam <- BG1 %>%
+  left_join(OJ1, by = "occfam")
+
+colnames(tablebyoccfam) <- c("occfam", "occfamname", "BGTcount", "OJcount")
+
+tablebyoccfam <- tablebyoccfam %>%
+  mutate(
+    Diff = abs(BGTcount - OJcount), 
+    PercDiff = round(100*(Diff/(sum(BGTcount, OJcount)/2)), 1)
+  )
+
+kable(tablebyoccfam)
+```
+
+##### Compare by Economic Region
+
+```{r val_region}
+BG2 <- BGpoint %>%
+  group_by(Region, GOorg) %>%
+  summarise(count = n())
+
+
+OJ2 <- OJpoint %>%
+  filter(as.Date(datePosted) >= "2017-07-01" ) %>%
+  group_by(Region, GOorg) %>%
+  summarise(count = n())
+
+st_geometry(BG2) <- NULL
+st_geometry(OJ2) <- NULL
+
+
+tablebyRegion <- BG2 %>%
+  left_join(OJ2, by = c("Region", "GOorg"))
+
+colnames(tablebyRegion) <- c("Region", "GOorg", "BGTcount", "OJcount")
+
+tablebyRegion <- tablebyRegion %>%
+  mutate(
+    Diff = abs(BGTcount - OJcount), 
+    PercDiff = round(100*(Diff/(sum(BGTcount, OJcount)/2)), 1)
+  )
+
+kable(tablebyRegion)
+```
+
+
+
+##### Compare by Geography
+
+The distribution of jobs throughout Virginia appears as expected, with coverage throughout all regions of Virginia and density surrounding the major urban areas. Notably, the increased density aligns with the areas around the DC metro area, the Norfolk/Virginia Beach area, and the city of Richmond.  
+
+```{r point_map}
+
+# sf::write_sf(BGpoint, "/home/dnair1/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_point.shp")
+# sf::write_sf(BGshape, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_shape.shp")
+
+# leaflet(BGpoint) %>%
+#   addProviderTiles(providers$CartoDB.Positron) %>%
+#   addCircles(color = "orange") %>%
+#   setView( lng = -79.156541, lat = 37.298192, zoom = 5) %>%
+#   setMaxBounds( lng1 = -83.758734, lat1 = 36.560764,
+#                 lng2 = -75.744134, lat2 = 39.498217 )
+
+
+#ggplot() + geom_sf(data = BGpoint, aes(color = BGpoint$occfam, fill = BGpoint$occfam))
+```
+
+If we look at this same map in aggregate across counties, we see the same density patterns (darker reds indicating greater density) except Blacksburg and Charlottesville also become notable areas of density. 
+
+<div class="col2">
+![Figure 7. BGT Job Locations in Virginia during July 2017 by Lat](bgt_pointmap.png)
+
+
+![Figure 8. BGT Job Density in Virginia Counties during July 2017 by :pm](bgt_ctymap.png)
+</div>
+
+```{r county_map}
+# palette <- colorNumeric("YlOrRd", domain = log(BGshape$count), na.color = "#FFFFFF")
+# 
+# leaflet(BGshape) %>%
+#   addProviderTiles(providers$CartoDB.Positron) %>%
+#   addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
+#               opacity = 1.0, fillOpacity = 0.5,
+#               fillColor = ~palette(log(count)),
+#               highlightOptions = highlightOptions(color = "white", weight = 2,
+#                                                   bringToFront = TRUE),
+#               popup = ~htmltools::htmlEscape(popup)) %>%
+#   addLegend(pal =  palette, values = ~log(count), labels = ~count, title = "Jobs", opacity = 0.5)
+
+```
+
+
+
+## APPENDIX
+
+
+##### Compare by Economic Region & County
+
+```{r val_region_cnty}
+BG3 <- BGpoint %>%
+  group_by(Region, GOorg, NAMELSAD) %>%
+  summarise(count = n())
+
+
+OJ3 <- OJpoint %>%
+  filter(as.Date(datePosted) >= "2017-07-01" ) %>%
+  group_by(Region, GOorg, NAMELSAD) %>%
+  summarise(count = n())
+
+st_geometry(BG3) <- NULL
+st_geometry(OJ3) <- NULL
+
+
+tablebyRegionCounty <- BG3 %>%
+  left_join(OJ3, by = c("Region", "GOorg", "NAMELSAD"))
+
+colnames(tablebyRegionCounty) <- c("Region", "GOorg", "County", "BGTcount", "OJcount")
+kable(tablebyRegionCounty)
+
+```
+
+
+
+## Post Script? Questions Remaining for Burning Glass
+
+* If occfam is missing, is occfamname always missing as well?
+* what naming standardizations have been done to the employer column? 
+* How does burning glass handle subsidiaries?
+
+
+
+
+
