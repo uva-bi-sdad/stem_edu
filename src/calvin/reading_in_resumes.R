@@ -41,21 +41,23 @@ remove(va_Resumes)
 
 # Function to read in the other file types
 # You need to change the variable BGTResId for education_info and skill_info to BGTResID
-getOtherInfo <- function(fileTypes){
+getOtherInfo <- function(fileTypes) {
+  folder <- "../stem_edu/data/stem_edu/original/Burning_Glass_Data/Resume_Data/"
+  file_paths <- list.files(folder)
+  info_paths <- file_paths[str_detect(string = file_paths, pattern = fileTypes) == TRUE]
+  info_all <- data.table()
 
-  currentSeries <- 1
-  resume <- fread(paste("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Resume_Data/",currentSeries,"_",fileTypes,".csv.gz",sep=""))
-  otherInfo <- resume[as.character(resume$BGTResId) %chin% as.character(allIds),]
-
-  for (currentSeries in seq(2:454)+1){
-    filePath <- paste("../stem_edu/data/stem_edu/original/Burning_Glass_Data/Resume_Data/",currentSeries,"_",fileTypes,".csv.gz",sep="")
-    print(paste("Currently reading in file number ",currentSeries,".",sep = ""))
-    currentResumes <- fread(filePath)
-    otherCurrent <- resume[as.character(resume$BGTResId) %chin% as.character(allIds),]
-    otherInfo <- rbindlist(list(otherInfo,otherCurrent))
-    print(paste("We now have a total of ", length(otherInfo$BGTResId)," ",fileTypes," rows in Virginia.",sep = ""))
+  for (i in seq(1:length(info_paths))) {
+    filepath <- paste0(folder, info_paths[i])
+    print(paste("Currently reading in file number ", i, ".", sep = ""))
+    print(filepath)
+    currentInfo <- fread(filepath)
+    colnames(currentInfo)[1] <- "BGTResID"
+    currentInfo <- currentInfo[as.character(currentInfo$BGTResID) %chin% as.character(allIds),]
+    print(nrow(currentInfo))
+    info_all <- rbindlist(list(info_all, currentInfo))
   }
-  return(otherInfo)
+  info_all
 }
 
 # Then get the other four file types

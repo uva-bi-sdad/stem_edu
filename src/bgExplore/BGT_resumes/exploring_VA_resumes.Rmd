@@ -12,9 +12,19 @@ library(dplyr)
 ```{r load data}
 cert <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_certification_info_va.csv")
 edu <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_education_info_va.csv")
-job <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_job_info_va.csv")
-main <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_personal_info_va.csv")
+job <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/with rowname variable/resume_job_info_va.csv")
+main <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/with rowname variable/resume_personal_info_va.csv")
+main_without_X <- read.csv("~/git/stem_edu/data/stem_edu/working/resume_personal_info_va.csv")
 skill <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_skill_info_va.csv")
+
+jobs <- read.csv("data/stem_edu/working/Virginia_Resumes/resume_va_job_info.csv")
+
+# cert$X <- NULL
+# edu$X <- NULL
+# job$X <- NULL
+# main$X <- NULL
+# skill$X <- NULL
+
 ```
 
 for my own use: 
@@ -38,7 +48,10 @@ max(dates) #2018
 ```
 
 ```{r scratch paper}
-head(skill)
+
+
+
+
 ```
 
 
@@ -61,7 +74,15 @@ Certifications | related | 5        | 0.5      |
 Skill          | related | 9        | 16.4     |
 
 
+```{r}
+main[1,]
 
+tibble("Column" = colnames(main))
+```
+
+```{r}
+head(main)
+```
 
 
 
