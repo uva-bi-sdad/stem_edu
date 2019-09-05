@@ -7,51 +7,148 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(magrittr)
 library(dplyr)
+library(stringr)
+library(data.table)
 ```
 
 ```{r load data}
+main <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_personal_info_va.csv")
+jobs <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_va_job_info.csv")
 cert <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_certification_info_va.csv")
 edu <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_education_info_va.csv")
-job <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/with rowname variable/resume_job_info_va.csv")
-main <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/with rowname variable/resume_personal_info_va.csv")
-main_without_X <- read.csv("~/git/stem_edu/data/stem_edu/working/resume_personal_info_va.csv")
 skill <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_skill_info_va.csv")
 
-jobs <- read.csv("data/stem_edu/working/Virginia_Resumes/resume_va_job_info.csv")
+onet <- readxl::read_excel("~/git/stem_edu/data/stem_edu/original/ONET_survey/Occupation Data.xlsx")
 
-# cert$X <- NULL
-# edu$X <- NULL
-# job$X <- NULL
-# main$X <- NULL
-# skill$X <- NULL
+rothwell_stw <- readr::read_csv("~/git/stem_edu/data/stem_edu/working/Rothwell_STW_list.csv")
 
 ```
 
 for my own use: 
 
 ```{r size, echo=FALSE}
-tibble(
+my_own_table <- tibble(
   "Set" = c("Personal", "Jobs", "Education", "Certifications", "Skills"),
-  "# Obs" = prettyNum(c(nrow(main), nrow(job), nrow(edu), nrow(cert), nrow(skill)), big.mark=",",trim = TRUE),
-  "Ratio" = round((c(nrow(main), nrow(job), nrow(edu), nrow(cert), nrow(skill)))/nrow(main), 1),
-  "# Vars" = c(ncol(main), ncol(job), ncol(edu), ncol(cert), ncol(skill))
+  "# Obs" = prettyNum(c(nrow(main), nrow(jobs), nrow(edu), nrow(cert), nrow(skill)), big.mark=",",trim = TRUE),
+  "Ratio" = round((c(nrow(main), nrow(jobs), nrow(edu), nrow(cert), nrow(skill)))/nrow(main), 1),
+  "# Vars" = c(ncol(main), ncol(jobs), ncol(edu), ncol(cert), ncol(skill))
 )
+my_own_table
+```
 
+```{r}
 tibble(colnames(job), class(colnames(job)))
-
 job$jobISOStartDate[1]
 dates <- lubridate::ymd(job$jobISOStartDate)
 dates <- dates[!is.na(dates)] 
 min(dates) #1957
 max(dates) #2018
+```
+
+```{r}
+jobs_w_onet <- jobs %>% filter(!dataplumbr::var.is_blank(consolidatedtitleonet)) 
+
+restonw_wjobs <- main %>% filter(str_detect(zipcode, "20190") == TRUE)  %>% 
+  left_join(jobs_w_onet, by = "BGTResId") %>% 
+  left_join(onet, by = c("consolidatedtitleonet" = "O*NET-SOC Code")) %>% 
+  select(-Description) %>% 
+  select(BGTResId, consolidatedtitleonet, jobISOStartDate, jobISOEndDate, Title) %>% 
+  mutate(time = (lubridate::ymd(jobISOEndDate)-lubridate::ymd(jobISOStartDate))) %>% 
+  select(-jobISOStartDate, -jobISOEndDate)
+
+helper <- function(df) {
+  x <- unique(df)
+    if (length(x) > 1L) {
+      pairs <- combn(x = x, m = 2) %>% t() %>% data.table()
+   } else {
+     data.table()
+   }
+}
+
+reston_jobs_only <- restonw_wjobs %>% select(BGTResId, Title )
+reston_helped <- tapply(reston_jobs_only$Title, reston_jobs_only$BGTResId, FUN = helper)
+reston_helped <- do.call(rbind, reston_helped)
+reston_edgelist <- reston_helped %>% group_by(V1, V2) %>% summarise(weight = n()) %>%  filter(weight > 18) %>% select(-weight)
+reston_edge2 <- as.matrix(reston_jobs_only)
+reston_plot <- plot(igraph::graph_from_edgelist(as.matrix(reston_edgelist), directed = FALSE))
+
+plot(igraph::graph_from_data_frame(d=reston_edgelist, vertices = reston_jobs_only, directed = F))
+
+allvajobs <- main %>% left_join(jobs_w_onet, by = "BGTResId") %>%
+  left_join(onet, by = c("consolidatedtitleonet" = "O*NET-SOC Code")) %>% 
+  select(-Description)
+
+remove(main, jobs, allvajobs)
+
+va_titles <- allvajobs %>% select(BGTResId, Title)
+  
+allva_ties <- tapply(va_titles$Title, va_titles$BGTResId, FUN = helper)
+saveRDS(allva_ties, "~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/all_va_ties_listdf.RDS")
+allva_ties <- do.call(rbind, all_va_ties_listdf)
+va_edgelist <- allva_ties %>% group_by(V1, V2) %>% summarise(weight = n()) %>%  filter(weight > 1999) %>% select(-weight)
+#reston_edge2 <- as.matrix(reston_jobs_only)
+reston_plot <- plot(igraph::graph_from_edgelist(as.matrix(va_edgelist), directed = FALSE))
+
+allvajobs %>% left_join(education)
+rothwell_stw
+
+table(edu$degreeLevel)
+
+edu %>% filter(str_detect(degreeLevel, "#") == TRUE) %>% head(1) %>% 
+  transmute(
+    BGTResID,
+    degreeLevel = str_extract_all()
+  )
+
+s <- strsplit(as.character(edu$degreeLevel), split = "#")
+data.frame(V1 = rep(edu$degreeLevel, sapply(s, length)), V2 = unlist(s))
+
+edu %>% 
+  filter(str_detect(degreeLevel, "#") == TRUE) %>% 
+  head(1) %>% select(BGTResID, degreeLevel, DegreeType, major) %>%  # %>%  str_split(as.character(degreeLevel), "#")
+  mutate(test = paste(degreeLevel, DegreeType, major)) 
+
+st <- tibble(edu$BGTResID, edu$degreeLevel, tidyr::nest((s)))
+
+st$s
+class(s[[2]])
+
+edu %>% head() %>%
+  mutate(test = str_split(CompletionDateRaw, pattern = "#"))
+
+edu %>% transmute(count = str_detect())
+table(str_detect(edu$Instituition, "#") == TRUE)
+table(str_detect(edu$Instituition, "\\\\n") == TRUE)
 
 ```
 
-```{r scratch paper}
 
 
+```{r helper function }
+
+helper <- function(df) {
+  # df_split <- split(df, f=df$BGTResId)
+  # for (i in 1:length(df_split)) {
+  #   df_split[[i]] <- unique(df_split[[i]])
+  #   x <- unique(df_split[[i]]$Title)
+  #    if (length(x) > 1L) {
+  #      pairs <- combn(x = x, m = 2) %>% t() %>% data.table()
+  #      pairs
+  #  } else {
+  #    data.table()
+  #  }
+  # }
+  # return()
+  x <- unique(df)
+    if (length(x) > 1L) {
+      pairs <- combn(x = x, m = 2) %>% t() %>% data.table()
+   } else {
+     data.table()
+   }
+}
 
 
+write.csv(xx, "~/git/stem_edu/data/stem_edu/working/reston100resumeswjobs.csv")
 ```
 
 
@@ -67,11 +164,11 @@ Burning Glass Technology offers six principal domains within its Virginia resume
 * Skill - a related table indicating skills associated with job postings (3 fields for skill names, 3 for skill descriptors)
     Domain     |   Type  | Columns  | Rows (M) | Notes
 ---------------|---------|----------|----------| ----
-Main           | base    | 10       | 0.5      | 
-Jobs           | related | 10       | 3.9      |
-Education      | related | 13       | 0.9      |
-Certifications | related | 5        | 0.5      |
-Skill          | related | 9        | 16.4     |
+Main           | base    |  9       | 0.5      | 
+Jobs           | related | 10       | 2.9      |
+Education      | related | 13       | 0.8      |
+Certifications | related | 5        | 0.3      |
+Skill          | related | 9        | 13.0     |
 
 
 ```{r}
@@ -82,7 +179,125 @@ tibble("Column" = colnames(main))
 
 ```{r}
 head(main)
+colnames(main)
 ```
+
+
+
+```{r}
+library(purr)
+
+check_calc <- function(vec) {
+  blanks <- 0L
+  true_na <- 0L
+  written_na <- 0L
+  len <- length(x = vec)
+  for (elem in vec) {
+    if (is.na(x = elem)) {
+      true_na <- true_na + 1L
+    } else if (elem == "na") {
+      written_na <- written_na + 1L
+    } else if (elem == "") {
+      blanks <- blanks + 1L
+    }
+  }
+  percent_complete <- (len - (blanks + true_na + written_na)) / len
+  unique_values <- length(unique(vec))
+  tibble(blanks = blanks,
+         true_na = true_na,
+         written_na = written_na,
+         percent_complete = percent_complete,
+         unique_values = unique_values)
+}
+
+
+
+check_complete <- function(df) {
+  z <- deparse(substitute(df))
+  map_df(.x = df, .f = check_calc) %>%
+    mutate(column = colnames(df)) %>%
+    mutate(set = print(z))  %>%
+    select(set, column, blanks, true_na, written_na, percent_complete, unique_values)
+}
+
+bgt_resume_complete <- rbind(check_complete(main),
+      check_complete(jobs),
+      check_complete(edu),
+      check_complete(cert),
+      check_complete(skill)
+      )
+
+bgt_resume_complete
+
+#readr::write_csv(bgt_perc_comp, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_completeness.csv")
+```
+
+Validity rules: 
+* BGTResId - check for length
+* StateName - check if value in set values
+* cityName - check if value in set values
+* msa - check if value in set values
+* zipcode - check if value in set values
+* gender - check if value in set values
+* NoofSchoolDegrees - check if value above 10
+* Noofcertifications - check if value above 100
+* NoOfJobs - check if value above 20
+
+
+```{r}
+bgtjobid_val <- tibble(
+  "Column" = "BGT Job ID",
+  "Definition" = "id is not duplicated",
+  "Total Rows" = nrow(main),
+  "Total Valid" = length(unique(main$bgtjobid)),
+  "Total Invalid" = nrow(main) - length(unique(main$bgtjobid)),
+  "Percent Invalid" = (nrow(main) - length(unique(main$bgtjobid))) / nrow(main), 
+  "Percent Valid" = (1 - (nrow(main) - length(unique(main$bgtjobid))) / nrow(main))) 
+
+check_val <- function(vec, rule) {
+  valids <- 0L
+  invalids <- 0L
+  len <- length(x = vec)
+  for (elem in vec) {
+    if (is.na(x = elem)) {
+      true_na <- true_na + 1L
+    } else if (elem == "na") {
+      written_na <- written_na + 1L
+    } else if (elem == "") {
+      blanks <- blanks + 1L
+    }
+  }
+  percent_complete <- (len - (blanks + true_na + written_na)) / len
+  unique_values <- length(unique(vec))
+  tibble(blanks = blanks,
+         true_na = true_na,
+         written_na = written_na,
+         percent_complete = percent_complete,
+         unique_values = unique_values)
+}
+
+
+
+
+
+check_validity <- function(df) {
+  z <- deparse(substitute(df))
+  map_df(.x = df, .f = check_val) %>%
+    mutate(set = print(z), 
+           column = names(df)) %>%
+    select(set, column, blanks, true_na, written_na, percent_complete, unique_values)
+}
+
+```
+
+
+
+
+
+
+
+
+
 
 
 
