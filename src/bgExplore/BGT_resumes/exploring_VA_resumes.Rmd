@@ -17,11 +17,8 @@ jobs <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_v
 cert <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_certification_info_va.csv")
 edu <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_education_info_va.csv")
 skill <- read.csv("~/git/stem_edu/data/stem_edu/working/Virginia_Resumes/resume_skill_info_va.csv")
-
 onet <- readxl::read_excel("~/git/stem_edu/data/stem_edu/original/ONET_survey/Occupation Data.xlsx")
-
 rothwell_stw <- readr::read_csv("~/git/stem_edu/data/stem_edu/working/Rothwell_STW_list.csv")
-
 ```
 
 for my own use: 
@@ -47,7 +44,6 @@ max(dates) #2018
 
 ```{r}
 jobs_w_onet <- jobs %>% filter(!dataplumbr::var.is_blank(consolidatedtitleonet)) 
-
 restonw_wjobs <- main %>% filter(str_detect(zipcode, "20190") == TRUE)  %>% 
   left_join(jobs_w_onet, by = "BGTResId") %>% 
   left_join(onet, by = c("consolidatedtitleonet" = "O*NET-SOC Code")) %>% 
@@ -55,7 +51,6 @@ restonw_wjobs <- main %>% filter(str_detect(zipcode, "20190") == TRUE)  %>%
   select(BGTResId, consolidatedtitleonet, jobISOStartDate, jobISOEndDate, Title) %>% 
   mutate(time = (lubridate::ymd(jobISOEndDate)-lubridate::ymd(jobISOStartDate))) %>% 
   select(-jobISOStartDate, -jobISOEndDate)
-
 helper <- function(df) {
   x <- unique(df)
     if (length(x) > 1L) {
@@ -64,22 +59,17 @@ helper <- function(df) {
      data.table()
    }
 }
-
 reston_jobs_only <- restonw_wjobs %>% select(BGTResId, Title )
 reston_helped <- tapply(reston_jobs_only$Title, reston_jobs_only$BGTResId, FUN = helper)
 reston_helped <- do.call(rbind, reston_helped)
 reston_edgelist <- reston_helped %>% group_by(V1, V2) %>% summarise(weight = n()) %>%  filter(weight > 18) %>% select(-weight)
 reston_edge2 <- as.matrix(reston_jobs_only)
 reston_plot <- plot(igraph::graph_from_edgelist(as.matrix(reston_edgelist), directed = FALSE))
-
 plot(igraph::graph_from_data_frame(d=reston_edgelist, vertices = reston_jobs_only, directed = F))
-
 allvajobs <- main %>% left_join(jobs_w_onet, by = "BGTResId") %>%
   left_join(onet, by = c("consolidatedtitleonet" = "O*NET-SOC Code")) %>% 
   select(-Description)
-
 remove(main, jobs, allvajobs)
-
 va_titles <- allvajobs %>% select(BGTResId, Title)
   
 allva_ties <- tapply(va_titles$Title, va_titles$BGTResId, FUN = helper)
@@ -88,44 +78,33 @@ allva_ties <- do.call(rbind, all_va_ties_listdf)
 va_edgelist <- allva_ties %>% group_by(V1, V2) %>% summarise(weight = n()) %>%  filter(weight > 1999) %>% select(-weight)
 #reston_edge2 <- as.matrix(reston_jobs_only)
 reston_plot <- plot(igraph::graph_from_edgelist(as.matrix(va_edgelist), directed = FALSE))
-
 allvajobs %>% left_join(education)
 rothwell_stw
-
 table(edu$degreeLevel)
-
 edu %>% filter(str_detect(degreeLevel, "#") == TRUE) %>% head(1) %>% 
   transmute(
     BGTResID,
     degreeLevel = str_extract_all()
   )
-
 s <- strsplit(as.character(edu$degreeLevel), split = "#")
 data.frame(V1 = rep(edu$degreeLevel, sapply(s, length)), V2 = unlist(s))
-
 edu %>% 
   filter(str_detect(degreeLevel, "#") == TRUE) %>% 
   head(1) %>% select(BGTResID, degreeLevel, DegreeType, major) %>%  # %>%  str_split(as.character(degreeLevel), "#")
   mutate(test = paste(degreeLevel, DegreeType, major)) 
-
 st <- tibble(edu$BGTResID, edu$degreeLevel, tidyr::nest((s)))
-
 st$s
 class(s[[2]])
-
 edu %>% head() %>%
   mutate(test = str_split(CompletionDateRaw, pattern = "#"))
-
 edu %>% transmute(count = str_detect())
 table(str_detect(edu$Instituition, "#") == TRUE)
 table(str_detect(edu$Instituition, "\\\\n") == TRUE)
-
 ```
 
 
 
 ```{r helper function }
-
 helper <- function(df) {
   # df_split <- split(df, f=df$BGTResId)
   # for (i in 1:length(df_split)) {
@@ -146,8 +125,6 @@ helper <- function(df) {
      data.table()
    }
 }
-
-
 write.csv(xx, "~/git/stem_edu/data/stem_edu/working/reston100resumeswjobs.csv")
 ```
 
@@ -173,7 +150,6 @@ Skill          | related | 9        | 13.0     |
 
 ```{r}
 main[1,]
-
 tibble("Column" = colnames(main))
 ```
 
@@ -185,8 +161,7 @@ colnames(main)
 
 
 ```{r}
-library(purr)
-
+library(purrr)
 check_calc <- function(vec) {
   blanks <- 0L
   true_na <- 0L
@@ -209,9 +184,6 @@ check_calc <- function(vec) {
          percent_complete = percent_complete,
          unique_values = unique_values)
 }
-
-
-
 check_complete <- function(df) {
   z <- deparse(substitute(df))
   map_df(.x = df, .f = check_calc) %>%
@@ -219,18 +191,74 @@ check_complete <- function(df) {
     mutate(set = print(z))  %>%
     select(set, column, blanks, true_na, written_na, percent_complete, unique_values)
 }
-
 bgt_resume_complete <- rbind(check_complete(main),
       check_complete(jobs),
       check_complete(edu),
       check_complete(cert),
       check_complete(skill)
       )
-
 bgt_resume_complete
+#readr::write_csv(bgt_resume_complete, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/resume_bgt_completeness.csv")
 
-#readr::write_csv(bgt_perc_comp, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/aaronsdata_bgt_completeness.csv")
+bgt_resume_complete <- readr::read_csv("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/resume_bgt_completeness.csv")
 ```
+
+```{r db}
+library(sdalr)
+#con <- con_db(dbname = "burning_glass", host = "postgis_1",  port = 5432, user = "dtn2ep", pass = "dtn2ep") 
+#dbskillsize07 <- dbGetQuery(con, assess_ads_skills07)
+```
+
+```{r}
+virginiajobs <- main %>% maditr::dt_left_join(jobs, by = "BGTResId")
+library(maditr)
+tenurecalc <- jobs %>% 
+  transmute(BGTResId = BGTResId, Start = lubridate::ymd(jobISOStartDate), End = lubridate::ymd(jobISOEndDate)) %>%
+  mutate(Duration = ((End - Start))) %>% 
+  maditr::dt_select(-Start, -End) %>% 
+  dt_summarise(tenure = sum(Duration), by = BGTResId) 
+
+tenurecalc
+
+main %>% left_join(tenurecalc, by = "BGTResId")
+
+
+
+
+```
+
+
+```{r}
+edu_inst <- edu %>% 
+  select(BGTResID,degreeLevel, Instituition) %>% 
+  mutate(inst_split = str_split(Instituition, "\\\\n|#")) %>% 
+  select(-Instituition) %>%
+  tidyr::unnest(inst_split)
+
+missingInst <- edu_inst %>% 
+  filter(dataplumbr::var.is_blank(degreeLevel) & !dataplumbr::var.is_blank(inst_split)) 
+
+edu_patt <- paste0(c("comm college", "community college", "high school", "online", 
+                     "air force", "sergeants major", "military", "us army", "technical school", "technical college",
+                     "air command", "USAF"), collapse = "|")
+
+test <- missingInst %>% mutate(edu_type = str_extract(string = str_to_lower(inst_split), pattern = edu_patt))
+
+test %>% filter(is.na(edu_type)) #173K blank, 101K filled
+
+# FALSE   TRUE 
+#100925 173577 
+  
+ipeds_inst_names  <- readr::read_csv("~/git/stem_edu/data/stem_edu/original/IPEDS_Data/1_Institutional_Char_Directory_Info/hd2012.csv") %>% 
+  select(INSTNM)
+
+highered_patt <- paste0(ipeds_inst_names$INSTNM, collapse = "|")
+
+test2 <- test %>% filter(is.na(edu_type)) %>% 
+  mutate(higher_ed = str_extract(inst_split, pattern = highered_patt))
+
+```
+
 
 Validity rules: 
 * BGTResId - check for length
@@ -253,7 +281,6 @@ bgtjobid_val <- tibble(
   "Total Invalid" = nrow(main) - length(unique(main$bgtjobid)),
   "Percent Invalid" = (nrow(main) - length(unique(main$bgtjobid))) / nrow(main), 
   "Percent Valid" = (1 - (nrow(main) - length(unique(main$bgtjobid))) / nrow(main))) 
-
 check_val <- function(vec, rule) {
   valids <- 0L
   invalids <- 0L
@@ -275,11 +302,6 @@ check_val <- function(vec, rule) {
          percent_complete = percent_complete,
          unique_values = unique_values)
 }
-
-
-
-
-
 check_validity <- function(df) {
   z <- deparse(substitute(df))
   map_df(.x = df, .f = check_val) %>%
@@ -287,10 +309,7 @@ check_validity <- function(df) {
            column = names(df)) %>%
     select(set, column, blanks, true_na, written_na, percent_complete, unique_values)
 }
-
 ```
-
-
 
 
 
