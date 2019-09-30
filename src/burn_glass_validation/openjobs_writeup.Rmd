@@ -1,0 +1,191 @@
+---
+title: "Open Jobs Write Up"
+author: "Eirik Iversen"
+date: "5/14/2019"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, include = FALSE}
+#load data and libs 
+library(dplyr)
+library(DataExplorer)
+library(data.table)
+library(lubridate)
+library(knitr)
+ojobs <-  fread('../../data/stem_edu/working/allOpenjobsParsed.csv')
+```
+# Open Jobs Data Framework
+
+## Data Inventory
+
+**Purpose**: In 2016, the Commonwealth Center for Advanced Research and Statistics ( CCARS ) initiated a pilot project to create an open “real-time” data set of advertised job postings in Virginia. This data set is the initial outcome of the pilot. Work on this project is reported to be ongoing and is being conducted by the Discovery Analytics Center at Virginia Tech. The intended use of this data is to “to create applications or visualizations that can help connect Virginians to job opportunities, offer insights into the needs of employers by occupation, skills, or education requirements, or create predictive models to help Virginia determine its future needs for talent!”
+
+**Method**: The Discovery Analytics Center collected, cleaned, “enriched”, and de-duplicated data from three sources: 
+
+*	A daily feed of jobs from the National Labor Exchange made available by the DirectEmployers Association
+*	A snapshot of jobs in the Virginia Workforce Connection from mid-February 2016 made available by the Virginia Employment Commission
+*	A feed of schema tagged jobs available through an open API built by Devis for the Veterans Job Bank. 
+
+Their major steps to combine this data into a single set are listed below: 
+
+*	Mapped job postings from all three sources to the job-posting schema standard
+*	Enriched job postings with average wage data from the Georgetown University’s Center for Education and the Workforce and job title normalization assistance from Glassdoor
+*	De-duplicated the data using an algorithm to identify identical job postings
+
+**Description**: The data contains 846,613 job postings from various regions in Virginia from 2010 – 2017 (2010 – 2013 sparsely populated). The variables available are listed below in a table along with how many observations in that column are missing.
+
+**Timeliness**: The Data offers few observations from 2010 to 2013, but from June 2014 and onwards data seems to be collected either on a monthly or daily interval. For some months, most of the job postings all have the “datePosted” variable equal to the same day. We will explore this trend later on in EDA, but overall it seems that data for job postings is collected daily. 
+Selectivity: The population of interest are online job postings in Virginia. Open Data does offer some caveats to this population: “This data set does not cover all job openings in Virginia advertised online. Not all sources of data used to create this set are “real-time.” Currently, data supplied from the Virginia Workforce Connection is a snapshot of data from a point in time. Efforts are underway to explore access to these jobs in “real-time.” Additionally, the schema tagged jobs pulled into this data set are limited to those jobs tagged with a “Veteran Hiring Commitment”.”  
+
+**Accessibility**:  The data is freely available to the public at this link: http://opendata.cs.vt.edu/dataset/openjobs-jobpostings. The datasets are is JSON format. 
+
+## Data Profiling 
+
+**Missingness**
+
+Below is a table containing the missingness and number of values missing for all the variables in openjobs:
+```{r}
+na_tab <- apply(ojobs, 2, function(x) {sum(is.na(x)) + sum(x == "",na.rm = T)+sum(x == " ",na.rm = T)})
+na_tab <- cbind(as.data.frame(na_tab), as.data.frame(na_tab)$na_tab / nrow(ojobs))
+kable(na_tab, col.names = c("# of Missing or NA or Empty", "Percent Missing or NA or Empty")) 
+```
+
+It seems that most of the fields that would be free text are the ones that are missing the most information. 
+
+**Date Posted exploration**
+
+As mentioned previously, there is an interesting distribution of job postings across time: 
+
+```{r}
+# How many rows have values that don't make sense?
+tab <- data.frame(table(ojobs$datePosted))
+barplot(height = tab$Freq, names.arg = tab$Var1)
+#note that 3/17/2016, 09/09/2016, and 4/22/2016 have unusually high counts
+#let's look at the distribution for those months
+```
+
+Each bar in this plot represents a date, and the height of the bar represents how many jobs were posted on that date. This is concerning because we see there are a few dates with a suspicious amount of jobs posted. As it's hard to see what exactly is going on at this level, I have broken down the suspicious bars into their respective months to see if they're really all posted on a single day.
+
+```{r}
+par(mfrow = c(1,3))
+march <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-03-01'),]
+march <- march[as_date(march$datePosted) < as_date('2016-03-31'),]
+m_tab <- data.frame(table(march$datePosted))
+barplot(height = m_tab$Freq, names.arg = m_tab$Var1, main = "Jobs posted March 2016")
+
+april <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-04-01'),]
+april <- april[as_date(april$datePosted) < as_date('2016-04-30'),]
+a_tab <- data.frame(table(april$datePosted))
+barplot(height = a_tab$Freq, names.arg = a_tab$Var1,main = "Jobs posted April 2016")
+
+sep <- ojobs[as_date(ojobs$datePosted) >= as_date('2016-09-01'),]
+sep <- sep[as_date(sep$datePosted) < as_date('2016-09-30'),]
+s_tab <- data.frame(table(sep$datePosted))
+barplot(height = s_tab$Freq, names.arg = s_tab$Var1,main = "Jobs posted September 2016")
+par(mfrow = c(1,1))
+
+```
+
+Sure enough, in these three months there is a day where most of the jobs are posted. My best guess for this is that there was some error in data collection that caused all of the jobs in a month to be posted on the same day, but there is no way to know for sure without contacting the original source.
+
+
+##  Open Job Economic region job aggregates for July 2017
+```{r,warning=FALSE,include=FALSE}
+library(data.table)
+library(dplyr)
+library(stringr)
+library(sf)
+library(ggmap)
+library(lubridate)
+BG_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/BG_join_point.RDS')
+OJ_join_point <- readRDS('../../data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS')
+econ_va_counties <- readRDS("../../data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
+```
+
+```{r, echo=FALSE, fig.cap="OpenJobs Job Count Aggregates by Economic Region July 2017", out.width = '100%'}
+knitr::include_graphics("../burn_glass_validation/Images/oj_map.JPG")
+```
+
+The below image was meant to be rendered in HTML to be interactive, but the table represents the same information. 
+
+
+
+```{r,warning = FALSE}
+#filter out the correct dates
+joined <- filter(OJ_join_point,as.Date(OJ_join_point$datePosted) >= "2017-07-01")
+joined <- st_join(joined, econ_va_counties)
+
+#
+joined_within <- joined %>% filter(within == TRUE) # removes 101 observations
+
+# aggregate jobs per county
+#join_cty_ct <- joined_within %>% group_by(fipscounty) %>% summarise(count = n())
+OJ_job <- joined_within %>% group_by(GOorg) %>% summarise(count = n())
+BG_job <- BG_join_point %>% group_by(GOorg) %>% summarise(count = n())
+#clean up
+st_geometry(OJ_job) <- NULL
+st_geometry(BG_job) <- NULL
+BG_job <- BG_job[complete.cases(BG_job$GOorg),]
+
+jobtable <- left_join(OJ_job,BG_job, by='GOorg')
+colnames(jobtable) <- c("GOorg", "Open Jobs Count", "Burning Glass Count") 
+knitr::kable(jobtable)
+
+```
+
+\newpage
+
+
+**Length of unique identifiers**
+
+each openjobs identifier is made of 32 characters. If we multiply that by the number of observations, then that 
+*should* be the number of characters in the column. Let's count the number of characters in the column to double check:
+```{r,echo = TRUE,include =TRUE}
+len <- length(unique(ojobs$rawdata_id))
+32*len
+32*len == (sum(as.numeric(lapply(ojobs$rawdata_id, nchar))))
+```
+We find that our unique identifiers are indeed unique.
+
+**Duplicates**
+
+By dropping the unique identifier from the data, we can search for duplicates. A duplicate here is a row that is identical to another row in all columns
+other than identifier
+```{r, echo = TRUE}
+data_dup <- ojobs[,-1]
+data_dup <- data_dup[duplicated(data_dup)]
+nrow(data_dup)
+# we see that there are 13555 duplicates overall
+cleaned_data <- ojobs %>% distinct(jobLocation_geo_latitude, jobLocation_geo_longitude, 
+                                   normalizedTitle_onetCode,normalizedTitle_onetName, 
+                                   datePosted, responsibilities, experienceRequirements,
+                                  jobDescription, hiringOrg, .keep_all = TRUE)
+#check to see the right amount of rows removed
+nrow(ojobs) - nrow(cleaned_data)
+```
+There are 13,555 duplicate rows in the data, which is fairly small. These duplicates could be postings for multiple openings of the same position, so we decide not to remove these.
+
+
+## Spatial plot of Job Postings 
+```{r,warning=FALSE}
+#### Please don't use this API key for future use. 
+## If you want to use ggmap in the future, register a Google API here: 
+# https://cloud.google.com/maps-platform/
+OJ <- fread('../../data/stem_edu/working/allOpenjobsParsed.csv')
+#ggmap background
+api <- 'AIzaSyCqJUvDKU5BNB14AdIJFTvd8GTtNtW8MMg'
+register_google(api)
+
+va_map <- get_map(source = 'google', location = 'Virginia', crop = FALSE, zoom = 7)
+va_map <- ggmap(va_map)
+
+va_map + geom_point(data= OJ, aes(x=jobLocation_geo_longitude, y= jobLocation_geo_latitude),alpha = 0.05, color = 'red')  
+```
+

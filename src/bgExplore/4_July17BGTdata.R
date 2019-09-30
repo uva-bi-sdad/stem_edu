@@ -1,6 +1,7 @@
 library(data.table)
 library(sf)
 library(dplyr)
+library(readr)
 
 # Import datasets - Economic Regions + BGT
 econ_va_counties <- readRDS("data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
@@ -46,8 +47,14 @@ plot(join_shape_ct["bucket"])
 ggplot2::ggplot(join_shape_ct) +
   geom_sf(mapping = aes(fill = GOorg)) +
   geom_sf_text(mapping = aes(label = count))
+# eiriki
+#library(leaflet)
 
-join_shape_ct$popup <- paste(join_shape_ct$Locations, join_shape_ct$count)
+#open_join_shape_ct <- readRDS('./data/stem_edu/working/BGexplorevalidate/open_join_shape_ct.RDS')
+#merge(open_join_shape_ct, join_shape_ct,by = 'geometry')
+
+
+#join_shape_ct$popup <- paste(join_shape_ct$Locations, join_shape_ct$count)
 
 
 # ------------------------------------------------------------------------------------
@@ -55,6 +62,7 @@ join_shape_ct$popup <- paste(join_shape_ct$Locations, join_shape_ct$count)
 ##LEAFLET PLOTS
 
 palette <- colorNumeric("YlOrRd", domain = log(join_shape_ct$count), na.color = "#FFFFFF")
+
 
 leaflet(join_shape_ct) %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
