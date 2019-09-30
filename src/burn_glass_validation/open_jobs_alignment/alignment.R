@@ -23,7 +23,11 @@ open_point <- sf::st_as_sf(x = open_jobs,
 # this takes a long time to run
 open_point$within <- st_within(open_point$geometry, econ_va_counties$geometry) %>% lengths > 0
 #SAVE OUT TO FILE IF U RUN ABOVE LINE, otherwise use readRDS
+#eiriki
+#open_point <- readRDS('./data/stem_edu/working/BGexplorevalidate/BG_Shapefiles/open_point.RDS')
+
 #open_point <- readRDS('./data/stem_edu/working/open_point.RDS')
+
 joined <- st_join(open_point, econ_va_counties)
 #filter out the correct dates
 library(lubridate)
@@ -31,7 +35,9 @@ joined <- filter(joined,as.Date(joined$datePosted) >= "2017-07-01")
 
 #
 joined_within <- joined %>% filter(within == TRUE) # removes 101 observations
+
 saveRDS(joined_within, "./data/stem_edu/working/BGexplorevalidate/OJ_point.RDS")
+
 
 # aggregate jobs per county
 #join_cty_ct <- joined_within %>% group_by(fipscounty) %>% summarise(count = n())

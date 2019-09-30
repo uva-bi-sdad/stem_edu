@@ -28,33 +28,139 @@ ORDER BY "occfam"
 
 ```
 
-
-
 ```{sql connection = con}
 Select  "occfam", "occfamname", COUNT( DISTINCT "skillclusterfamily") as "skf_count", COUNT(a.bgtjobid) as "job_count"
-FROM (SELECT * FROM ads_main_2017 WHERE "mo" = 7 AND "occfam" ) a 
+FROM (SELECT * FROM ads_main_2017 WHERE "mo" = 7 AND "occfam" = 15 ) a 
 LEFT JOIN (SELECT  * FROM ads_skills_2017 WHERE "skillclusterfamily" != 'na') b on a.bgtjobid = b.bgtjobid 
 GROUP BY "occfam", "occfamname" 
 ORDER BY "occfam"
 ```
 
-
-
-
 ```{sql connection = con}
 Select  "occfam", "occfamname", "skillclusterfamily", COUNT(DISTINCT b.skill) as "skillcount", COUNT(a.bgtjobid) as "jobcount"
 FROM (SELECT * FROM ads_main_2017 WHERE "mo" = 7 AND "occfam" is NOT NULL ) a 
-LEFT JOIN (SELECT  * FROM ads_skills_2017 WHERE "skillclusterfamily" != 'na') b on a.bgtjobid = b.bgtjobid
+LEFT JOIN (SELECT  * FROM ads_skills_2017 WHERE "skillclusterfamily" = 'na') b on a.bgtjobid = b.bgtjobid
 GROUP BY "skillclusterfamily", "occfam", "occfamname"
 ORDER BY  "skillcount" DESC --"jobcount" DESC --  "occfam", "skillclusterfamily"
 ```
 
-```{sql connection = con, output.var="bgtskills0717"}
+## PULL SKILLS
+
+SKILLS with na family
+
+```{sql connection = con, output.var="bgt_vaskills_2017_na"}
 Select  *
-FROM (SELECT * FROM ads_main_2017 WHERE "mo" = 7 AND "occfam" is NOT NULL ) a 
-LEFT JOIN (SELECT  * FROM ads_skills_2017 WHERE "skillclusterfamily" != 'na') b on a.bgtjobid = b.bgtjobid
+FROM (SELECT bgtjobid FROM ads_main_2017 WHERE ads_main_2017.fipsstate = 51 ) a 
+LEFT JOIN (SELECT  * FROM ads_skills_2017 WHERE ads_skills_2017.skillclusterfamily = 'na') b on a.bgtjobid = b.bgtjobid
+```
+
+SKILLS without  na family
+```{sql connection = con, output.var="bgt_vaskills_2017"}
+Select  *
+FROM (SELECT bgtjobid FROM ads_main_2017 WHERE ads_main_2017.fipsstate = 51 ) a 
+LEFT JOIN (SELECT  * FROM ads_skills_2017 WHERE ads_skills_2017.skillclusterfamily != 'na') b on a.bgtjobid = b.bgtjobid
+```
+
+## Append SKILLS
+
+
+```{r}
+
+bgt_vaskills_2017_keepnona <- bgt_vaskills_2017[complete.cases(bgt_vaskills_2017),] # 5,005,837 rows
+bgt_vaskills_2017[!complete.cases(bgt_vaskills_2017),] #56,400 rows
+bgt_vaskills_2017_keepna <- bgt_vaskills_2017_na[complete.cases(bgt_vaskills_2017_na),] # 1,943,631
+bgt_vaskills_2017_na[!complete.cases(bgt_vaskills_2017_na),] # 136,053 rows
+
+bgt_vaskills_2017_keepnona
+bgt_vaskills_2017_keepna
+
+keep <- rbind(bgt_vaskills_2017_keepnona, bgt_vaskills_2017_keepna)
+nrow(keep)
+nrow(bgt_vaskills_2017_keepnona)
+nrow(bgt_vaskills_2017_keepna)
+nrow(bgt_vaskills_2017_keepnona) + nrow(bgt_vaskills_2017_keepna)
+
 
 ```
+
+
+## PULL JOBS
+
+Jobs across VA in 2017
+
+
+
+```{sql connection = con, output.var = "bgt_vajobs_2017"}
+SELECT bgtjobid, cleantitle, occfam, employer, sector, bestfitmsa, bestfitmsaname, city, lat, lon
+FROM ads_main_2017
+WHERE ads_main_2017.fipsstate = 51
+
+--bgtjobid, cleantitle, occfam, occfamname, soc, socname, onet, onetname, employer, sector, sectorname, city, bestfitmsa, bestfitmsaname, bestfitmsatype, msa,  maxedu, maxdegree
+```
+
+
+
+```{r}
+saveRDS(bgt_vajobs_2017, "~/git/stem_edu/data/stem_edu/working/bgtworking/bgt_vajobs_2017.RDS")
+saveRDS(bgt_vaskills_2017, "~/git/stem_edu/data/stem_edu/working/bgtworking/bgt_vaskills_2017.RDS")
+saveRDS(bgt_join_va_jobsNskills, "~/git/stem_edu/data/stem_edu/working/bgtworking/bgt_join_va_jobsNskills.RDS")
+
+saveRDS(bgt_join_va_jobsNskills_nafam, "~/git/stem_edu/data/stem_edu/working/bgtworking/bgt_join_va_jobsNskills_nafam.RDS")
+```
+
+
+```{r}
+head(bgt_vajobs_2017)
+head(bgt_vaskills_2017)
+
+sum(is.na(bgt_vaskills_2017))
+rm(bgt_vaskills_2017)
+
+bgt_vaskills_2017_with500Knas <- bgt_vaskills_2017
+
+bgt_vaskills_2017 %>% 
+  filter(is.na(skill)) %>%
+  head()
+
+bgt_vaskills_2017 <- as.data.table(bgt_vaskills_2017)
+
+bgt_vaskills_2017 <- bgt_vaskills_2017[complete.cases(bgt_vaskills_2017)]
+
+object.size(bgt_vaskills_2017)
+
+head(bgt_vajobs_2017, 50)
+head(bgt_vaskills_2017, 50)
+
+bgt_vaskills_2017 <- bgt_vaskills_2017[, 2:10]
+
+library(dplyr)
+bgt_vajobs_2017 %>% group_by(bestfitmsaname) %>% summarise(count = n()) %>% arrange(desc(count))
+
+bgt_join_va_jobsNskills <- bgt_vajobs_2017 %>%
+  left_join(bgt_vaskills_2017, by = c("bgtjobid"))
+
+bgt_vaskills_2017_with500Knas <- bgt_vaskills_2017_with500Knas[2:10]
+bgt_vaskills_2017_na <- bgt_vaskills_2017_na[2:10]
+
+bgt_vaskills_2017_with500Knas %>% filter(skill == "Communication")
+
+bgt_vaskills_2017_na <- bgt_vaskills_2017_na %>% filter(skill != "na")
+
+bgt_vaskills_2017_na 
+
+
+bgt_join_va_jobsNskills_nafam <- bgt_vaskills_2017_na %>%
+  left_join(bgt_vajobs_2017, by = c("bgtjobid"))
+
+
+```
+
+
+
+
+
+
+
 
 
 

@@ -13,8 +13,9 @@ econ_reg_orgs <- readxl::read_excel("data/stem_edu/original/BurningGlassData/Eco
 econ_reg_locs <- readxl::read_excel("data/stem_edu/original/BurningGlassData/Economic Regions.xlsx", sheet = "2019RegionsLoc")
 
 # Import US & VA County Geographies
-con <- sdalr::con_db(dbname = "sdad", host = "127.0.0.1", port = 5433, user = "dtn2ep", pass = "dtn2ep")
-sql <- "SELECT * FROM geospatial$census_tl.tl_2017_us_county WHERE \"STATEFP\" = \'51\'"
+#con <- sdalr::con_db(dbname = "sdad", host = "127.0.0.1", port = 5433, user = "dtn2ep", pass = "dtn2ep")
+con <- sdalr::con_db(dbname = "gis", host = "postgis_1", port = 5432, user = "dtn2ep", pass = "dtn2ep")
+sql <- "SELECT * FROM census_tl.tl_2017_us_county WHERE \"STATEFP\" = \'51\'"
 va_counties <- st_read(con, query = sql)
 plot(va_counties["COUNTYFP"])
 
@@ -55,7 +56,13 @@ econ_va_counties <- merge(econ_va_counties, econ_reg_orgs, 'Region')
 #write_rds(econ_va_counties, "data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
 econ_va_counties <- read_rds("data/stem_edu/working/BGexplorevalidate/econvacounties.RDS")
 
+plot(econ_va_counties["Region"])
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#FFFFFF")
+plot(econ_va_counties["Region"], pal = cbPalette)
 
-
-
+ggplot(data = econ_va_counties) +
+  geom_sf(aes(fill = as.factor(Region))) +
+  xlab("Longitude") + ylab("Latitude") + labs(fill = "Economic Region")
+  theme_minimal() +
+  scale_fill_manual(breaks = as.factor(1:9), values = cbPalette)
 
