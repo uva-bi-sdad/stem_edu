@@ -6,7 +6,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(magrittr)
-library(dplyr)
+library(dplyr) #, lib.loc="/usr/local/lib/R/site-library")
 library(stringr)
 library(data.table)
 ```
@@ -34,12 +34,12 @@ my_own_table
 ```
 
 ```{r}
-tibble(colnames(job), class(colnames(job)))
-job$jobISOStartDate[1]
-dates <- lubridate::ymd(job$jobISOStartDate)
-dates <- dates[!is.na(dates)] 
-min(dates) #1957
-max(dates) #2018
+# tibble(colnames(job), class(colnames(job)))
+# job$jobISOStartDate[1]
+# dates <- lubridate::ymd(job$jobISOStartDate)
+# dates <- dates[!is.na(dates)] 
+# min(dates) #1957
+# max(dates) #2018
 ```
 
 ```{r}
@@ -201,6 +201,7 @@ bgt_resume_complete
 #readr::write_csv(bgt_resume_complete, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/resume_bgt_completeness.csv")
 
 bgt_resume_complete <- readr::read_csv("~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/resume_bgt_completeness.csv")
+bgt_resume_complete
 ```
 
 ```{r db}
@@ -212,19 +213,29 @@ library(sdalr)
 ```{r}
 virginiajobs <- main %>% maditr::dt_left_join(jobs, by = "BGTResId")
 library(maditr)
-tenurecalc <- jobs %>% 
-  transmute(BGTResId = BGTResId, Start = lubridate::ymd(jobISOStartDate), End = lubridate::ymd(jobISOEndDate)) %>%
-  mutate(Duration = ((End - Start))) %>% 
-  maditr::dt_select(-Start, -End) %>% 
-  dt_summarise(tenure = sum(Duration), by = BGTResId) 
 
-tenurecalc
+eligiblejobs <- jobs %>% 
+  mutate(Start = lubridate::ymd(jobISOStartDate), 
+         End = lubridate::ymd(jobISOEndDate), 
+         JobDuration = ((End - Start)),
+         order_val = as.numeric(Start)) %>% 
+  filter(!is.na(Start)) 
 
-main %>% left_join(tenurecalc, by = "BGTResId")
+tenurecalc <- eligiblejobs %>%
+  dt_select(BGTResId, JobDuration) %>% dt_summarise(tenure = sum(JobDuration), by = BGTResId)
 
+tenureportion <- eligiblejobs %>% 
+  left_join(tenurecalc, by = "BGTResId") %>% 
+  mutate(tenureportion = as.integer(100*(as.numeric(JobDuration)/as.numeric(tenure)))) %>% 
+  group_by(BGTResId) %>% 
+  mutate(JobOrder =  order(order_val, decreasing=TRUE),
+         TotalJobs = max(JobOrder),
+         trajectory_percentage = as.integer(100*(1 - ((TotalJobs - JobOrder)/TotalJobs))),
+         career_phase = ifelse(trajectory_percentage < 40, "Early", ifelse(trajectory_percentage < 75, "Mid", "Late"))) 
+  #select(BGTResId, consolidatedtitleonet, JobDuration, tenure, tenureportion, JobOrder, TotalJobs, trajectory_percentage, career_phase)
 
-
-
+hist(tenureportion$trajectory_percentage)
+head(tenureportion)
 ```
 
 
@@ -254,7 +265,7 @@ ipeds_inst_names  <- readr::read_csv("~/git/stem_edu/data/stem_edu/original/IPED
 
 highered_patt <- paste0(ipeds_inst_names$INSTNM, collapse = "|")
 
-test2 <- test %>% filter(is.na(edu_type)) %>% 
+test2 <- test %>% filter(is.na(edu_type))
   mutate(higher_ed = str_extract(inst_split, pattern = highered_patt))
 
 ```
