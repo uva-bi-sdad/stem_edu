@@ -1,0 +1,80 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RPostgreSQL)
+library(purrr)
+```
+
+
+```{r data}
+conn <- dbConnect(drv=PostgreSQL(),
+                  dbname='sdad_data',
+                  host='postgis_2',
+                  user=Sys.getenv('db_userid'),
+                  password=Sys.getenv('db_userid'))
+
+main=dbReadTable(conn=conn,name=c('bgt','va_res_pers'))
+jobs=dbReadTable(conn=conn,name=c('bgt','va_res_job'))
+edu=dbReadTable(conn=conn,name=c('bgt','va_res_ed'))
+cert=dbReadTable(conn=conn,name=c('bgt','va_res_cert'))
+skill=dbReadTable(conn=conn,name=c('bgt','va_res_skills'))
+
+```
+
+```{r functions}
+check_calc <- function(vec) {
+  blanks <- 0L
+  true_na <- 0L
+  written_na <- 0L
+  len <- length(x = vec)
+  for (elem in vec) {
+    if (is.na(x = elem)) {
+      true_na <- true_na + 1L
+    } else if (elem == "na") {
+      written_na <- written_na + 1L
+    } else if (elem == "") {
+      blanks <- blanks + 1L
+    }
+  }
+  percent_complete <- (len - (blanks + true_na + written_na)) / len
+  unique_values <- length(unique(vec))
+  tibble(blanks = blanks,
+         true_na = true_na,
+         written_na = written_na,
+         percent_complete = percent_complete,
+         unique_values = unique_values)
+}
+
+check_complete <- function(df) {
+  z <- deparse(substitute(df))
+  map_df(.x = df, .f = check_calc) %>%
+    mutate(column = colnames(df)) %>%
+    mutate(set = print(z))  %>%
+    select(set, column, blanks, true_na, written_na, percent_complete, unique_values)
+}
+```
+
+
+```{r}
+main_cmplt <- check_complete(main)
+jobs_cmplt <- check_complete(jobs)
+edu_cmplt <- check_complete(edu)
+cert_cmplt <- check_complete(cert)
+skills_cmplt <- check_complete(skill)
+
+bgt_resume_complete <- rbind(main_cmplt, jobs_cmplt, edu_cmplt, cert_cmplt, skills_cmplt)
+
+bgt_resume_complete
+
+#write.csv(bgt_resume_complete, "~/git/stem_edu/data/stem_edu/working/BGexplorevalidate/bgt_db_resume_complete.csv")
+```
+
+
+
+
+
+
